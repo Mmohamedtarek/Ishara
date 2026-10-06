@@ -1,0 +1,31 @@
+{
+  "cnn": {
+    "smooth": 3,
+    "confirm_rf": false,
+    "active_s": 4,
+    "confirm_s": 3.5,
+    "models": [
+      "ishara_cnn",
+      "ishara_cnn_2",
+      "ishara_cnn_3"
+    ],
+    "active": {
+      "confidence": 0.5,
+      "hold": 1,
+      "max_null": 0.3,
+      "per_class": {}
+    },
+    "tentative": {
+      "confidence": 0.6,
+      "hold": 1,
+      "max_null": 0.3,
+      "per_class": {}
+    },
+    "idle": {
+      "confidence": 0.85,
+      "hold": 3,
+      "max_null": 0.05,
+      "per_class": {}
+    }
+  }
+}

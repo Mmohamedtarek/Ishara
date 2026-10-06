@@ -1,0 +1,53 @@
+# Full calibration run in the simulator (uses the [env:wokwi] build via wokwi.toml).
+#   pio run -e wokwi
+#   wokwi-cli --timeout 60000 --scenario test/calibration.test.yaml .
+# Every wait-serial text is unique to its step, so no wait can match an earlier line, and
+# each wait targets a different burst of output (lines printed together are waited on once).
+name: 'Ishara full calibration'
+version: 1
+author: 'Ishara team'
+
+steps:
+  # Boot banner. Simulator flash is blank on every start, so it must say NOT CALIBRATED.
+  - wait-serial: 'Calibration  NOT CALIBRATED - press c'
+
+  - write-serial: 'c'
+
+  # Step 1: open hand. Sliders all the way to one end before the countdown ends.
+  # The MPU stays at its defaults (accel 0 0 1 g, no rotation): zero gyro bias, zero gyro
+  # std dev (no "hand moved" warning) and a neutral roll of 0 deg.
+  - wait-serial: '=== Step 1 of 3: Open hand ==='
+  - set-control: { part-id: potThumb, control: position, value: 0 }
+  - set-control: { part-id: potIndex, control: position, value: 0 }
+  - set-control: { part-id: potMiddle, control: position, value: 0 }
+  - set-control: { part-id: potRing, control: position, value: 0 }
+  - set-control: { part-id: potPinky, control: position, value: 0 }
+  - wait-serial: '--- Step 1 of 3 result'
+  - write-serial: 'y'
+
+  # Step 2: fist. Sliders to the other end.
+  - wait-serial: '=== Step 2 of 3: Make a fist ==='
+  - set-control: { part-id: potThumb, control: position, value: 1 }
+  - set-control: { part-id: potIndex, control: position, value: 1 }
+  - set-control: { part-id: potMiddle, control: position, value: 1 }
+  - set-control: { part-id: potRing, control: position, value: 1 }
+  - set-control: { part-id: potPinky, control: position, value: 1 }
+  - wait-serial: '--- Step 2 of 3 result'
+  - write-serial: 'y'
+
+  # Step 3: turn the wrist. Palm left (+90 deg) during the countdown so the filter settles,
+  # then palm right (-90 deg) as soon as capture starts.
+  - wait-serial: '=== Step 3 of 3: Turn the wrist ==='
+  - set-control: { part-id: imu, control: accelY, value: 1 }
+  - set-control: { part-id: imu, control: accelZ, value: 0 }
+  - wait-serial: 'GO - capturing Step 3 of 3'
+  - set-control: { part-id: imu, control: accelY, value: -1 }
+  - wait-serial: '--- Step 3 of 3 result'
+  - write-serial: 'y'
+
+  # "CALIBRATION SAVED" and the whole report are printed in one burst.
+  - wait-serial: '===== CALIBRATION REPORT ====='
+
+  # One-line JSON export, saved as format version 2.
+  - write-serial: 'j'
+  - wait-serial: '","v":2,"open":'

@@ -1,0 +1,20 @@
+# AI: files that can be regenerated
+AI/**/ishara_rf.joblib
+AI/**/data/
+AI/**/__pycache__/
+AI/**/.venv/
+
+# PlatformIO
+firmware/**/.pio/
+firmware/**/.vscode/
+
+# KiCad temp/backup files
+hardware/**/*-backups/
+hardware/**/#auto_saved_files#
+hardware/**/_autosave-*
+hardware/**/~*.lck
+hardware/**/fp-info-cache
+
+# misc
+*.zip
+.DS_Store

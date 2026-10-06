@@ -1,0 +1,2239 @@
+{
+ "note": "for each file: 'words' = confirmed words the app must show and speak, with the sample index (1-based count of samples read) when each is confirmed; 'events' = every Decider event (word / tentative / confirm / cancel) at its model step. Same as the Python reference.",
+ "files": {
+  "A/one.csv": {
+   "words": [],
+   "events": [
+    {
+     "step": 8,
+     "sample": 180,
+     "event": "tentative",
+     "word": "one"
+    },
+    {
+     "step": 27,
+     "sample": 370,
+     "event": "cancel",
+     "word": "one"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "tentative",
+     "word": "one"
+    },
+    {
+     "step": 55,
+     "sample": 650,
+     "event": "cancel",
+     "word": "one"
+    },
+    {
+     "step": 62,
+     "sample": 720,
+     "event": "tentative",
+     "word": "one"
+    }
+   ]
+  },
+  "A/two.csv": {
+   "words": [
+    {
+     "word": "two",
+     "sample": 200
+    },
+    {
+     "word": "two",
+     "sample": 460
+    },
+    {
+     "word": "two",
+     "sample": 750
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "two"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "two"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "two"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "confirm",
+     "word": "two"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "two"
+    },
+    {
+     "step": 65,
+     "sample": 750,
+     "event": "confirm",
+     "word": "two"
+    }
+   ]
+  },
+  "A/three.csv": {
+   "words": [
+    {
+     "word": "three",
+     "sample": 210
+    },
+    {
+     "word": "three",
+     "sample": 490
+    },
+    {
+     "word": "three",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 8,
+     "sample": 180,
+     "event": "tentative",
+     "word": "three"
+    },
+    {
+     "step": 11,
+     "sample": 210,
+     "event": "confirm",
+     "word": "three"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "three"
+    },
+    {
+     "step": 39,
+     "sample": 490,
+     "event": "confirm",
+     "word": "three"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "three"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "three"
+    }
+   ]
+  },
+  "A/four.csv": {
+   "words": [
+    {
+     "word": "four",
+     "sample": 200
+    },
+    {
+     "word": "four",
+     "sample": 470
+    },
+    {
+     "word": "four",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "four"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "four"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "four"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "confirm",
+     "word": "four"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "four"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "four"
+    }
+   ]
+  },
+  "A/five.csv": {
+   "words": [
+    {
+     "word": "five",
+     "sample": 210
+    },
+    {
+     "word": "five",
+     "sample": 470
+    },
+    {
+     "word": "five",
+     "sample": 730
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "five"
+    },
+    {
+     "step": 11,
+     "sample": 210,
+     "event": "confirm",
+     "word": "five"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "five"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "confirm",
+     "word": "five"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
+     "word": "five"
+    },
+    {
+     "step": 63,
+     "sample": 730,
+     "event": "confirm",
+     "word": "five"
+    }
+   ]
+  },
+  "A/me.csv": {
+   "words": [],
+   "events": [
+    {
+     "step": 9,
+     "sample": 190,
+     "event": "tentative",
+     "word": "me"
+    },
+    {
+     "step": 28,
+     "sample": 380,
+     "event": "cancel",
+     "word": "me"
+    },
+    {
+     "step": 35,
+     "sample": 450,
+     "event": "tentative",
+     "word": "me"
+    },
+    {
+     "step": 54,
+     "sample": 640,
+     "event": "cancel",
+     "word": "me"
+    },
+    {
+     "step": 63,
+     "sample": 730,
+     "event": "tentative",
+     "word": "me"
+    }
+   ]
+  },
+  "A/you.csv": {
+   "words": [
+    {
+     "word": "you",
+     "sample": 200
+    },
+    {
+     "word": "you",
+     "sample": 460
+    },
+    {
+     "word": "you",
+     "sample": 750
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "you"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "you"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "you"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "confirm",
+     "word": "you"
+    },
+    {
+     "step": 62,
+     "sample": 720,
+     "event": "tentative",
+     "word": "you"
+    },
+    {
+     "step": 65,
+     "sample": 750,
+     "event": "confirm",
+     "word": "you"
+    }
+   ]
+  },
+  "A/hello.csv": {
+   "words": [
+    {
+     "word": "hello",
+     "sample": 190
+    },
+    {
+     "word": "hello",
+     "sample": 460
+    },
+    {
+     "word": "hello",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "hello"
+    },
+    {
+     "step": 9,
+     "sample": 190,
+     "event": "confirm",
+     "word": "hello"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "hello"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "confirm",
+     "word": "hello"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "hello"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "hello"
+    }
+   ]
+  },
+  "A/thanks.csv": {
+   "words": [
+    {
+     "word": "thanks",
+     "sample": 190
+    },
+    {
+     "word": "thanks",
+     "sample": 460
+    },
+    {
+     "word": "thanks",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "thanks"
+    },
+    {
+     "step": 9,
+     "sample": 190,
+     "event": "confirm",
+     "word": "thanks"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "thanks"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "confirm",
+     "word": "thanks"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
+     "word": "thanks"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "thanks"
+    }
+   ]
+  },
+  "A/please.csv": {
+   "words": [
+    {
+     "word": "please",
+     "sample": 180
+    },
+    {
+     "word": "please",
+     "sample": 460
+    },
+    {
+     "word": "please",
+     "sample": 720
+    }
+   ],
+   "events": [
+    {
+     "step": 5,
+     "sample": 150,
+     "event": "tentative",
+     "word": "please"
+    },
+    {
+     "step": 8,
+     "sample": 180,
+     "event": "confirm",
+     "word": "please"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "please"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "confirm",
+     "word": "please"
+    },
+    {
+     "step": 59,
+     "sample": 690,
+     "event": "tentative",
+     "word": "please"
+    },
+    {
+     "step": 62,
+     "sample": 720,
+     "event": "confirm",
+     "word": "please"
+    }
+   ]
+  },
+  "A/yes.csv": {
+   "words": [
+    {
+     "word": "yes",
+     "sample": 210
+    },
+    {
+     "word": "yes",
+     "sample": 480
+    },
+    {
+     "word": "yes",
+     "sample": 750
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "yes"
+    },
+    {
+     "step": 11,
+     "sample": 210,
+     "event": "confirm",
+     "word": "yes"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "yes"
+    },
+    {
+     "step": 38,
+     "sample": 480,
+     "event": "confirm",
+     "word": "yes"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "yes"
+    },
+    {
+     "step": 65,
+     "sample": 750,
+     "event": "confirm",
+     "word": "yes"
+    }
+   ]
+  },
+  "A/no.csv": {
+   "words": [
+    {
+     "word": "no",
+     "sample": 200
+    },
+    {
+     "word": "no",
+     "sample": 460
+    },
+    {
+     "word": "no",
+     "sample": 750
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "no"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "no"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "no"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "confirm",
+     "word": "no"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "no"
+    },
+    {
+     "step": 65,
+     "sample": 750,
+     "event": "confirm",
+     "word": "no"
+    }
+   ]
+  },
+  "A/sorry.csv": {
+   "words": [
+    {
+     "word": "sorry",
+     "sample": 200
+    },
+    {
+     "word": "sorry",
+     "sample": 480
+    },
+    {
+     "word": "sorry",
+     "sample": 750
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "sorry"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "sorry"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "sorry"
+    },
+    {
+     "step": 38,
+     "sample": 480,
+     "event": "confirm",
+     "word": "sorry"
+    },
+    {
+     "step": 62,
+     "sample": 720,
+     "event": "tentative",
+     "word": "sorry"
+    },
+    {
+     "step": 65,
+     "sample": 750,
+     "event": "confirm",
+     "word": "sorry"
+    }
+   ]
+  },
+  "A/good.csv": {
+   "words": [
+    {
+     "word": "good",
+     "sample": 210
+    },
+    {
+     "word": "good",
+     "sample": 470
+    },
+    {
+     "word": "good",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "good"
+    },
+    {
+     "step": 11,
+     "sample": 210,
+     "event": "confirm",
+     "word": "good"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "good"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "confirm",
+     "word": "good"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
+     "word": "good"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "good"
+    }
+   ]
+  },
+  "A/bad.csv": {
+   "words": [
+    {
+     "word": "bad",
+     "sample": 200
+    },
+    {
+     "word": "bad",
+     "sample": 490
+    },
+    {
+     "word": "bad",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "bad"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "bad"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "tentative",
+     "word": "bad"
+    },
+    {
+     "step": 39,
+     "sample": 490,
+     "event": "confirm",
+     "word": "bad"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
+     "word": "bad"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "bad"
+    }
+   ]
+  },
+  "A/come.csv": {
+   "words": [
+    {
+     "word": "come",
+     "sample": 190
+    },
+    {
+     "word": "come",
+     "sample": 470
+    },
+    {
+     "word": "come",
+     "sample": 730
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "come"
+    },
+    {
+     "step": 9,
+     "sample": 190,
+     "event": "confirm",
+     "word": "come"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "come"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "confirm",
+     "word": "come"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
+     "word": "come"
+    },
+    {
+     "step": 63,
+     "sample": 730,
+     "event": "confirm",
+     "word": "come"
+    }
+   ]
+  },
+  "A/drink.csv": {
+   "words": [],
+   "events": [
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "tentative",
+     "word": "drink"
+    }
+   ]
+  },
+  "A/call.csv": {
+   "words": [
+    {
+     "word": "call",
+     "sample": 180
+    },
+    {
+     "word": "call",
+     "sample": 480
+    },
+    {
+     "word": "call",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 5,
+     "sample": 150,
+     "event": "tentative",
+     "word": "call"
+    },
+    {
+     "step": 8,
+     "sample": 180,
+     "event": "confirm",
+     "word": "call"
+    },
+    {
+     "step": 35,
+     "sample": 450,
+     "event": "tentative",
+     "word": "call"
+    },
+    {
+     "step": 38,
+     "sample": 480,
+     "event": "confirm",
+     "word": "call"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "call"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "call"
+    }
+   ]
+  },
+  "A/iloveyou.csv": {
+   "words": [
+    {
+     "word": "iloveyou",
+     "sample": 180
+    },
+    {
+     "word": "iloveyou",
+     "sample": 460
+    },
+    {
+     "word": "iloveyou",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 5,
+     "sample": 150,
+     "event": "tentative",
+     "word": "iloveyou"
+    },
+    {
+     "step": 8,
+     "sample": 180,
+     "event": "confirm",
+     "word": "iloveyou"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "iloveyou"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "confirm",
+     "word": "iloveyou"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
+     "word": "iloveyou"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "iloveyou"
+    }
+   ]
+  },
+  "A/hungry.csv": {
+   "words": [],
+   "events": [
+    {
+     "step": 11,
+     "sample": 210,
+     "event": "tentative",
+     "word": "hungry"
+    },
+    {
+     "step": 30,
+     "sample": 400,
+     "event": "cancel",
+     "word": "hungry"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "tentative",
+     "word": "hungry"
+    },
+    {
+     "step": 55,
+     "sample": 650,
+     "event": "cancel",
+     "word": "hungry"
+    },
+    {
+     "step": 63,
+     "sample": 730,
+     "event": "tentative",
+     "word": "hungry"
+    }
+   ]
+  },
+  "A/rest.csv": {
+   "words": [],
+   "events": []
+  },
+  "A/other.csv": {
+   "words": [],
+   "events": []
+  },
+  "A/sentences.csv": {
+   "words": [
+    {
+     "word": "me",
+     "sample": 660
+    },
+    {
+     "word": "drink",
+     "sample": 660
+    },
+    {
+     "word": "you",
+     "sample": 920
+    },
+    {
+     "word": "come",
+     "sample": 990
+    },
+    {
+     "word": "call",
+     "sample": 1280
+    },
+    {
+     "word": "me",
+     "sample": 1360
+    },
+    {
+     "word": "thanks",
+     "sample": 1730
+    },
+    {
+     "word": "good",
+     "sample": 1730
+    },
+    {
+     "word": "iloveyou",
+     "sample": 2240
+    }
+   ],
+   "events": [
+    {
+     "step": 18,
+     "sample": 280,
+     "event": "tentative",
+     "word": "hungry"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "cancel",
+     "word": "hungry"
+    },
+    {
+     "step": 44,
+     "sample": 540,
+     "event": "tentative",
+     "word": "me"
+    },
+    {
+     "step": 56,
+     "sample": 660,
+     "event": "confirm",
+     "word": "me"
+    },
+    {
+     "step": 56,
+     "sample": 660,
+     "event": "word",
+     "word": "drink"
+    },
+    {
+     "step": 78,
+     "sample": 880,
+     "event": "tentative",
+     "word": "you"
+    },
+    {
+     "step": 82,
+     "sample": 920,
+     "event": "confirm",
+     "word": "you"
+    },
+    {
+     "step": 89,
+     "sample": 990,
+     "event": "word",
+     "word": "come"
+    },
+    {
+     "step": 114,
+     "sample": 1240,
+     "event": "tentative",
+     "word": "call"
+    },
+    {
+     "step": 118,
+     "sample": 1280,
+     "event": "confirm",
+     "word": "call"
+    },
+    {
+     "step": 126,
+     "sample": 1360,
+     "event": "word",
+     "word": "me"
+    },
+    {
+     "step": 151,
+     "sample": 1610,
+     "event": "tentative",
+     "word": "thanks"
+    },
+    {
+     "step": 163,
+     "sample": 1730,
+     "event": "confirm",
+     "word": "thanks"
+    },
+    {
+     "step": 163,
+     "sample": 1730,
+     "event": "word",
+     "word": "good"
+    },
+    {
+     "step": 189,
+     "sample": 1990,
+     "event": "tentative",
+     "word": "sorry"
+    },
+    {
+     "step": 208,
+     "sample": 2180,
+     "event": "cancel",
+     "word": "sorry"
+    },
+    {
+     "step": 211,
+     "sample": 2210,
+     "event": "tentative",
+     "word": "iloveyou"
+    },
+    {
+     "step": 214,
+     "sample": 2240,
+     "event": "confirm",
+     "word": "iloveyou"
+    }
+   ]
+  },
+  "A/everyday.csv": {
+   "words": [],
+   "events": []
+  },
+  "B/one.csv": {
+   "words": [],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "you"
+    },
+    {
+     "step": 26,
+     "sample": 360,
+     "event": "cancel",
+     "word": "you"
+    }
+   ]
+  },
+  "B/two.csv": {
+   "words": [
+    {
+     "word": "two",
+     "sample": 200
+    },
+    {
+     "word": "two",
+     "sample": 480
+    },
+    {
+     "word": "two",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "two"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "two"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "two"
+    },
+    {
+     "step": 38,
+     "sample": 480,
+     "event": "confirm",
+     "word": "two"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "two"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "two"
+    }
+   ]
+  },
+  "B/three.csv": {
+   "words": [
+    {
+     "word": "three",
+     "sample": 200
+    },
+    {
+     "word": "three",
+     "sample": 490
+    },
+    {
+     "word": "three",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "three"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "three"
+    },
+    {
+     "step": 35,
+     "sample": 450,
+     "event": "tentative",
+     "word": "three"
+    },
+    {
+     "step": 39,
+     "sample": 490,
+     "event": "confirm",
+     "word": "three"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "three"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "three"
+    }
+   ]
+  },
+  "B/four.csv": {
+   "words": [
+    {
+     "word": "four",
+     "sample": 200
+    },
+    {
+     "word": "four",
+     "sample": 480
+    },
+    {
+     "word": "four",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "four"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "four"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "four"
+    },
+    {
+     "step": 38,
+     "sample": 480,
+     "event": "confirm",
+     "word": "four"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "four"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "four"
+    }
+   ]
+  },
+  "B/five.csv": {
+   "words": [
+    {
+     "word": "five",
+     "sample": 200
+    },
+    {
+     "word": "five",
+     "sample": 480
+    },
+    {
+     "word": "five",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "five"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "five"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "five"
+    },
+    {
+     "step": 38,
+     "sample": 480,
+     "event": "confirm",
+     "word": "five"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "five"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "five"
+    }
+   ]
+  },
+  "B/me.csv": {
+   "words": [],
+   "events": [
+    {
+     "step": 8,
+     "sample": 180,
+     "event": "tentative",
+     "word": "me"
+    },
+    {
+     "step": 27,
+     "sample": 370,
+     "event": "cancel",
+     "word": "me"
+    }
+   ]
+  },
+  "B/you.csv": {
+   "words": [
+    {
+     "word": "you",
+     "sample": 200
+    },
+    {
+     "word": "you",
+     "sample": 470
+    },
+    {
+     "word": "you",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "you"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "you"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "you"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "confirm",
+     "word": "you"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "you"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "you"
+    }
+   ]
+  },
+  "B/hello.csv": {
+   "words": [
+    {
+     "word": "hello",
+     "sample": 190
+    },
+    {
+     "word": "hello",
+     "sample": 480
+    },
+    {
+     "word": "hello",
+     "sample": 750
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "hello"
+    },
+    {
+     "step": 9,
+     "sample": 190,
+     "event": "confirm",
+     "word": "hello"
+    },
+    {
+     "step": 35,
+     "sample": 450,
+     "event": "tentative",
+     "word": "hello"
+    },
+    {
+     "step": 38,
+     "sample": 480,
+     "event": "confirm",
+     "word": "hello"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "hello"
+    },
+    {
+     "step": 65,
+     "sample": 750,
+     "event": "confirm",
+     "word": "hello"
+    }
+   ]
+  },
+  "B/thanks.csv": {
+   "words": [
+    {
+     "word": "thanks",
+     "sample": 180
+    },
+    {
+     "word": "thanks",
+     "sample": 440
+    },
+    {
+     "word": "thanks",
+     "sample": 720
+    }
+   ],
+   "events": [
+    {
+     "step": 5,
+     "sample": 150,
+     "event": "tentative",
+     "word": "thanks"
+    },
+    {
+     "step": 8,
+     "sample": 180,
+     "event": "confirm",
+     "word": "thanks"
+    },
+    {
+     "step": 31,
+     "sample": 410,
+     "event": "tentative",
+     "word": "thanks"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "confirm",
+     "word": "thanks"
+    },
+    {
+     "step": 59,
+     "sample": 690,
+     "event": "tentative",
+     "word": "thanks"
+    },
+    {
+     "step": 62,
+     "sample": 720,
+     "event": "confirm",
+     "word": "thanks"
+    }
+   ]
+  },
+  "B/please.csv": {
+   "words": [
+    {
+     "word": "please",
+     "sample": 190
+    },
+    {
+     "word": "please",
+     "sample": 450
+    },
+    {
+     "word": "please",
+     "sample": 720
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "please"
+    },
+    {
+     "step": 9,
+     "sample": 190,
+     "event": "confirm",
+     "word": "please"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "please"
+    },
+    {
+     "step": 35,
+     "sample": 450,
+     "event": "confirm",
+     "word": "please"
+    },
+    {
+     "step": 59,
+     "sample": 690,
+     "event": "tentative",
+     "word": "please"
+    },
+    {
+     "step": 62,
+     "sample": 720,
+     "event": "confirm",
+     "word": "please"
+    }
+   ]
+  },
+  "B/yes.csv": {
+   "words": [
+    {
+     "word": "yes",
+     "sample": 200
+    },
+    {
+     "word": "yes",
+     "sample": 470
+    },
+    {
+     "word": "yes",
+     "sample": 740
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "yes"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "yes"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "yes"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "confirm",
+     "word": "yes"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "yes"
+    },
+    {
+     "step": 64,
+     "sample": 740,
+     "event": "confirm",
+     "word": "yes"
+    }
+   ]
+  },
+  "B/no.csv": {
+   "words": [
+    {
+     "word": "no",
+     "sample": 210
+    },
+    {
+     "word": "no",
+     "sample": 450
+    },
+    {
+     "word": "no",
+     "sample": 730
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "no"
+    },
+    {
+     "step": 11,
+     "sample": 210,
+     "event": "confirm",
+     "word": "no"
+    },
+    {
+     "step": 32,
+     "sample": 420,
+     "event": "tentative",
+     "word": "no"
+    },
+    {
+     "step": 35,
+     "sample": 450,
+     "event": "confirm",
+     "word": "no"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
+     "word": "no"
+    },
+    {
+     "step": 63,
+     "sample": 730,
+     "event": "confirm",
+     "word": "no"
+    }
+   ]
+  },
+  "B/sorry.csv": {
+   "words": [
+    {
+     "word": "sorry",
+     "sample": 200
+    },
+    {
+     "word": "sorry",
+     "sample": 470
+    },
+    {
+     "word": "sorry",
+     "sample": 730
+    }
+   ],
+   "events": [
+    {
+     "step": 8,
+     "sample": 180,
+     "event": "tentative",
+     "word": "sorry"
+    },
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "confirm",
+     "word": "sorry"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "sorry"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "confirm",
+     "word": "sorry"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
+     "word": "sorry"
+    },
+    {
+     "step": 63,
+     "sample": 730,
+     "event": "confirm",
+     "word": "sorry"
+    }
+   ]
+  },
+  "B/good.csv": {
+   "words": [
+    {
+     "word": "good",
+     "sample": 210
+    },
+    {
+     "word": "good",
+     "sample": 470
+    },
+    {
+     "word": "good",
+     "sample": 750
+    }
+   ],
+   "events": [
+    {
+     "step": 8,
+     "sample": 180,
+     "event": "tentative",
+     "word": "good"
+    },
+    {
+     "step": 11,
+     "sample": 210,
+     "event": "confirm",
+     "word": "good"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "good"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "confirm",
+     "word": "good"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "good"
+    },
+    {
+     "step": 65,
+     "sample": 750,
+     "event": "confirm",
+     "word": "good"
+    }
+   ]
+  },
+  "B/bad.csv": {
+   "words": [
+    {
+     "word": "bad",
+     "sample": 180
+    },
+    {
+     "word": "bad",
+     "sample": 470
+    },
+    {
+     "word": "bad",
+     "sample": 750
+    }
+   ],
+   "events": [
+    {
+     "step": 5,
+     "sample": 150,
+     "event": "tentative",
+     "word": "bad"
+    },
+    {
+     "step": 8,
+     "sample": 180,
+     "event": "confirm",
+     "word": "bad"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "bad"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "confirm",
+     "word": "bad"
+    },
+    {
+     "step": 61,
+     "sample": 710,
+     "event": "tentative",
+     "word": "bad"
+    },
+    {
+     "step": 65,
+     "sample": 750,
+     "event": "confirm",
+     "word": "bad"
+    }
+   ]
+  },
+  "B/come.csv": {
+   "words": [
+    {
+     "word": "come",
+     "sample": 190
+    },
+    {
+     "word": "come",
+     "sample": 460
+    },
+    {
+     "word": "come",
+     "sample": 730
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "come"
+    },
+    {
+     "step": 9,
+     "sample": 190,
+     "event": "confirm",
+     "word": "come"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "come"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "confirm",
+     "word": "come"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
+     "word": "come"
+    },
+    {
+     "step": 63,
+     "sample": 730,
+     "event": "confirm",
+     "word": "come"
+    }
+   ]
+  },
+  "B/drink.csv": {
+   "words": [],
+   "events": [
+    {
+     "step": 10,
+     "sample": 200,
+     "event": "tentative",
+     "word": "drink"
+    },
+    {
+     "step": 29,
+     "sample": 390,
+     "event": "cancel",
+     "word": "drink"
+    },
+    {
+     "step": 37,
+     "sample": 470,
+     "event": "tentative",
+     "word": "drink"
+    },
+    {
+     "step": 56,
+     "sample": 660,
+     "event": "cancel",
+     "word": "drink"
+    },
+    {
+     "step": 63,
+     "sample": 730,
+     "event": "tentative",
+     "word": "drink"
+    }
+   ]
+  },
+  "B/call.csv": {
+   "words": [
+    {
+     "word": "call",
+     "sample": 210
+    },
+    {
+     "word": "call",
+     "sample": 460
+    },
+    {
+     "word": "call",
+     "sample": 730
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "call"
+    },
+    {
+     "step": 11,
+     "sample": 210,
+     "event": "confirm",
+     "word": "call"
+    },
+    {
+     "step": 33,
+     "sample": 430,
+     "event": "tentative",
+     "word": "call"
+    },
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "confirm",
+     "word": "call"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
+     "word": "call"
+    },
+    {
+     "step": 63,
+     "sample": 730,
+     "event": "confirm",
+     "word": "call"
+    }
+   ]
+  },
+  "B/iloveyou.csv": {
+   "words": [
+    {
+     "word": "iloveyou",
+     "sample": 190
+    },
+    {
+     "word": "iloveyou",
+     "sample": 480
+    },
+    {
+     "word": "iloveyou",
+     "sample": 750
+    }
+   ],
+   "events": [
+    {
+     "step": 6,
+     "sample": 160,
+     "event": "tentative",
+     "word": "iloveyou"
+    },
+    {
+     "step": 9,
+     "sample": 190,
+     "event": "confirm",
+     "word": "iloveyou"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "iloveyou"
+    },
+    {
+     "step": 38,
+     "sample": 480,
+     "event": "confirm",
+     "word": "iloveyou"
+    },
+    {
+     "step": 62,
+     "sample": 720,
+     "event": "tentative",
+     "word": "iloveyou"
+    },
+    {
+     "step": 65,
+     "sample": 750,
+     "event": "confirm",
+     "word": "iloveyou"
+    }
+   ]
+  },
+  "B/hungry.csv": {
+   "words": [],
+   "events": [
+    {
+     "step": 36,
+     "sample": 460,
+     "event": "tentative",
+     "word": "hungry"
+    },
+    {
+     "step": 55,
+     "sample": 650,
+     "event": "cancel",
+     "word": "hungry"
+    }
+   ]
+  },
+  "B/rest.csv": {
+   "words": [],
+   "events": []
+  },
+  "B/other.csv": {
+   "words": [],
+   "events": []
+  },
+  "B/sentences.csv": {
+   "words": [
+    {
+     "word": "two",
+     "sample": 640
+    },
+    {
+     "word": "drink",
+     "sample": 640
+    },
+    {
+     "word": "you",
+     "sample": 920
+    },
+    {
+     "word": "come",
+     "sample": 950
+    },
+    {
+     "word": "thanks",
+     "sample": 1630
+    },
+    {
+     "word": "good",
+     "sample": 1730
+    },
+    {
+     "word": "sorry",
+     "sample": 2000
+    }
+   ],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "one"
+    },
+    {
+     "step": 26,
+     "sample": 360,
+     "event": "cancel",
+     "word": "one"
+    },
+    {
+     "step": 45,
+     "sample": 550,
+     "event": "tentative",
+     "word": "two"
+    },
+    {
+     "step": 54,
+     "sample": 640,
+     "event": "confirm",
+     "word": "two"
+    },
+    {
+     "step": 54,
+     "sample": 640,
+     "event": "word",
+     "word": "drink"
+    },
+    {
+     "step": 79,
+     "sample": 890,
+     "event": "tentative",
+     "word": "you"
+    },
+    {
+     "step": 82,
+     "sample": 920,
+     "event": "confirm",
+     "word": "you"
+    },
+    {
+     "step": 85,
+     "sample": 950,
+     "event": "word",
+     "word": "come"
+    },
+    {
+     "step": 115,
+     "sample": 1250,
+     "event": "tentative",
+     "word": "call"
+    },
+    {
+     "step": 134,
+     "sample": 1440,
+     "event": "cancel",
+     "word": "call"
+    },
+    {
+     "step": 150,
+     "sample": 1600,
+     "event": "tentative",
+     "word": "thanks"
+    },
+    {
+     "step": 153,
+     "sample": 1630,
+     "event": "confirm",
+     "word": "thanks"
+    },
+    {
+     "step": 163,
+     "sample": 1730,
+     "event": "word",
+     "word": "good"
+    },
+    {
+     "step": 187,
+     "sample": 1970,
+     "event": "tentative",
+     "word": "sorry"
+    },
+    {
+     "step": 190,
+     "sample": 2000,
+     "event": "confirm",
+     "word": "sorry"
+    },
+    {
+     "step": 217,
+     "sample": 2270,
+     "event": "tentative",
+     "word": "iloveyou"
+    }
+   ]
+  },
+  "B/everyday.csv": {
+   "words": [],
+   "events": []
+  }
+ }
+}

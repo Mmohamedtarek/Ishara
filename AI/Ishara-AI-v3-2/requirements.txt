@@ -1,0 +1,6 @@
+numpy
+pandas
+scikit-learn
+joblib
+pyserial
+tensorflow    # للـ CNN بس، ومحتاج Python 3.12 أو أقدم

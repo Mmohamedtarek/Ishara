@@ -1,0 +1,301 @@
+{
+  "version": 1,
+  "author": "Ishara team",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-slide-potentiometer",
+      "id": "potThumb",
+      "top": -40,
+      "left": -330,
+      "attrs": {
+        "travelLength": "30",
+        "value": "512"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lblThumb",
+      "top": -58,
+      "left": -330,
+      "attrs": {
+        "text": "Thumb (GPIO 1)"
+      }
+    },
+    {
+      "type": "wokwi-slide-potentiometer",
+      "id": "potIndex",
+      "top": 35,
+      "left": -330,
+      "attrs": {
+        "travelLength": "30",
+        "value": "512"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lblIndex",
+      "top": 17,
+      "left": -330,
+      "attrs": {
+        "text": "Index (GPIO 2)"
+      }
+    },
+    {
+      "type": "wokwi-slide-potentiometer",
+      "id": "potMiddle",
+      "top": 110,
+      "left": -330,
+      "attrs": {
+        "travelLength": "30",
+        "value": "512"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lblMiddle",
+      "top": 92,
+      "left": -330,
+      "attrs": {
+        "text": "Middle (GPIO 3)"
+      }
+    },
+    {
+      "type": "wokwi-slide-potentiometer",
+      "id": "potRing",
+      "top": 185,
+      "left": -330,
+      "attrs": {
+        "travelLength": "30",
+        "value": "512"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lblRing",
+      "top": 167,
+      "left": -330,
+      "attrs": {
+        "text": "Ring (GPIO 4)"
+      }
+    },
+    {
+      "type": "wokwi-slide-potentiometer",
+      "id": "potPinky",
+      "top": 260,
+      "left": -330,
+      "attrs": {
+        "travelLength": "30",
+        "value": "512"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lblPinky",
+      "top": 242,
+      "left": -330,
+      "attrs": {
+        "text": "Pinky (GPIO 7)"
+      }
+    },
+    {
+      "type": "wokwi-slide-potentiometer",
+      "id": "potBattery",
+      "top": 335,
+      "left": -330,
+      "attrs": {
+        "travelLength": "30",
+        "value": "620"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lblBattery",
+      "top": 317,
+      "left": -330,
+      "attrs": {
+        "text": "Battery (sim) (GPIO 8)"
+      }
+    },
+    {
+      "type": "wokwi-mpu6050",
+      "id": "imu",
+      "top": -40,
+      "left": 230,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lblImu",
+      "top": -60,
+      "left": 230,
+      "attrs": {
+        "text": "MPU-6050 (0x68)"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "potThumb:SIG",
+      "esp:1",
+      "orange",
+      []
+    ],
+    [
+      "potThumb:VCC",
+      "esp:3V3.1",
+      "red",
+      []
+    ],
+    [
+      "potThumb:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "potIndex:SIG",
+      "esp:2",
+      "yellow",
+      []
+    ],
+    [
+      "potIndex:VCC",
+      "esp:3V3.1",
+      "red",
+      []
+    ],
+    [
+      "potIndex:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "potMiddle:SIG",
+      "esp:3",
+      "green",
+      []
+    ],
+    [
+      "potMiddle:VCC",
+      "esp:3V3.1",
+      "red",
+      []
+    ],
+    [
+      "potMiddle:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "potRing:SIG",
+      "esp:4",
+      "blue",
+      []
+    ],
+    [
+      "potRing:VCC",
+      "esp:3V3.1",
+      "red",
+      []
+    ],
+    [
+      "potRing:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "potPinky:SIG",
+      "esp:7",
+      "violet",
+      []
+    ],
+    [
+      "potPinky:VCC",
+      "esp:3V3.1",
+      "red",
+      []
+    ],
+    [
+      "potPinky:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "potBattery:SIG",
+      "esp:8",
+      "red",
+      []
+    ],
+    [
+      "potBattery:VCC",
+      "esp:3V3.1",
+      "red",
+      []
+    ],
+    [
+      "potBattery:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "imu:VCC",
+      "esp:3V3.2",
+      "red",
+      []
+    ],
+    [
+      "imu:GND",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "imu:SDA",
+      "esp:5",
+      "green",
+      []
+    ],
+    [
+      "imu:SCL",
+      "esp:6",
+      "blue",
+      []
+    ],
+    [
+      "imu:AD0",
+      "esp:GND.2",
+      "black",
+      []
+    ]
+  ],
+  "serialMonitor": {
+    "display": "terminal",
+    "convertEol": true
+  },
+  "dependencies": {}
+}
