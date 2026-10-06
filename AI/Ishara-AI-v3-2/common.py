@@ -76,11 +76,11 @@ def parse_glove_cal(line):
     fist_vals = _pick(d, "fist", "fist_vals", "flex_fist")
     if open_vals is None or fist_vals is None or len(open_vals) != 5 or len(fist_vals) != 5:
         raise ValueError("سطر #CAL ناقص قيم open أو fist")
-    bias = _pick(d, "gyro_bias_raw", "gbias_raw", "gyro_raw")
+    bias = _pick(d, "gyro_bias_raw", "gbias_raw", "gyro_raw", "gyrobias")   # gyroBias = اسم الفيرموير 0.2/0.3 (وحدة خام)
     if bias is None:                                   # لو الجلوف باعتها بـ °/s نحوّلها للوحدة الخام
         dps = _pick(d, "gyro_bias_dps", "gyro_bias", "gbias", "bias")
         bias = [v * GYRO_SCALE for v in dps] if dps is not None else [0, 0, 0]
-    roll = {k: _pick(d, "roll_" + k, k) for k in ("neutral", "min", "max")}
+    roll = {k: _pick(d, "roll_" + k, "roll" + k, k) for k in ("neutral", "min", "max")}   # roll_neutral أو rollNeutral
     return {"v": int(_pick(d, "v", "version") or 1), "open": [float(v) for v in open_vals],
             "fist": [float(v) for v in fist_vals], "gyro_bias": [float(v) for v in bias],
             "roll": roll, "source": "glove"}

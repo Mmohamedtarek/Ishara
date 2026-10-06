@@ -59,7 +59,7 @@ One notification = one frame = **n consecutive samples** (n = 5 by default → 1
 | 4 | 22 × n | int16 × 11 per sample | `f0 f1 f2 f3 f4 ax ay az gx gy gz` |
 
 Frame size = 4 + 22·n bytes (n = 5 → **114 bytes**).
-The firmware picks n = min(5, ⌊(MTU − 3 − 4) / 22⌋). If that is 0 (MTU < 29), it does not stream and sends `#ERR STREAM MTU`.
+The firmware picks n = min(5, ⌊(MTU − 3 − 4) / 22⌋). If that is 0 (MTU < 29), it does not stream and sends `#ERR STREAM MTU`. This line can also arrive **without a command**: if the MTU drops while streaming, the firmware stops streaming and sends it.
 
 **Channel values are the raw values, exactly as in the USB serial line** (no scaling, no calibration):
 
@@ -94,7 +94,7 @@ UTF-8 text, upper case, one command per write, at most 20 bytes. Every command g
 | `BAT` | battery state now | `#BAT ...` (section 6) |
 | `PING` | link check | `#PONG` |
 
-Unknown command → `#ERR <first word> UNKNOWN`.
+Unknown command → `#ERR <first word> UNKNOWN`. An empty write (or only spaces / line ends) is ignored and gets no reply.
 Streaming can stay on during calibration (the app shows live values while the user holds the pose).
 
 ## 6. EVENT (glove → app)
@@ -106,13 +106,16 @@ Text lines, each ending with `\n`. A line longer than one notification is **spli
 | `#CAL {"v":2,"open":[5],"fist":[5],"gyro_bias_raw":[3],"roll_neutral":r,"roll_min":a,"roll_max":b}` | reply to `GETCAL` / `CAL SAVE` |
 | `#CAL NONE` | glove not calibrated yet |
 | `#CALSTEP <OPEN\|FIST\|TURN> <OK\|FAIL> [reason]` | end of each step |
-| `#BAT NO_BATTERY (USB)` · `#BAT OK 3.92V 78%` · `#BAT LOW 3.38V` | at connect, on every state change, and as the reply to `BAT` |
+| `#BAT NO_BATTERY (USB)` · `#BAT OK 3.92V 78%` · `#BAT LOW 3.38V` | when the app subscribes to EVENT, on every state change, and as the reply to `BAT` |
 | `#OK <CMD>` · `#ERR <CMD> <reason>` | command replies |
 | `#PONG` | reply to `PING` |
 | `#MPU FAIL` | MPU-6050 not responding (sensor problem) |
 | `#FLEX WEAK <finger index 0-4>` | a finger moved less than 300 counts during calibration (sensor problem) |
 
 `#CAL` field meanings and units are the same as the USB `#CAL` line (`gyro_bias_raw` is in raw gyro units, 65.5 = 1 °/s). This JSON is what the app stores and passes to the recognizer.
+The JSON **always contains** `v`, `open`, `fist`, `gyro_bias_raw`, `roll_neutral`, `roll_min`, `roll_max`. It may contain more fields (the firmware also sends `fw`, `gravity`, and older camelCase copies such as `gyroBias`): the app reads the fields above and ignores the rest.
+
+**Timing:** `#BAT` (and `#MPU FAIL` if the sensor is missing) is sent when the app **subscribes to EVENT**, not at connect, because a line sent before the subscription would be lost.
 
 ## 7. Calibration flow (app-driven)
 
@@ -123,13 +126,22 @@ app: CAL TURN   → UI "turn your wrist left and right"  → glove: #CALSTEP TUR
 app: CAL SAVE   →                                       → glove: #CAL {json}
 ```
 
-- Each step takes 2 s (TURN: 3 s) after the command arrives. The reply comes at the end of the step.
+- Each step takes 2 s (TURN: 3 s) after the command arrives. The reply comes at the end of the step, except when the MPU-6050 is missing: then `CAL OPEN` / `CAL TURN` reply at once with `#MPU FAIL` followed by `#CALSTEP <step> FAIL MPU`.
 - A step fails if the hand moved too much (OPEN/FIST) or did not turn enough (TURN). The app shows the reason and asks again.
 - Any step can be repeated before `CAL SAVE`. `CAL SAVE` without all 3 steps → `#ERR CAL MISSING <step>`.
 - The gyro bias is measured during the OPEN step (hand still), as today.
+- Capture starts as soon as the command arrives (no countdown on the glove: the app shows its own).
+- `FAIL` reasons: `MOVED` (gyro standard deviation over 3 °/s during OPEN or FIST), `RANGE` (wrist turned less than 30° during TURN), `MPU` (no MPU-6050 during OPEN or TURN), `CANCELLED` (`CAL CANCEL` arrived during the step).
+- `#FLEX WEAK <i>` lines come right before the OPEN or FIST reply, once both OPEN and FIST are done.
+- Other errors: `#ERR CAL BUSY` (the USB serial calibration or another step is running), `#ERR CAL NVS` (saving failed), `#ERR CAL UNKNOWN` (unknown step), `#ERR STREAM ARG` (not `0` or `1`).
+- Unsaved steps are dropped on disconnect, and when someone presses `c` or `r` on the USB serial.
+- Commands are trimmed and upper-cased by the firmware, so trailing `\r\n` or lower case are accepted.
 - The USB serial `c` flow stays as it is; both flows write the same stored calibration.
 
 ## 8. Versioning
+
+Firmware 0.3.0 is the first implementation of this document.
+
 
 - `proto` in INFO and `ver` in every DATA frame are both **1** for this document.
 - Adding a new EVENT line or a new command does **not** change the version (old apps ignore it).
