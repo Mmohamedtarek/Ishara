@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 // ---------- Build ----------
-static const char* const FW_VERSION = "0.2.0";
+static const char* const FW_VERSION = "0.3.0";
 
 // Set per PlatformIO environment (see platformio.ini). Defaults = hardware behaviour.
 #ifndef STREAM_ON_BOOT
@@ -12,6 +12,9 @@ static const char* const FW_VERSION = "0.2.0";
 #endif
 #ifndef SIM_MODE
 #define SIM_MODE 0        // 1 = Wokwi simulation build (only changes the boot banner)
+#endif
+#ifndef BLE_ENABLED
+#define BLE_ENABLED 1     // 0 = no Bluetooth (Wokwi build: the simulator has no BT radio)
 #endif
 
 // ---------- Pins (GPIO numbers) ----------
@@ -73,6 +76,7 @@ static const uint32_t CAL_OPEN_MS = 2000;     // also measures gyro bias + neutr
 static const uint32_t CAL_FIST_MS = 2000;
 static const uint32_t CAL_ROTATE_MS = 4000;
 static const uint32_t CAL_BAR_PERIOD_MS = 500;  // live progress bar refresh
+static const uint32_t CAL_BLE_TURN_MS = 3000;  // app-driven TURN step (BLE contract section 7)
 static const uint16_t CAL_MAX_SAMPLES = CAL_ROTATE_MS / SAMPLE_PERIOD_MS;  // longest window
 
 static const uint16_t CAL_MIN_FLEX_RANGE = 300;  // |fist - open| below this = warning
@@ -84,6 +88,18 @@ static const float CAL_MIN_ROLL_RANGE_DEG = 30.0f;
 // tremor, while any deliberate movement is well above 10 deg/s. 3 deg/s (~200 LSB) sits
 // between the two: a normal steady hand passes, a hand that moved gets the warning.
 static const float CAL_STILL_GYRO_STD_DPS = 3.0f;  // per-axis gyro std dev limit
+
+// ---------- BLE (docs/BLE-CONTRACT.md at the repo root) ----------
+static const uint8_t BLE_PROTO = 1;              // INFO "proto"; bump only with the contract
+static const uint8_t BLE_FRAME_VER = 1;          // DATA frame "ver"
+static const uint8_t BLE_CHANNELS = 11;          // f0..f4 ax ay az gx gy gz
+static const uint8_t BLE_SAMPLES_PER_FRAME = 5;  // 5 x 20 ms = 10 frames/s
+static const uint8_t BLE_FRAME_HEADER = 4;       // ver, n, seq (uint16)
+static const uint16_t BLE_MTU = 247;             // preferred ATT MTU
+static const uint16_t BLE_CONN_MIN = 12;         // connection interval, 1.25 ms units: 15 ms
+static const uint16_t BLE_CONN_MAX = 24;         // 30 ms
+static const uint16_t BLE_CONN_TIMEOUT = 400;    // supervision timeout, 10 ms units: 4 s
+static const uint8_t BLE_CMD_MAX = 20;           // longest command, bytes
 
 // ---------- Storage (NVS) ----------
 static const char* const NVS_NAMESPACE = "ishara";

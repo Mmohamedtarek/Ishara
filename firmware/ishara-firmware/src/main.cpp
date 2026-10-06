@@ -1,5 +1,6 @@
-// Ishara Glove firmware: calibration stage.
+// Ishara Glove firmware: calibration + BLE stage.
 // Raw stream:        seq,f0,f1,f2,f3,f4,ax,ay,az,gx,gy,gz   (12 fields, 50 Hz)
+// BLE:               the same raw samples as binary DATA frames, see ble.h
 // Normalized stream: N,f0,f1,f2,f3,f4,roll,gx,gy,gz         (10 fields)
 // Everything else starts with '#' so record.py / live.py ignore it. All lines end with CRLF.
 #include <Arduino.h>
@@ -8,10 +9,11 @@
 #include "console.h"
 #include "sensors.h"
 #include "calibration.h"
+#include "ble.h"
 
 static bool g_rawOn = STREAM_ON_BOOT;
 static bool g_normOn = false;
-static uint8_t g_seq = 0;
+static uint16_t g_seq = 0;  // BLE frames use all 16 bits, the serial stream the low 8
 static uint32_t g_nextSample = 0;
 static uint32_t g_lastBat = 0;
 static uint32_t g_lastStatus = 0;
@@ -43,6 +45,7 @@ static void printBanner() {
   else say("Calibration  NOT CALIBRATED - press c");
   say("Battery      %u%% %u mV (%s)", b.pct, b.mv, batterySource(b));
   say("Raw stream   %s at boot (s toggles)", g_rawOn ? "ON" : "OFF");
+  say("BLE          %s", BLE_ENABLED ? bleName() : "off (simulation build)");
   printHelp();
 }
 
@@ -51,15 +54,15 @@ static void printBattery() {
   say("BAT %u%% (%u mV)", b.pct, b.mv);
 }
 
-// "#BAT <state> ..." (no commas, so the CSV tools skip it), at boot and on every state change.
+// "#BAT <state> ..." (no commas, so the CSV tools skip it), at boot and on every state change,
+// on serial and BLE EVENT.
 static void printBatState() {
-  const Battery& b = batteryLast();
-  switch (batteryState()) {
-    case BatState::NoBattery: Serial.print("#BAT NO_BATTERY (USB)" EOL); break;
-    case BatState::Low: Serial.printf("#BAT LOW %.2fV" EOL, b.mv / 1000.0f); break;
-    case BatState::Ok: Serial.printf("#BAT OK %.2fV %u%%" EOL, b.mv / 1000.0f, b.pct); break;
-    case BatState::Unknown: break;  // boot, LOW debounce still running
-  }
+  if (batteryState() == BatState::Unknown) return;  // boot, LOW debounce still running
+  char line[40];
+  batteryStateLine(batteryState(), line, sizeof(line));
+  Serial.print(line);
+  Serial.print(EOL);
+  bleEvent("%s", line);
 }
 
 // One line: battery, calibration state, each finger raw (+ bend %), roll.
@@ -123,7 +126,7 @@ static void handleKey(char k) {
 }
 
 static void printRaw(const Sample& s) {
-  Serial.printf("%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%d" EOL, g_seq, s.flex[0], s.flex[1],
+  Serial.printf("%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%d" EOL, g_seq & 0xFF, s.flex[0], s.flex[1],
                 s.flex[2], s.flex[3], s.flex[4], s.accel[0], s.accel[1], s.accel[2], s.gyro[0],
                 s.gyro[1], s.gyro[2]);
 }
@@ -142,6 +145,7 @@ void setup() {
   Serial.begin(SERIAL_BAUD);
   sensorsBegin();
   calBegin();
+  bleBegin();
   printBanner();
   g_nextSample = millis();
   g_lastBat = millis();
@@ -152,6 +156,7 @@ void setup() {
 
 void loop() {
   while (Serial.available()) handleKey((char)Serial.read());
+  bleLoop();
 
   uint32_t now = millis();
   if ((int32_t)(now - g_nextSample) < 0) return;  // not time yet
@@ -166,8 +171,10 @@ void loop() {
     if (batteryUpdate()) printBatState();
   }
 
-  if (calActive()) {
-    calTick(s, now);  // streams and status pause during calibration so the prompts stay readable
+  bleSample(s, g_seq);  // BLE keeps streaming during calibration (the app shows live values)
+  calTick(s, now);       // serial wizard and app-driven steps
+
+  if (calActive()) {     // serial streams and status pause so the prompts stay readable
     g_lastStatus = g_lastBat = now;
   } else if (g_rawOn || g_normOn) {
     if (g_rawOn) printRaw(s);

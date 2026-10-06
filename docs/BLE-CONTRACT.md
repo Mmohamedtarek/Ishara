@@ -113,6 +113,9 @@ Text lines, each ending with `\n`. A line longer than one notification is **spli
 | `#FLEX WEAK <finger index 0-4>` | a finger moved less than 300 counts during calibration (sensor problem) |
 
 `#CAL` field meanings and units are the same as the USB `#CAL` line (`gyro_bias_raw` is in raw gyro units, 65.5 = 1 °/s). This JSON is what the app stores and passes to the recognizer.
+The JSON **always contains** `v`, `open`, `fist`, `gyro_bias_raw`, `roll_neutral`, `roll_min`, `roll_max`. It may contain more fields (the firmware also sends `fw`, `gravity`, and older camelCase copies such as `gyroBias`): the app reads the fields above and ignores the rest.
+
+**Timing:** `#BAT` (and `#MPU FAIL` if the sensor is missing) is sent when the app **subscribes to EVENT**, not at connect, because a line sent before the subscription would be lost.
 
 ## 7. Calibration flow (app-driven)
 
@@ -127,9 +130,18 @@ app: CAL SAVE   →                                       → glove: #CAL {json}
 - A step fails if the hand moved too much (OPEN/FIST) or did not turn enough (TURN). The app shows the reason and asks again.
 - Any step can be repeated before `CAL SAVE`. `CAL SAVE` without all 3 steps → `#ERR CAL MISSING <step>`.
 - The gyro bias is measured during the OPEN step (hand still), as today.
+- Capture starts as soon as the command arrives (no countdown on the glove: the app shows its own).
+- `FAIL` reasons: `MOVED` (gyro standard deviation over 3 °/s during OPEN or FIST), `RANGE` (wrist turned less than 30° during TURN), `MPU` (no MPU-6050 during OPEN or TURN), `CANCELLED` (`CAL CANCEL` arrived during the step).
+- `#FLEX WEAK <i>` lines come right before the OPEN or FIST reply, once both OPEN and FIST are done.
+- Other errors: `#ERR CAL BUSY` (the USB serial calibration or another step is running), `#ERR CAL NVS` (saving failed), `#ERR CAL UNKNOWN` (unknown step), `#ERR STREAM ARG` (not `0` or `1`).
+- Unsaved steps are dropped on disconnect, and when someone presses `c` or `r` on the USB serial.
+- Commands are trimmed and upper-cased by the firmware, so trailing `\r\n` or lower case are accepted.
 - The USB serial `c` flow stays as it is; both flows write the same stored calibration.
 
 ## 8. Versioning
+
+Firmware 0.3.0 is the first implementation of this document.
+
 
 - `proto` in INFO and `ver` in every DATA frame are both **1** for this document.
 - Adding a new EVENT line or a new command does **not** change the version (old apps ignore it).

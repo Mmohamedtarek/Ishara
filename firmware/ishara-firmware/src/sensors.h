@@ -34,3 +34,6 @@ enum class BatState : uint8_t { Unknown, NoBattery, Low, Ok };  // Unknown: boot
 bool batteryUpdate();          // call every BAT_CHECK_MS; true if the state changed
 BatState batteryState();
 const Battery& batteryLast();  // the reading from the last batteryUpdate()
+// "#BAT NO_BATTERY (USB)" / "#BAT LOW 3.38V" / "#BAT OK 3.92V 78%" for a state and the last
+// reading (no line end). Unknown gives an empty string.
+void batteryStateLine(BatState st, char* buf, size_t len);

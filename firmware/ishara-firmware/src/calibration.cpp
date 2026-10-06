@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <math.h>
 #include <stdarg.h>
+#include "ble.h"
 #include "console.h"
 
 // Every text line starts with '#' and avoids commas, so the 12-field CSV tools ignore it.
@@ -29,7 +30,16 @@ static uint32_t g_phaseStart = 0;
 static uint32_t g_lastBar = 0;
 static int8_t g_lastCount = -1;
 
-// Capture buffers.
+// App-driven flow (BLE "CAL <step>" commands): one step at a time, no countdown or review.
+static const char* const BLE_STEP_NAMES[STEP_COUNT] = {"OPEN", "FIST", "TURN"};
+static const uint32_t BLE_STEP_MS[STEP_COUNT] = {CAL_OPEN_MS, CAL_FIST_MS, CAL_BLE_TURN_MS};
+static const int8_t BLE_NO_STEP = -1;
+static CalData g_bleWork;            // steps done so far, saved by "CAL SAVE"
+static bool g_bleDone[STEP_COUNT];
+static int8_t g_bleStep = BLE_NO_STEP;  // step capturing now
+static uint32_t g_bleStart = 0;
+
+// Capture buffers (shared: the serial wizard and the app flow never capture at the same time).
 static uint16_t g_flexBuf[NUM_FINGERS][CAL_MAX_SAMPLES];
 static uint16_t g_n = 0;
 static double g_gyroSum[3], g_gyroSq[3], g_accSum[3];
@@ -77,14 +87,66 @@ static void enterStep(Step st, uint32_t now) {
   say("%s", STEP_HINTS[st]);
 }
 
-static void startCapture(uint32_t now) {
-  g_phase = PH_CAPTURE;
-  g_phaseStart = now;
-  g_lastBar = now;
+static void captureReset() {
   g_n = 0;
   for (int i = 0; i < 3; i++) g_gyroSum[i] = g_gyroSq[i] = g_accSum[i] = 0;
   g_rollMin = 1000;
   g_rollMax = -1000;
+}
+
+static void captureAdd(const Sample& s) {
+  if (g_n >= CAL_MAX_SAMPLES) return;
+  for (uint8_t f = 0; f < NUM_FINGERS; f++) g_flexBuf[f][g_n] = s.flex[f];
+  g_n++;
+  for (int i = 0; i < 3; i++) {
+    g_gyroSum[i] += s.gyro[i];
+    g_gyroSq[i] += (double)s.gyro[i] * s.gyro[i];
+    g_accSum[i] += s.accel[i];
+  }
+  g_rollMin = min(g_rollMin, s.rollDeg);
+  g_rollMax = max(g_rollMax, s.rollDeg);
+}
+
+// Per-axis gyro std dev of the capture (raw counts). True if any axis is above the
+// stillness limit, i.e. the hand moved.
+static bool captureMoved(float gyroStd[3]) {
+  uint16_t n = g_n ? g_n : 1;
+  bool moved = false;
+  for (int i = 0; i < 3; i++) {
+    double mean = g_gyroSum[i] / n;
+    double var = g_gyroSq[i] / n - mean * mean;
+    gyroStd[i] = sqrt(var > 0 ? var : 0);
+    moved |= dps(gyroStd[i]) > CAL_STILL_GYRO_STD_DPS;
+  }
+  return moved;
+}
+
+// The hand is held still in the open step, so it also gives the gyro bias and the gravity
+// reference. Neutral roll = roll of the mean accel vector (wrap-safe mean).
+static void computeOpen(CalData& c) {
+  uint16_t n = g_n ? g_n : 1;
+  for (int i = 0; i < 3; i++) {
+    c.gyroBias[i] = g_gyroSum[i] / n;
+    c.gravity[i] = g_accSum[i] / n;
+  }
+  c.rollNeutral = accelRollDeg(c.gravity[0], c.gravity[1], c.gravity[2]);
+  for (uint8_t f = 0; f < NUM_FINGERS; f++) c.open[f] = median(g_flexBuf[f], g_n);
+}
+
+static void computeFist(CalData& c) {
+  for (uint8_t f = 0; f < NUM_FINGERS; f++) c.fist[f] = median(g_flexBuf[f], g_n);
+}
+
+static void computeTurn(CalData& c) {
+  c.rollMin = g_rollMin;
+  c.rollMax = g_rollMax;
+}
+
+static void startCapture(uint32_t now) {
+  g_phase = PH_CAPTURE;
+  g_phaseStart = now;
+  g_lastBar = now;
+  captureReset();
   say("GO - capturing %s...", STEP_TAGS[g_step]);
 }
 
@@ -103,23 +165,12 @@ static void warnImu() {
 // Turn the captured buffers into results and print them as a small table.
 static void finishCapture() {
   g_phase = PH_REVIEW;
-  uint16_t n = g_n ? g_n : 1;
 
   switch (g_step) {
     case STEP_OPEN: {
-      // The hand is held still here, so this step also gives the gyro bias and the
-      // gravity reference. Neutral roll = roll of the mean accel vector (wrap-safe mean).
       float gyroStd[3];
-      bool moved = false;
-      for (int i = 0; i < 3; i++) {
-        g_work.gyroBias[i] = g_gyroSum[i] / n;
-        g_work.gravity[i] = g_accSum[i] / n;
-        double var = g_gyroSq[i] / n - (double)g_work.gyroBias[i] * g_work.gyroBias[i];
-        gyroStd[i] = sqrt(var > 0 ? var : 0);
-        moved |= dps(gyroStd[i]) > CAL_STILL_GYRO_STD_DPS;
-      }
-      g_work.rollNeutral = accelRollDeg(g_work.gravity[0], g_work.gravity[1], g_work.gravity[2]);
-      for (uint8_t f = 0; f < NUM_FINGERS; f++) g_work.open[f] = median(g_flexBuf[f], g_n);
+      bool moved = captureMoved(gyroStd);
+      computeOpen(g_work);
       say("--- %s result: open hand (%u samples) ---", STEP_TAGS[g_step], g_n);
       say("Finger  median");
       for (uint8_t f = 0; f < NUM_FINGERS; f++) say("%-6s  %6u", FINGER_NAMES[f], g_work.open[f]);
@@ -133,7 +184,7 @@ static void finishCapture() {
       break;
     }
     case STEP_FIST: {
-      for (uint8_t f = 0; f < NUM_FINGERS; f++) g_work.fist[f] = median(g_flexBuf[f], g_n);
+      computeFist(g_work);
       say("--- %s result: fist medians (%u samples) ---", STEP_TAGS[g_step], g_n);
       say("Finger  median   open  range  flag");
       for (uint8_t f = 0; f < NUM_FINGERS; f++)
@@ -143,8 +194,7 @@ static void finishCapture() {
       break;
     }
     case STEP_ROTATE: {
-      g_work.rollMin = g_rollMin;
-      g_work.rollMax = g_rollMax;
+      computeTurn(g_work);
       say("--- %s result: wrist roll (%u samples) ---", STEP_TAGS[g_step], g_n);
       say("Roll deg    min  neutral    max  range  flag");
       say("         %6.1f   %6.1f  %6.1f  %5.1f  %s", g_work.rollMin, g_work.rollNeutral,
@@ -185,6 +235,11 @@ bool calValid() { return g_savedValid; }
 const CalData& calData() { return g_saved; }
 
 void calStart() {
+  if (g_bleStep != BLE_NO_STEP) {
+    say("Busy: the app is running a calibration step. Try again in a few seconds.");
+    return;
+  }
+  calBleDrop();  // one calibration at a time: the app's unsaved steps are dropped
   memset(&g_work, 0, sizeof(g_work));
   // Measure the new bias without the old one applied.
   const float zero[3] = {0, 0, 0};
@@ -220,7 +275,10 @@ void calHandleKey(char key) {
   }
 }
 
+static void bleTick(const Sample& s, uint32_t now);
+
 void calTick(const Sample& s, uint32_t now) {
+  if (g_bleStep != BLE_NO_STEP) bleTick(s, now);
   uint32_t el = now - g_phaseStart;
 
   if (g_phase == PH_COUNTDOWN) {
@@ -235,18 +293,7 @@ void calTick(const Sample& s, uint32_t now) {
   }
   if (g_phase != PH_CAPTURE) return;
 
-  // Collect this sample.
-  if (g_n < CAL_MAX_SAMPLES) {
-    for (uint8_t f = 0; f < NUM_FINGERS; f++) g_flexBuf[f][g_n] = s.flex[f];
-    g_n++;
-  }
-  for (int i = 0; i < 3; i++) {
-    g_gyroSum[i] += s.gyro[i];
-    g_gyroSq[i] += (double)s.gyro[i] * s.gyro[i];
-    g_accSum[i] += s.accel[i];
-  }
-  g_rollMin = min(g_rollMin, s.rollDeg);
-  g_rollMax = max(g_rollMax, s.rollDeg);
+  captureAdd(s);
 
   // Live progress, like the app screen.
   if (now - g_lastBar >= CAL_BAR_PERIOD_MS) {
@@ -268,6 +315,7 @@ void calTick(const Sample& s, uint32_t now) {
 
 void calReset() {
   calCancel();
+  calBleDrop();
   storageClear();
   memset(&g_saved, 0, sizeof(g_saved));
   g_savedValid = false;
@@ -339,17 +387,16 @@ struct JsonBuf {
   }
 };
 
-void calPrintJson() {
-  if (!g_savedValid) {
-    say("NOT CALIBRATED");
-    return;
-  }
+const char* calJson() {
+  if (!g_savedValid) return nullptr;
   // Flex values are raw ADC medians; gyro_bias_raw is raw gyro counts (same units as the
   // stream, GYRO_LSB_PER_DPS counts = 1 deg/s); roll values are degrees.
   // Finger order: thumb index middle ring pinky. "v" is this JSON format's version.
+  // The snake_case keys are the contract (BLE-CONTRACT.md section 6); the camelCase copies,
+  // "fw", "gravity" and the LSB scales are extras for older readers.
   static JsonBuf j;
   j.n = 0;
-  j.add("{\"v\":2,");
+  j.add("{\"fw\":\"%s\",\"v\":2,", FW_VERSION);
   j.u16s("open", g_saved.open);
   j.add(",");
   j.u16s("fist", g_saved.fist);
@@ -361,9 +408,28 @@ void calPrintJson() {
   j.num(g_saved.rollMin);
   j.add(",\"roll_max\":");
   j.num(g_saved.rollMax);
-  j.add("}");
+  j.add(",");
+  j.f3("gyroBias", g_saved.gyroBias);
+  j.add(",");
+  j.f3("gravity", g_saved.gravity);
+  j.add(",\"rollNeutral\":");
+  j.num(g_saved.rollNeutral);
+  j.add(",\"rollMin\":");
+  j.num(g_saved.rollMin);
+  j.add(",\"rollMax\":");
+  j.num(g_saved.rollMax);
+  j.add(",\"gyroLsbPerDps\":%.1f,\"accelLsbPerG\":%.0f}", GYRO_LSB_PER_DPS, ACCEL_LSB_PER_G);
+  return j.s;
+}
+
+void calPrintJson() {
+  const char* j = calJson();
+  if (!j) {
+    say("NOT CALIBRATED");
+    return;
+  }
   Serial.print("#CAL ");
-  Serial.print(j.s);
+  Serial.print(j);
   Serial.print(EOL);
 }
 
@@ -375,3 +441,130 @@ float calFingerNorm(uint8_t f, uint16_t raw) {
 }
 
 float calRollRelDeg(float rollDeg) { return wrap180(rollDeg - g_saved.rollNeutral); }
+
+// ---------- app-driven flow (BLE-CONTRACT.md section 7) ----------
+// Each "CAL <step>" captures right away and answers "#CALSTEP <step> OK|FAIL <reason>" at
+// the end of the step. Fail reasons: MOVED (gyro std dev over CAL_STILL_GYRO_STD_DPS during
+// OPEN / FIST), RANGE (TURN under CAL_MIN_ROLL_RANGE_DEG), MPU (no MPU-6050 for OPEN / TURN),
+// CANCELLED ("CAL CANCEL" during the step).
+
+static void applySavedBias() {
+  const float zero[3] = {0, 0, 0};
+  sensorsSetGyroBias(g_savedValid ? g_saved.gyroBias : zero);
+}
+
+// "#FLEX WEAK <finger>" for every finger that moved less than CAL_MIN_FLEX_RANGE.
+static void bleFlexCheck() {
+  if (!g_bleDone[STEP_OPEN] || !g_bleDone[STEP_FIST]) return;
+  for (uint8_t f = 0; f < NUM_FINGERS; f++)
+    if (!flexOk(g_bleWork, f)) bleEvent("#FLEX WEAK %u", f);
+}
+
+static void bleStepResult(Step st, const char* failReason) {
+  g_bleDone[st] = !failReason;
+  if (failReason) {
+    bleEvent("#CALSTEP %s FAIL %s", BLE_STEP_NAMES[st], failReason);
+    say("App calibration %s FAIL %s", BLE_STEP_NAMES[st], failReason);
+  } else {
+    bleEvent("#CALSTEP %s OK", BLE_STEP_NAMES[st]);
+    say("App calibration %s OK", BLE_STEP_NAMES[st]);
+  }
+}
+
+static void bleTick(const Sample& s, uint32_t now) {
+  captureAdd(s);
+  if (now - g_bleStart < BLE_STEP_MS[g_bleStep]) return;
+
+  Step st = (Step)g_bleStep;
+  g_bleStep = BLE_NO_STEP;
+  float gyroStd[3];
+  bool moved = captureMoved(gyroStd);
+  switch (st) {
+    case STEP_OPEN:
+      if (moved) return bleStepResult(st, "MOVED");
+      computeOpen(g_bleWork);
+      sensorsSetGyroBias(g_bleWork.gyroBias);  // the TURN step's roll filter uses the new bias
+      break;
+    case STEP_FIST:
+      if (moved) return bleStepResult(st, "MOVED");
+      computeFist(g_bleWork);
+      break;
+    case STEP_ROTATE:
+      computeTurn(g_bleWork);
+      if (!rollOk(g_bleWork)) return bleStepResult(st, "RANGE");
+      break;
+    default:
+      return;
+  }
+  g_bleDone[st] = true;
+  if (st != STEP_ROTATE) bleFlexCheck();  // before the reply, so the app has it with the result
+  bleStepResult(st, nullptr);
+}
+
+static void bleSave() {
+  for (uint8_t st = 0; st < STEP_COUNT; st++) {
+    if (!g_bleDone[st]) {
+      bleEvent("#ERR CAL MISSING %s", BLE_STEP_NAMES[st]);
+      return;
+    }
+  }
+  g_bleWork.version = CAL_VERSION;
+  if (!storageSave(g_bleWork)) {
+    bleEvent("#ERR CAL NVS");
+    say("ERROR: could not save the app calibration to NVS");
+    return;
+  }
+  g_saved = g_bleWork;
+  g_savedValid = true;
+  memset(g_bleDone, 0, sizeof(g_bleDone));
+  sensorsSetGyroBias(g_saved.gyroBias);
+  bleEvent("#CAL %s", calJson());
+  say("CALIBRATION SAVED (from the app)");
+}
+
+void calBleCommand(const char* arg) {
+  if (!strcmp(arg, "CANCEL")) {
+    if (g_bleStep != BLE_NO_STEP) bleStepResult((Step)g_bleStep, "CANCELLED");  // its reply
+    calBleDrop();
+    bleEvent("#OK CAL");
+    return;
+  }
+  int8_t st = BLE_NO_STEP;
+  for (uint8_t i = 0; i < STEP_COUNT; i++)
+    if (!strcmp(arg, BLE_STEP_NAMES[i])) st = i;
+  if (st == BLE_NO_STEP && strcmp(arg, "SAVE")) {
+    bleEvent("#ERR CAL UNKNOWN");
+    return;
+  }
+  if (calActive() || g_bleStep != BLE_NO_STEP) {  // serial wizard running, or a step capturing
+    bleEvent("#ERR CAL BUSY");
+    return;
+  }
+  if (st == BLE_NO_STEP) {
+    bleSave();
+    return;
+  }
+  if (st != STEP_FIST) {
+    if (!imuPresent()) imuProbe();  // maybe it was reconnected
+    if (!imuPresent()) {
+      bleEvent("#MPU FAIL");
+      bleStepResult((Step)st, "MPU");
+      return;
+    }
+  }
+  if (!g_bleDone[STEP_OPEN] && !g_bleDone[STEP_FIST] && !g_bleDone[STEP_ROTATE])
+    memset(&g_bleWork, 0, sizeof(g_bleWork));  // first step of a new run
+  say("App calibration %s: capturing %lu ms", BLE_STEP_NAMES[st], (unsigned long)BLE_STEP_MS[st]);
+  captureReset();
+  g_bleStep = st;
+  g_bleStart = millis();
+}
+
+void calBleDrop() {
+  bool had = g_bleStep != BLE_NO_STEP || g_bleDone[STEP_OPEN];
+  g_bleStep = BLE_NO_STEP;
+  memset(g_bleDone, 0, sizeof(g_bleDone));
+  if (had) applySavedBias();  // OPEN had already applied its new bias
+}
+
+bool calBleBusy() { return g_bleStep != BLE_NO_STEP; }

@@ -48,6 +48,6 @@ steps:
   # "CALIBRATION SAVED" and the whole report are printed in one burst.
   - wait-serial: '===== CALIBRATION REPORT ====='
 
-  # One-line JSON export, saved as format version 2.
+  # One-line JSON export: the #CAL line carries the contract keys (BLE-CONTRACT.md section 6).
   - write-serial: 'j'
-  - wait-serial: '","v":2,"open":'
+  - wait-serial: '"gyro_bias_raw":'

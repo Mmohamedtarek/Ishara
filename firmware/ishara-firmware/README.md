@@ -1,4 +1,4 @@
-# Ishara Glove firmware: calibration stage
+# Ishara Glove firmware: calibration + BLE stage
 
 Firmware for the Ishara sign-language glove. The same code builds for the ESP32-S3-DevKitC-1 N16R8 (development) and the Seeed XIAO ESP32-S3 (final glove), with the same GPIOs and the same output. You can run it in the Wokwi simulator inside VS Code before you have the hardware.
 
@@ -9,6 +9,7 @@ src/sensors.*         flex (ADC), MPU-6050 (raw Wire), battery, roll filter
 src/calibration.*     non-blocking calibration state machine
 src/storage.*         NVS (Preferences, namespace "ishara")
 src/console.*         "# " text lines, all ending in CRLF
+src/ble.*             BLE link to the app (NimBLE), implements docs/BLE-CONTRACT.md
 src/main.cpp          50 Hz loop, key handling, streams, boot banner, status line
 diagram.json          Wokwi circuit (serial monitor in terminal mode)
 wokwi.toml            points Wokwi at the [env:wokwi] build
@@ -23,7 +24,7 @@ All three share the same source code and the same sensor GPIOs:
 |---|---|---|---|---|---|
 | `devkit` (default) | ESP32-S3-DevKitC-1 N16R8 | 16 MB / 8 MB octal | UART port (USB-UART chip) | 1 | Development hardware |
 | `xiao` | Seeed XIAO ESP32-S3 | 8 MB / 8 MB octal | native USB CDC | 1 | The final glove |
-| `wokwi` | DevKitC in the simulator | board defaults | UART | 0 | The simulator. Quiet at boot: no raw stream, a `#` status line once per second instead. |
+| `wokwi` | DevKitC in the simulator | board defaults | UART | 0 | The simulator. Quiet at boot: no raw stream, a `#` status line once per second instead. No BLE (`BLE_ENABLED=0`): Wokwi does not simulate the Bluetooth radio. |
 
 `devkit` and `wokwi` define `BOARD_DEVKIT`, `xiao` defines `BOARD_XIAO`; `include/board.h` picks the status LED pin and the board name from that. The sensor pins in `config.h` are the same for every board, and the build fails (`static_assert`) if someone changes one. `pio run` builds `devkit` only. `wokwi.toml` points at `.pio/build/wokwi/`, so the simulator always runs the quiet build. `SIM_MODE` only changes the boot banner; the firmware behaves the same otherwise.
 
@@ -66,7 +67,7 @@ wokwi-cli --timeout 5000 --expect-text "Ishara Glove" .
 - step 2: all five sliders to `position: 1`
 - step 3: `accelY` +1 / `accelZ` 0 during the countdown (palm left, +90°), then `accelY` −1 when capture starts (palm right, −90°)
 
-It passes when it sees `===== CALIBRATION REPORT =====` and then a `#CAL {...}` line with `"v":2` after sending `j`.
+It passes when it sees `===== CALIBRATION REPORT =====` and then a `#CAL {...}` line containing `"gyro_bias_raw":` after sending `j`.
 
 ```
 export WOKWI_CLI_TOKEN=...        # from https://wokwi.com/dashboard/ci
@@ -75,6 +76,19 @@ wokwi-cli --timeout 60000 --scenario test/calibration.test.yaml .
 ```
 
 The run takes about 20 s of simulated time. The exit code is 0 on success and non-zero on a timeout or failure.
+
+## BLE
+
+The BLE protocol is defined in [`docs/BLE-CONTRACT.md`](../../docs/BLE-CONTRACT.md) at the repo root (v1). That file is the spec; this section only lists what the firmware adds or chooses. The library is NimBLE-Arduino 1.4 (`lib_deps` in `platformio.ini`, downloaded on the first build).
+
+- The glove advertises as `Ishara-XXXX` from boot (the banner shows the name). Serial keeps working as before while BLE is connected; both can be used at the same time.
+- DATA frames carry the same raw samples as the serial stream, every sample, even while the serial stream is off or the serial calibration wizard is running. The BLE `seq` is 16-bit; the serial `seq` is its low 8 bits, so the two match.
+- Serial prints `# BLE connected`, `# BLE disconnected, advertising` and `# BLE command <CMD>` for each command, which helps when testing with nRF Connect.
+- `#BAT` is sent when the app subscribes to EVENT (a line sent before that would be lost), then on every change. `#MPU FAIL` is sent at the same moment if the MPU-6050 is missing.
+- **App calibration** (`CAL OPEN` / `FIST` / `TURN`): capture starts as soon as the command arrives (no countdown, the app shows its own). `#CALSTEP <step> FAIL <reason>` reasons: `MOVED` (gyro std dev over 3 °/s during OPEN or FIST, same limit as the serial warning), `RANGE` (TURN under 30°), `MPU` (no MPU-6050 for OPEN or TURN, after `#MPU FAIL`), `CANCELLED` (`CAL CANCEL` during the step). `#FLEX WEAK <i>` lines come right before the OPEN/FIST reply, once both steps are done. TURN lasts 3 s over BLE (4 s in the serial wizard).
+- Only one calibration runs at a time: `CAL <step>` while the serial wizard runs (or while another step captures) gets `#ERR CAL BUSY`; pressing `c` while an app step captures prints a busy message. Pressing `c` or `r` drops the app's unsaved steps, and so does a disconnect.
+- Other `#ERR` reasons: `#ERR STREAM ARG` (not `0`/`1`), `#ERR CAL UNKNOWN` (unknown step), `#ERR CAL NVS` (saving failed).
+- Commands are trimmed and upper-cased before parsing, so `stream 1\r\n` from a terminal app works too.
 
 ## Pins
 
@@ -112,13 +126,14 @@ On the real circuit, **bending makes the voltage go down**. The firmware doesn't
 
 ```
 # ========================================
-# Ishara Glove - firmware v0.2.0 (Wokwi simulation build)
+# Ishara Glove - firmware v0.3.0 (Wokwi simulation build)
 # ========================================
 # Board        devkit
 # MPU-6050     OK
 # Calibration  NOT CALIBRATED - press c
 # Battery      82% 4010 mV (analogReadMilliVolts)
 # Raw stream   OFF at boot (s toggles)
+# BLE          off (simulation build)
 # Keys: ...
 ```
 
@@ -143,7 +158,7 @@ The status line stops as soon as you press `c`, `s` or `n`, and comes back when 
 
 ```
 # ===== CALIBRATION REPORT =====
-# Firmware 0.2.0  uptime 0:00:27
+# Firmware 0.3.0  uptime 0:00:27
 # Battery 82% (4010 mV via analogReadMilliVolts)
 # MPU-6050 OK
 # Calibration format v2
@@ -173,10 +188,10 @@ After each step, a small table shows just that step's result: per-finger open me
 `j` prints the saved calibration as one line, so you can copy it into the app or the AI tools:
 
 ```
-#CAL {"fw":"0.2.0","v":2,"open":[0,0,0,0,0],"fist":[4095,4095,4095,4095,4095],"gyroBias":[0.00,0.00,0.00],"gravity":[0.00,0.00,8192.00],"rollNeutral":0.00,"rollMin":-86.80,"rollMax":85.50,"gyroLsbPerDps":65.5,"accelLsbPerG":8192}
+#CAL {"fw":"0.3.0","v":2,"open":[0,0,0,0,0],"fist":[4095,4095,4095,4095,4095],"gyro_bias_raw":[0.00,0.00,0.00],"roll_neutral":0.00,"roll_min":-86.80,"roll_max":85.50,"gyroBias":[0.00,0.00,0.00],"gravity":[0.00,0.00,8192.00],"rollNeutral":0.00,"rollMin":-86.80,"rollMax":85.50,"gyroLsbPerDps":65.5,"accelLsbPerG":8192}
 ```
 
-Finger order is thumb, index, middle, ring, pinky. `open` / `fist` are raw ADC counts. `gyroBias` and `gravity` are raw IMU counts, in the same units as the raw stream; divide by `gyroLsbPerDps` or `accelLsbPerG` to get °/s or g. Roll values are in degrees. `v` is the calibration format version (2 for anything saved by this firmware, 1 for an older calibration still loaded from NVS). Take everything after `#CAL `. If there is no calibration, `j` prints `# NOT CALIBRATED - nothing to export`.
+The app and the AI tools read the contract keys `v`, `open`, `fist`, `gyro_bias_raw`, `roll_neutral`, `roll_min`, `roll_max` (`docs/BLE-CONTRACT.md` section 6). `gyroBias`, `rollNeutral`, `rollMin`, `rollMax` are copies with the same values, kept for older readers. Finger order is thumb, index, middle, ring, pinky. `open` / `fist` are raw ADC counts. `gyro_bias_raw` / `gyroBias` and `gravity` are raw IMU counts, in the same units as the raw stream; divide by `gyroLsbPerDps` or `accelLsbPerG` to get °/s or g. Roll values are in degrees. `v` is the calibration format version (2 for anything saved by this firmware, 1 for an older calibration still loaded from NVS). Take everything after `#CAL `. If there is no calibration, `j` prints `# NOT CALIBRATED - nothing to export`.
 
 ## Keys
 

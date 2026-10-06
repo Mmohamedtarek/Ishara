@@ -145,3 +145,13 @@ bool batteryUpdate() {
 BatState batteryState() { return g_batState; }
 
 const Battery& batteryLast() { return g_batLast; }
+
+void batteryStateLine(BatState st, char* buf, size_t len) {
+  const Battery& b = g_batLast;
+  switch (st) {
+    case BatState::NoBattery: snprintf(buf, len, "#BAT NO_BATTERY (USB)"); break;
+    case BatState::Low: snprintf(buf, len, "#BAT LOW %.2fV", b.mv / 1000.0f); break;
+    case BatState::Ok: snprintf(buf, len, "#BAT OK %.2fV %u%%", b.mv / 1000.0f, b.pct); break;
+    case BatState::Unknown: snprintf(buf, len, "%s", ""); break;
+  }
+}
