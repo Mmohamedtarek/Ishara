@@ -23,6 +23,7 @@ import 'package:ishara_app/core/recognition/recognition_engine.dart';
 import 'package:ishara_app/core/recognition/recognition_service.dart';
 import 'package:ishara_app/core/recognition/recognizer.dart';
 
+import '../glove/glove_client_test.dart' show ScriptedLink, ScriptedTransport;
 import '../support/kit.dart';
 
 /// Records what the service asks of the engine; outputs are pushed by tests.
@@ -186,21 +187,6 @@ void main() {
       expect(c.read(mockGloveProvider), isNull);
       expect(c.read(gloveSourceProvider), isA<GloveClient>());
     });
-
-    test(
-      'until a BLE library is chosen, BLE says unsupported (never fakes)',
-      () async {
-        const t = PendingBleTransport();
-        await expectLater(
-          t.scan(timeout: const Duration(seconds: 1)),
-          emitsError(isA<BluetoothUnavailableFailure>()),
-        );
-        await expectLater(
-          t.open(const DiscoveredGlove(id: 'a', name: 'Ishara-0000', rssi: 0)),
-          throwsA(isA<BluetoothUnavailableFailure>()),
-        );
-      },
-    );
   });
 
   group('MockFeed', () {
@@ -263,9 +249,10 @@ void main() {
       await f.dispose();
     });
 
-    test('a practice cue on the real-glove path is a no-op', () {
+    test('a practice cue on a radio transport is a no-op', () {
       fakeAsync((async) {
-        final c = GloveClient(const PendingBleTransport())..cuePractice('yes');
+        final c = GloveClient(ScriptedTransport(ScriptedLink()))
+          ..cuePractice('yes');
         async.flushMicrotasks();
         expect(c.status.phase, GlovePhase.idle);
       });

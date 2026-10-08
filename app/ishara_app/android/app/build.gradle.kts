@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "io.github.mmohamedtarek.ishara"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_reactive_ble 5.6.0 (reactive_ble_mobile) requires compiling
+    // against API 37. Runtime behaviour (targetSdk) is unchanged.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

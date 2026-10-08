@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:ishara_app/core/glove/ble/reactive_ble_transport.dart';
 import 'package:ishara_app/core/glove/glove_client.dart';
-import 'package:ishara_app/core/glove/glove_failures.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
-import 'package:ishara_app/core/glove/glove_transport.dart';
 import 'package:ishara_app/core/glove/mock/mock_feed.dart';
 import 'package:ishara_app/core/glove/mock/mock_glove.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -57,24 +56,13 @@ MockGlove? mockGlove(Ref ref) {
 @Riverpod(keepAlive: true)
 GloveSource gloveSource(Ref ref) {
   final mock = ref.watch(mockGloveProvider);
-  final source = GloveClient(mock ?? const PendingBleTransport());
+  final source = GloveClient(
+    mock ??
+        ReactiveBleTransport(
+          FlutterReactiveBleApi(),
+          isAndroid: defaultTargetPlatform == TargetPlatform.android,
+        ),
+  );
   ref.onDispose(source.dispose);
   return source;
-}
-
-/// Stand-in until the BLE library is chosen (flutter_blue_plus is no longer
-/// BSD-licensed; see DECISIONS.md). It never pretends to find a glove.
-class PendingBleTransport implements GloveTransport {
-  const new();
-
-  @override
-  Stream<List<DiscoveredGlove>> scan({required Duration timeout}) =>
-      Stream.error(
-        const BluetoothUnavailableFailure(BluetoothProblem.unsupported),
-      );
-
-  @override
-  Future<GloveLink> open(DiscoveredGlove glove) => Future.error(
-    const BluetoothUnavailableFailure(BluetoothProblem.unsupported),
-  );
 }

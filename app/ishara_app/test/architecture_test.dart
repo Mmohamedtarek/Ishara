@@ -19,7 +19,7 @@ void main() {
   test('only lib/core/glove/ knows which glove source is active', () {
     final forbidden = RegExp(
       r'GloveSourceKind|activeGloveKind|gloveSourceOverride|MockGlove\b|'
-      r'mock_glove\.dart|mockGloveProvider|PendingBleTransport',
+      r'mock_glove\.dart|mockGloveProvider|PendingBleTransport|ReactiveBleTransport|FlutterReactiveBleApi',
     );
     final offenders = [
       for (final f in _dartFiles('lib'))

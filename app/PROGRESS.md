@@ -109,3 +109,12 @@
 **Open questions**
 1. **BLE library** (flutter_blue_plus licence + build telemetry): which one? Recommendation: `flutter_reactive_ble` (BSD-3, Philips Hue, Android + iOS, updated 2026-09).
 2. 16 KB page-size check of the LiteRT native libraries: on the next APK (performance step).
+
+### Step 3 follow-up: BLE transport (2026-10-09)
+- `flutter_reactive_ble` 5.6.0 (user decision), licence and network checked first (see DECISIONS).
+- `lib/core/glove/ble/reactive_ble_transport.dart`: adapter state → `BluetoothUnavailableFailure` (off, unauthorized, location off, unsupported); scan filtered to `Ishara-XXXX` + service, deduplicated, strongest first, ends on time; connect → MTU 247 (Android only) → service check (all 4 characteristics) → link; notifications forwarded (listen first, then subscribe); CMD write with response; close / remote disconnect / notification error close the link; cleanup on every failure path. Replaces the "unsupported" stand-in.
+- Tests: 18 (fake `BleApi`), including GloveClient end to end over the adapter (ready, `#BAT`, frames, out of range). Tests that close connections run in short real time (a broadcast cancel completes in the root zone, which FakeAsync never runs).
+- **Android build: ✓** (62 s with a warm cache) after `compileSdk = 37` (required by reactive_ble_mobile). **16 KB page size: ✓** `zipalign -c -P 16`: all 18 native libraries aligned. Merged manifest checked: no location permission on Android 12+.
+- **Not tested on hardware yet:** the real glove over BLE needs the user's phone (Pair step).
+- Totals: 264 tests passing (+1 skipped benchmark), analyze 0 issues. `lib/core` coverage 95.7 %: the uncovered lines are `FlutterReactiveBleApi`, the thin wrapper over the plugin (needs a device).
+- Note: the AI team fixed the AI-SPEC §8 sentence (Keras vs tflite); it reaches the app when the updated kit is synced.
