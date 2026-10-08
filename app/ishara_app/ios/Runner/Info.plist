@@ -16,6 +16,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>Ishara</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Ishara uses Bluetooth to connect to your Ishara glove and read your signs.</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

@@ -16,7 +16,7 @@ class ModelBundle {
   const new({required this.labels, required this.config, required this.models});
 
   /// Default location of the synced kit (see `app/tools/sync_kit.sh`).
-  static const defaultDir = 'assets/kit/model';
+  static const defaultDir = 'assets/packs/asl/kit/model';
 
   static Future<ModelBundle> load(
     AssetReader read, {

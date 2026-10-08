@@ -31,7 +31,7 @@ void main() {
   final kit = p.normalize(
     p.join(Directory.current.path, '..', 'Ishara-Mobile-Kit'),
   );
-  const assets = 'assets/kit';
+  const assets = 'assets/packs/asl/kit';
 
   test('the kit folder exists', () {
     for (final part in _parts) {
@@ -39,19 +39,19 @@ void main() {
     }
   });
 
-  test('assets/kit has exactly the kit files, byte for byte', () {
+  test('assets/packs/asl/kit has exactly the kit files, byte for byte', () {
     final want = _hashes(kit);
     final have = _hashes(assets);
     expect(want, isNotEmpty);
     expect(
       have.keys.toSet().difference(want.keys.toSet()),
       isEmpty,
-      reason: 'files in assets/kit that the kit does not have',
+      reason: 'files in assets/packs/asl/kit that the kit does not have',
     );
     expect(
       want.keys.toSet().difference(have.keys.toSet()),
       isEmpty,
-      reason: 'kit files missing from assets/kit',
+      reason: 'kit files missing from assets/packs/asl/kit',
     );
     final changed = [
       for (final e in want.entries)
@@ -64,11 +64,11 @@ void main() {
     final pubspec = File('pubspec.yaml').readAsLinesSync().map((l) => l.trim());
     final declared = {
       for (final l in pubspec)
-        if (l.startsWith('- assets/kit/')) l.substring(2),
+        if (l.startsWith('- assets/packs/asl/kit/')) l.substring(2),
     };
     final needed = {
       for (final rel in _hashes(assets).keys) '${p.posix.dirname(rel)}/',
-    }.map((d) => 'assets/kit/$d').toSet();
+    }.map((d) => 'assets/packs/asl/kit/$d').toSet();
     expect(declared, containsAll(needed));
   });
 }

@@ -16,7 +16,7 @@ extension MockPersonDir on MockPerson {
 
 /// Loads (and caches) the kit's mock recordings.
 class MockLibrary {
-  new(this._read, {this.root = 'assets/kit/mock'});
+  new(this._read, {this.root = 'assets/packs/asl/kit/mock'});
 
   final AssetReader _read;
   final String root;

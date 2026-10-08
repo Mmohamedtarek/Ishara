@@ -57,11 +57,7 @@ MockGlove? mockGlove(Ref ref) {
 GloveSource gloveSource(Ref ref) {
   final mock = ref.watch(mockGloveProvider);
   final source = GloveClient(
-    mock ??
-        ReactiveBleTransport(
-          FlutterReactiveBleApi(),
-          isAndroid: defaultTargetPlatform == TargetPlatform.android,
-        ),
+    mock ?? ReactiveBleTransport(FlutterReactiveBleApi()),
   );
   ref.onDispose(source.dispose);
   return source;

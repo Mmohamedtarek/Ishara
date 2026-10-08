@@ -139,7 +139,7 @@ void main() {
           return p;
         },
         calibration: GloveCalibration.parse(
-          Recording.parse(readText('assets/kit/mock/A/rest.csv'))
+          Recording.parse(readText('assets/packs/asl/kit/mock/A/rest.csv'))
               .calibrationJson!,
         ),
       );

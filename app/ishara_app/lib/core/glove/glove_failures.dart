@@ -7,7 +7,15 @@ abstract class GloveFailure extends Failure {
 }
 
 /// Why Bluetooth can't be used.
-enum BluetoothProblem { off, unauthorized, unsupported, locationOff }
+enum BluetoothProblem {
+  off,
+  unauthorized,
+  unsupported,
+  locationOff,
+
+  /// The state isn't known yet (e.g. a permission alert is open): retry.
+  notReady,
+}
 
 /// Bluetooth is off, not allowed, or missing.
 final class BluetoothUnavailableFailure extends GloveFailure {
@@ -75,4 +83,13 @@ final class GloveBadCalibrationFailure extends GloveFailure {
 
   @override
   String get kind => 'glove_bad_calibration';
+}
+
+/// Scanning failed for a reason other than Bluetooth being unavailable
+/// (e.g. Android throttling repeated scans).
+final class GloveScanFailure extends GloveFailure {
+  const new({super.cause, super.stackTrace}) : super('scan failed');
+
+  @override
+  String get kind => 'glove_scan';
 }

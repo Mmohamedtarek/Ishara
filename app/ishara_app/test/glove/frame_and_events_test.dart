@@ -19,7 +19,8 @@ Uint8List _hex(String h) => Uint8List.fromList([
 void main() {
   group('FrameCodec (BLE-CONTRACT §4)', () {
     test('decodes every frame of mock/ble_frames.txt to the same numbers', () {
-      final lines = readText('assets/kit/mock/ble_frames.txt').split('\n');
+      final lines = readText('assets/packs/asl/kit/mock/ble_frames.txt')
+          .split('\n');
       var frames = 0;
       var checked = 0;
       List<GloveSample>? current;
@@ -47,7 +48,7 @@ void main() {
     });
 
     test('encode is the inverse of decode', () {
-      final hex = readText('assets/kit/mock/ble_frames.txt')
+      final hex = readText('assets/packs/asl/kit/mock/ble_frames.txt')
           .split('\n')
           .firstWhere((l) => RegExp('^[0-9a-f]').hasMatch(l))
           .trim();

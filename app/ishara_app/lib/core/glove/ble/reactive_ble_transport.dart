@@ -14,10 +14,9 @@ abstract interface class BleApi {
   Stream<BleStatus> get statusStream;
   BleStatus get status;
 
-  Stream<DiscoveredDevice> scan(
-    List<Uuid> services, {
-    required bool requireLocationServices,
-  });
+  /// Scans for devices advertising [services]. Location services are
+  /// checked through [statusStream] (`locationServicesDisabled`).
+  Stream<DiscoveredDevice> scan(List<Uuid> services);
 
   /// Connects; cancelling the subscription disconnects.
   Stream<ConnectionStateUpdate> connect(String id, {required Duration timeout});
@@ -53,13 +52,12 @@ class FlutterReactiveBleApi implements BleApi {
   BleStatus get status => _ble.status;
 
   @override
-  Stream<DiscoveredDevice> scan(
-    List<Uuid> services, {
-    required bool requireLocationServices,
-  }) => _ble.scanForDevices(
+  Stream<DiscoveredDevice> scan(List<Uuid> services) => _ble.scanForDevices(
     withServices: services,
     scanMode: ScanMode.lowLatency,
-    requireLocationServicesEnabled: requireLocationServices,
+    // The adapter status already reports locationServicesDisabled where it
+    // matters (Android 11 and older).
+    requireLocationServicesEnabled: false,
   );
 
   @override
@@ -114,22 +112,16 @@ class FlutterReactiveBleApi implements BleApi {
 class ReactiveBleTransport implements GloveTransport {
   new(
     this._api, {
-    required this.isAndroid,
-    this.requireLocationServices = false,
     this.connectTimeout = const Duration(seconds: 10),
-    this.statusWait = const Duration(seconds: 3),
+    this.statusWait = const Duration(seconds: 30),
   });
 
   final BleApi _api;
-
-  /// Android requests MTU 247; iOS negotiates by itself (BLE §3).
-  final bool isAndroid;
-
-  /// Android 11 and older need location services on to scan.
-  final bool requireLocationServices;
   final Duration connectTimeout;
 
-  /// How long to wait for the adapter state to be known.
+  /// How long to wait while the adapter state is unknown (iOS reports
+  /// unknown while its Bluetooth permission alert is open, and while the
+  /// adapter resets).
   final Duration statusWait;
 
   final _log = Log('ble');
@@ -145,6 +137,16 @@ class ReactiveBleTransport implements GloveTransport {
       Uuid.parse(c),
   };
 
+  static BluetoothProblem? _problemOf(BleStatus s) => switch (s) {
+    BleStatus.ready => null,
+    BleStatus.poweredOff => BluetoothProblem.off,
+    BleStatus.unauthorized => BluetoothProblem.unauthorized,
+    BleStatus.locationServicesDisabled => BluetoothProblem.locationOff,
+    BleStatus.unsupported => BluetoothProblem.unsupported,
+    // Still not known after the wait: retryable, never "unsupported".
+    BleStatus.unknown => BluetoothProblem.notReady,
+  };
+
   /// Throws [BluetoothUnavailableFailure] unless the adapter is ready.
   Future<void> _ensureReady() async {
     var status = _api.status;
@@ -153,14 +155,7 @@ class ReactiveBleTransport implements GloveTransport {
           .firstWhere((s) => s != BleStatus.unknown)
           .timeout(statusWait, onTimeout: () => BleStatus.unknown);
     }
-    final problem = switch (status) {
-      BleStatus.ready => null,
-      BleStatus.poweredOff => BluetoothProblem.off,
-      BleStatus.unauthorized => BluetoothProblem.unauthorized,
-      BleStatus.locationServicesDisabled => BluetoothProblem.locationOff,
-      BleStatus.unsupported ||
-      BleStatus.unknown => BluetoothProblem.unsupported,
-    };
+    final problem = _problemOf(status);
     if (problem != null) throw BluetoothUnavailableFailure(problem);
   }
 
@@ -172,21 +167,34 @@ class ReactiveBleTransport implements GloveTransport {
     List<DiscoveredGlove> sorted() =>
         found.values.toList()..sort((a, b) => b.rssi.compareTo(a.rssi));
     final sub = _api
-        .scan([_service], requireLocationServices: requireLocationServices)
+        .scan([_service])
         .listen(
           (d) {
             // Only real Ishara gloves (BLE §1: `Ishara-XXXX`).
             if (!IsharaUuids.namePattern.hasMatch(d.name)) return;
             found[d.id] = DiscoveredGlove(id: d.id, name: d.name, rssi: d.rssi);
-            out.add(sorted());
+            if (!out.isClosed) out.add(sorted());
           },
           onError: (Object e, StackTrace st) {
-            out.addError(
-              GloveConnectFailure('scan failed', cause: e, stackTrace: st),
-            );
+            // The scan is dead: say why (often Bluetooth or a permission
+            // went away) and end the stream.
+            final problem = _problemOf(_api.status);
+            if (!out.isClosed) {
+              out.addError(
+                problem != null && problem != BluetoothProblem.notReady
+                    ? BluetoothUnavailableFailure(problem)
+                    : GloveScanFailure(cause: e, stackTrace: st),
+              );
+              unawaited(out.close());
+            }
+          },
+          onDone: () {
+            if (!out.isClosed) unawaited(out.close());
           },
         );
-    final timer = Timer(timeout, () => unawaited(out.close()));
+    final timer = Timer(timeout, () {
+      if (!out.isClosed) unawaited(out.close());
+    });
     try {
       yield const [];
       yield* out.stream;
@@ -201,23 +209,33 @@ class ReactiveBleTransport implements GloveTransport {
     await _ensureReady();
     final connected = Completer<void>();
     final closed = Completer<void>();
+    // reactive_ble's connection updates are shared per device: a late
+    // "disconnected" of an earlier session can arrive first. This attempt
+    // starts when it reports "connecting".
+    var started = false;
     late final StreamSubscription<ConnectionStateUpdate> conn;
     conn = _api
         .connect(glove.id, timeout: connectTimeout)
         .listen(
           (u) {
             switch (u.connectionState) {
+              case DeviceConnectionState.connecting:
+                started = true;
               case DeviceConnectionState.connected:
+                started = true;
                 if (!connected.isCompleted) connected.complete();
               case DeviceConnectionState.disconnected:
-                final err = GloveConnectFailure(
-                  'disconnected while connecting',
-                  cause: u.failure,
-                );
-                if (!connected.isCompleted) connected.completeError(err);
+                if (!started) return; // stale: an earlier session
+                if (!connected.isCompleted) {
+                  connected.completeError(
+                    GloveConnectFailure(
+                      'disconnected while connecting',
+                      cause: u.failure,
+                    ),
+                  );
+                }
                 if (!closed.isCompleted) closed.complete();
-              case DeviceConnectionState.connecting ||
-                  DeviceConnectionState.disconnecting:
+              case DeviceConnectionState.disconnecting:
                 break;
             }
           },
@@ -238,10 +256,9 @@ class ReactiveBleTransport implements GloveTransport {
         connectTimeout + const Duration(seconds: 2),
         onTimeout: () => throw const GloveConnectFailure('connect timeout'),
       );
-      // BLE §3 step 2: MTU 247 on Android (it starts at 23).
-      final mtu = isAndroid
-          ? await _api.requestMtu(glove.id, IsharaUuids.requestedMtu)
-          : 0;
+      // BLE §3 step 2: MTU 247. Android negotiates it now (it starts at 23);
+      // iOS has negotiated by itself and returns the value it got.
+      final mtu = await _api.requestMtu(glove.id, IsharaUuids.requestedMtu);
       // Step 3: the Ishara service with its 4 characteristics.
       final chars = await _api.characteristicsOf(glove.id, _service);
       if (!chars.containsAll(_required)) {
@@ -250,17 +267,37 @@ class ReactiveBleTransport implements GloveTransport {
         );
       }
       _log.info('linked', {'mtu': mtu});
-      return _ReactiveLink(_api, glove.id, mtu, conn, closed);
+      return _ReactiveLink(_api, glove.id, mtu, conn, closed, _log);
     } on Object {
-      await conn.cancel();
+      await _cancelQuietly(conn, _log);
       if (!closed.isCompleted) closed.complete();
       rethrow;
     }
   }
 }
 
+/// Cancels the connection subscription (= disconnects). A failing platform
+/// disconnect is logged, not thrown: the link counts as closed either way.
+Future<void> _cancelQuietly(
+  StreamSubscription<ConnectionStateUpdate> conn,
+  Log log,
+) async {
+  try {
+    await conn.cancel();
+  } on Object catch (e, st) {
+    log.failure(
+      'disconnect_failed',
+      GloveConnectFailure(
+        'platform disconnect failed',
+        cause: e,
+        stackTrace: st,
+      ),
+    );
+  }
+}
+
 class _ReactiveLink implements GloveLink {
-  new(this._api, this._id, this.mtu, this._conn, this._closed) {
+  new(this._api, this._id, this.mtu, this._conn, this._closed, this._log) {
     unawaited(_closed.future.then((_) => _shutDown()));
   }
 
@@ -268,11 +305,11 @@ class _ReactiveLink implements GloveLink {
   final String _id;
   final StreamSubscription<ConnectionStateUpdate> _conn;
   final Completer<void> _closed;
+  final Log _log;
   final _events = StreamController<Uint8List>.broadcast(sync: true);
   final _data = StreamController<Uint8List>.broadcast(sync: true);
   final List<StreamSubscription<List<int>>> _notify = [];
 
-  /// Negotiated MTU (0 on iOS: the system picks it, usually 185).
   @override
   final int mtu;
 
@@ -282,9 +319,15 @@ class _ReactiveLink implements GloveLink {
     deviceId: _id,
   );
 
+  void _ensureOpen() {
+    if (_closed.isCompleted) throw const GloveDisconnectedFailure();
+  }
+
   @override
-  Future<Uint8List> readInfo() async =>
-      Uint8List.fromList(await _api.read(_char(IsharaUuids.info)));
+  Future<Uint8List> readInfo() async {
+    _ensureOpen();
+    return Uint8List.fromList(await _api.read(_char(IsharaUuids.info)));
+  }
 
   @override
   Stream<Uint8List> get eventNotifications => _events.stream;
@@ -293,6 +336,7 @@ class _ReactiveLink implements GloveLink {
   Stream<Uint8List> get dataNotifications => _data.stream;
 
   void _forward(String uuid, StreamController<Uint8List> to) {
+    _ensureOpen();
     _notify.add(
       _api
           .subscribe(_char(uuid))
@@ -300,9 +344,18 @@ class _ReactiveLink implements GloveLink {
             (v) {
               if (!to.isClosed) to.add(Uint8List.fromList(v));
             },
-            onError: (Object e) {
-              // A notification error means the link is gone.
-              if (!_closed.isCompleted) _closed.complete();
+            onError: (Object e, StackTrace st) {
+              // Notifications failed (e.g. GATT error): the link is unusable.
+              // Disconnect for real, so the glove is free for another phone.
+              _log.failure(
+                'notification_failed',
+                GloveConnectFailure(
+                  'notifications failed',
+                  cause: e,
+                  stackTrace: st,
+                ),
+              );
+              unawaited(close());
             },
           ),
     );
@@ -315,14 +368,16 @@ class _ReactiveLink implements GloveLink {
   Future<void> subscribeData() async => _forward(IsharaUuids.data, _data);
 
   @override
-  Future<void> writeCommand(Uint8List bytes) =>
-      _api.writeWithResponse(_char(IsharaUuids.cmd), bytes);
+  Future<void> writeCommand(Uint8List bytes) async {
+    _ensureOpen();
+    await _api.writeWithResponse(_char(IsharaUuids.cmd), bytes);
+  }
 
   @override
   Future<void> get closed => _closed.future;
 
   Future<void> _shutDown() async {
-    for (final s in _notify) {
+    for (final s in List.of(_notify)) {
       await s.cancel();
     }
     _notify.clear();
@@ -332,8 +387,11 @@ class _ReactiveLink implements GloveLink {
 
   @override
   Future<void> close() async {
-    await _conn.cancel(); // cancelling the connection stream disconnects
-    if (!_closed.isCompleted) _closed.complete();
+    try {
+      await _cancelQuietly(_conn, _log); // cancelling disconnects
+    } finally {
+      if (!_closed.isCompleted) _closed.complete();
+    }
     await _closed.future;
   }
 }

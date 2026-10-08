@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:ishara_app/core/recognition/model_bundle.dart';
 
-/// Reads the synced kit (`assets/kit/`) from disk in host tests.
+/// Reads the synced kit (`assets/packs/asl/kit/`) from disk in host tests.
 Future<Uint8List> readAsset(String path) => File(path).readAsBytes();
 
 Map<String, dynamic> readJson(String path) =>

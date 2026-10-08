@@ -47,7 +47,7 @@ are local only and are the images used for the screenshot review.
 ## Updating the AI models (new kit from the AI team)
 
 1. Replace `app/Ishara-Mobile-Kit/` with the new kit.
-2. Run `app/tools/sync_kit.sh` (copies `model/`, `mock/`, `test/` into `ishara_app/assets/kit/`, and checks that
+2. Run `app/tools/sync_kit.sh` (copies `model/`, `mock/`, `test/` into `ishara_app/assets/packs/asl/kit/`, and checks that
    `pubspec.yaml` declares every folder).
 3. Run `flutter test`. `test/kit/kit_sync_test.dart` fails if any asset differs from the kit; the pipeline tests
    check the new models against the kit's test vectors *(later: glove core step)*.

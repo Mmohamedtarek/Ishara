@@ -233,9 +233,12 @@ class GloveClient implements GloveSource {
     if (!identical(link, _link)) return;
     if (_closing) return;
     _log.warn('link_lost', {'phase': _status.phase.name});
+    _generation++; // a connect in progress on this link must stop
     const f = GloveDisconnectedFailure();
     _tearDown(f);
     _set(_status.copyWith(phase: GlovePhase.idle, failure: f));
+    // Make sure the radio side lets go too (idempotent).
+    unawaited(link.close());
   }
 
   void _tearDown(GloveFailure reason) {

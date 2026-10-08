@@ -40,6 +40,9 @@ class FakeBleApi implements BleApi {
   bool scanCancelled = false;
   bool connectionCancelled = false;
 
+  /// The platform disconnect throws (e.g. the adapter was turned off).
+  bool failDisconnect = false;
+
   /// EVENT lines the glove sends for each command.
   Map<String, List<String>> replies = {
     'GETCAL': ['#CAL NONE'],
@@ -51,11 +54,8 @@ class FakeBleApi implements BleApi {
   Stream<BleStatus> get statusStream => statusCtl.stream;
 
   @override
-  Stream<DiscoveredDevice> scan(
-    List<Uuid> services, {
-    required bool requireLocationServices,
-  }) {
-    calls.add('scan $services loc=$requireLocationServices');
+  Stream<DiscoveredDevice> scan(List<Uuid> services) {
+    calls.add('scan');
     return scanCtl.stream.doOnCancel(() => scanCancelled = true);
   }
 
@@ -65,7 +65,10 @@ class FakeBleApi implements BleApi {
     required Duration timeout,
   }) {
     calls.add('connect $id');
-    return connCtl.stream.doOnCancel(() => connectionCancelled = true);
+    return connCtl.stream.doOnCancel(() {
+      connectionCancelled = true;
+      if (failDisconnect) throw Exception('disconnectDevice failed');
+    });
   }
 
   void update(DeviceConnectionState s) => connCtl.add(
@@ -152,8 +155,8 @@ const _glove = DiscoveredGlove(id: 'AA', name: 'Ishara-3FA2', rssi: -50);
 Future<void> _settle() =>
     Future<void>.delayed(const Duration(milliseconds: 20));
 
-Future<GloveLink> _openReal(FakeBleApi a, {bool android = true}) async {
-  final f = ReactiveBleTransport(a, isAndroid: android).open(_glove);
+Future<GloveLink> _openReal(FakeBleApi a) async {
+  final f = ReactiveBleTransport(a).open(_glove);
   await _settle();
   a.update(DeviceConnectionState.connected);
   return await f;
@@ -168,10 +171,7 @@ void main() {
       (BleStatus.unsupported, BluetoothProblem.unsupported),
     ]) {
       test('$status -> $problem (scan and connect)', () async {
-        final t = ReactiveBleTransport(
-          FakeBleApi(status: status),
-          isAndroid: true,
-        );
+        final t = ReactiveBleTransport(FakeBleApi(status: status));
         await expectLater(
           t.scan(timeout: const Duration(seconds: 1)),
           emitsError(
@@ -192,10 +192,9 @@ void main() {
     test('unknown, then ready: waits for the state', () async {
       final api = FakeBleApi(status: BleStatus.unknown);
       final lists = <List<DiscoveredGlove>>[];
-      ReactiveBleTransport(
-        api,
-        isAndroid: true,
-      ).scan(timeout: const Duration(milliseconds: 300)).listen(lists.add);
+      ReactiveBleTransport(api)
+          .scan(timeout: const Duration(milliseconds: 300))
+          .listen(lists.add);
       await _settle();
       expect(lists, isEmpty);
       api.statusCtl.add(BleStatus.ready);
@@ -203,10 +202,9 @@ void main() {
       expect(lists, [<DiscoveredGlove>[]]);
     });
 
-    test('state never known -> unsupported after the wait', () async {
+    test('state never known -> not ready after the wait', () async {
       final t = ReactiveBleTransport(
         FakeBleApi(status: BleStatus.unknown),
-        isAndroid: true,
         statusWait: const Duration(milliseconds: 100),
       );
       await expectLater(
@@ -215,7 +213,7 @@ void main() {
           isA<BluetoothUnavailableFailure>().having(
             (f) => f.problem,
             'problem',
-            BluetoothProblem.unsupported,
+            BluetoothProblem.notReady,
           ),
         ),
       );
@@ -229,11 +227,7 @@ void main() {
         final api = FakeBleApi();
         final lists = <List<DiscoveredGlove>>[];
         final done = Completer<void>();
-        ReactiveBleTransport(
-              api,
-              isAndroid: true,
-              requireLocationServices: true,
-            )
+        ReactiveBleTransport(api)
             .scan(timeout: const Duration(milliseconds: 300))
             .listen(lists.add, onDone: done.complete);
         await _settle();
@@ -248,39 +242,19 @@ void main() {
           ('Ishara-3FA2', -45),
           ('Ishara-00B1', -55),
         ]);
-        expect(api.calls.single, contains('loc=true'));
         await done.future.timeout(const Duration(seconds: 2));
         await _settle();
         expect(api.scanCancelled, isTrue);
       },
     );
-
-    test('scan error -> GloveConnectFailure', () async {
-      final api = FakeBleApi();
-      final errors = <Object>[];
-      ReactiveBleTransport(api, isAndroid: true)
-          .scan(timeout: const Duration(milliseconds: 300))
-          .listen((_) {}, onError: errors.add);
-      await _settle();
-      api.scanCtl.addError(Exception('scan throttled'));
-      await _settle();
-      expect(errors.single, isA<GloveConnectFailure>());
-    });
   });
 
   group('open (BLE §3 steps 1-3)', () {
-    test('Android: connect, MTU 247, service check', () async {
+    test('connect, MTU 247 (negotiated or read back), service check', () async {
       final api = FakeBleApi();
       final link = await _openReal(api);
       expect(api.calls, ['connect AA', 'mtu 247', 'discover']);
       expect(link.mtu, 247);
-    });
-
-    test('iOS: no MTU request (the system negotiates it)', () async {
-      final api = FakeBleApi();
-      final link = await _openReal(api, android: false);
-      expect(api.calls, ['connect AA', 'discover']);
-      expect(link.mtu, 0);
     });
 
     test(
@@ -295,15 +269,20 @@ void main() {
 
     test('disconnected while connecting: failure', () async {
       final api = FakeBleApi();
-      final f = ReactiveBleTransport(api, isAndroid: true).open(_glove);
+      final f = ReactiveBleTransport(api).open(_glove);
       await _settle();
-      api.update(DeviceConnectionState.disconnected);
-      await expectLater(f, throwsA(isA<GloveConnectFailure>()));
+      api
+        ..update(DeviceConnectionState.connecting)
+        ..update(DeviceConnectionState.disconnected);
+      await expectLater(
+        f.timeout(const Duration(seconds: 1)),
+        throwsA(isA<GloveConnectFailure>()),
+      );
     });
 
     test('native connect error: failure', () async {
       final api = FakeBleApi();
-      final f = ReactiveBleTransport(api, isAndroid: true).open(_glove);
+      final f = ReactiveBleTransport(api).open(_glove);
       await _settle();
       api.connCtl.addError(TimeoutException('native timeout'));
       await expectLater(f, throwsA(isA<GloveConnectFailure>()));
@@ -313,7 +292,6 @@ void main() {
       final api = FakeBleApi();
       final f = ReactiveBleTransport(
         api,
-        isAndroid: true,
         connectTimeout: const Duration(milliseconds: 100),
       ).open(_glove);
       // The transport allows 2 s of grace over the native timeout.
@@ -368,9 +346,114 @@ void main() {
     });
   });
 
+  group('review regressions', () {
+    test('a late disconnected of an earlier session is ignored', () async {
+      final api = FakeBleApi();
+      final f = ReactiveBleTransport(api).open(_glove);
+      await _settle();
+      api
+        ..update(DeviceConnectionState.disconnected) // stale
+        ..update(DeviceConnectionState.connecting)
+        ..update(DeviceConnectionState.connected);
+      final link = await f;
+      expect(link.mtu, 247);
+    });
+
+    test('a notification error really disconnects', () async {
+      final api = FakeBleApi();
+      final link = await _openReal(api);
+      link.eventNotifications.listen((_) {});
+      await link.subscribeEvents();
+      api.notifier(IsharaUuids.event).addError(Exception('gatt 133'));
+      await link.closed.timeout(const Duration(seconds: 1));
+      await _settle();
+      expect(api.connectionCancelled, isTrue);
+    });
+
+    test('close completes even if the platform disconnect throws', () async {
+      final api = FakeBleApi();
+      final link = await _openReal(api);
+      api.failDisconnect = true;
+      await link.close().timeout(const Duration(seconds: 1));
+      await link.closed.timeout(const Duration(seconds: 1));
+    });
+
+    test('nothing can subscribe or write after the link closed', () async {
+      final api = FakeBleApi();
+      final link = await _openReal(api);
+      await link.close();
+      await expectLater(
+        link.subscribeData,
+        throwsA(isA<GloveDisconnectedFailure>()),
+      );
+      await expectLater(
+        link.writeCommand(Uint8List(1)),
+        throwsA(isA<GloveDisconnectedFailure>()),
+      );
+      await expectLater(
+        link.readInfo,
+        throwsA(isA<GloveDisconnectedFailure>()),
+      );
+    });
+
+    test('scan error: the real Bluetooth problem, and the scan ends', () async {
+      final api = FakeBleApi();
+      final errors = <Object>[];
+      final done = Completer<void>();
+      ReactiveBleTransport(api)
+          .scan(timeout: const Duration(seconds: 5))
+          .listen((_) {}, onError: errors.add, onDone: done.complete);
+      await _settle();
+      api.status = BleStatus.poweredOff;
+      api.scanCtl.addError(Exception('scan stopped'));
+      await done.future.timeout(const Duration(seconds: 1));
+      expect(
+        errors.single,
+        isA<BluetoothUnavailableFailure>().having(
+          (f) => f.problem,
+          'problem',
+          BluetoothProblem.off,
+        ),
+      );
+    });
+
+    test('scan error with Bluetooth ready: a scan failure', () async {
+      final api = FakeBleApi();
+      final errors = <Object>[];
+      ReactiveBleTransport(api)
+          .scan(timeout: const Duration(seconds: 5))
+          .listen((_) {}, onError: errors.add);
+      await _settle();
+      api.scanCtl.addError(Exception('throttled'));
+      await _settle();
+      expect(errors.single, isA<GloveScanFailure>());
+      expect((errors.single as GloveScanFailure).kind, 'glove_scan');
+    });
+
+    test(
+      'state still unknown after the wait: not ready (retry), not unsupported',
+      () async {
+        final t = ReactiveBleTransport(
+          FakeBleApi(status: BleStatus.unknown),
+          statusWait: const Duration(milliseconds: 100),
+        );
+        await expectLater(
+          t.open(_glove),
+          throwsA(
+            isA<BluetoothUnavailableFailure>().having(
+              (f) => f.problem,
+              'problem',
+              BluetoothProblem.notReady,
+            ),
+          ),
+        );
+      },
+    );
+  });
+
   test('end to end: GloveClient over reactive BLE reaches streaming', () async {
     final api = FakeBleApi();
-    final client = GloveClient(ReactiveBleTransport(api, isAndroid: true));
+    final client = GloveClient(ReactiveBleTransport(api));
     final samples = <GloveSample>[];
     client.samples.listen(samples.addAll);
     final connecting = client.connect(_glove);

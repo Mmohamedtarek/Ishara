@@ -15,7 +15,9 @@ void main() {
   test('recognizer step time', () async {
     final bundle = await loadKitBundle();
     final ensemble = bundle.buildEnsemble();
-    final rec = Recording.parse(readText('assets/kit/mock/A/everyday.csv'));
+    final rec = Recording.parse(
+      readText('assets/packs/asl/kit/mock/A/everyday.csv'),
+    );
     final times = <int>[];
     final sw = Stopwatch();
     final r = Recognizer(

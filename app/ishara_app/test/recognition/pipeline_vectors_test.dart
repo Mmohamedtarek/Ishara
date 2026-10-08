@@ -17,8 +17,8 @@ import 'package:ishara_app/core/recognition/recognizer.dart';
 
 import '../support/kit.dart';
 
-const _vectors = 'assets/kit/test/test_vectors.json';
-const _expected = 'assets/kit/mock/expected.json';
+const _vectors = 'assets/packs/asl/kit/test/test_vectors.json';
+const _expected = 'assets/packs/asl/kit/mock/expected.json';
 
 Map<String, Object?> _event(DeciderEvent e) => {
   'event': e.kind.name,
@@ -155,7 +155,7 @@ void main() {
     for (final MapEntry(key: name, value: want) in files.entries) {
       test(name, () {
         final rec = Recording.parse(
-          readText('assets/kit/mock/$name'),
+          readText('assets/packs/asl/kit/mock/$name'),
           name: name,
         );
         final r = Recognizer(

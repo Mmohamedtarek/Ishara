@@ -45,13 +45,13 @@ flutter:
 
   assets:
     # Mobile Kit: copied ONLY by app/tools/sync_kit.sh, checked by test/kit/kit_sync_test.dart
-    - assets/kit/model/
-    - assets/kit/mock/
-    - assets/kit/mock/A/
-    - assets/kit/mock/A/practice/
-    - assets/kit/mock/B/
-    - assets/kit/mock/B/practice/
-    - assets/kit/test/
+    - assets/packs/asl/kit/model/
+    - assets/packs/asl/kit/mock/
+    - assets/packs/asl/kit/mock/A/
+    - assets/packs/asl/kit/mock/A/practice/
+    - assets/packs/asl/kit/mock/B/
+    - assets/packs/asl/kit/mock/B/practice/
+    - assets/packs/asl/kit/test/
 
   # Built by app/tools/make_fonts.sh (OFL). Weights match the ones the prototype loads.
   fonts:

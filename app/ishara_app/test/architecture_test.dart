@@ -31,7 +31,7 @@ void main() {
   });
 
   test('no model label is hard-coded in lib/ (they come from labels.txt)', () {
-    final labels = File('assets/kit/model/labels.txt')
+    final labels = File('assets/packs/asl/kit/model/labels.txt')
         .readAsLinesSync()
         .map((l) => l.trim())
         .where((l) => l.isNotEmpty)

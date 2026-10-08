@@ -336,7 +336,7 @@ void main() {
           isA<AssetFailure>().having(
             (f) => f.path,
             'path',
-            'assets/kit/model/labels.txt',
+            'assets/packs/asl/kit/model/labels.txt',
           ),
         ),
       );
@@ -374,7 +374,7 @@ void main() {
       final bundle = await loadKitBundle();
       final engine = await IsolateRecognizer.spawn(bundle);
       final rec = Recording.parse(
-        readText('assets/kit/mock/A/practice/thanks.csv'),
+        readText('assets/packs/asl/kit/mock/A/practice/thanks.csv'),
       );
       final words = <String>[];
       final done = Completer<void>();
