@@ -159,18 +159,73 @@ void main() {
     );
   });
 
-  testWidgets('screens slide in over 0.38 s', (t) async {
+  /// Product of every Opacity above the screen (1 = fully visible).
+  double opacityOf(WidgetTester t, String key) => t
+      .widgetList<Opacity>(
+        find.ancestor(of: _screen(key), matching: find.byType(Opacity)),
+      )
+      .fold(1, (v, o) => v * o.opacity);
+
+  testWidgets('push: covered screen hides at once, new one slides in', (
+    t,
+  ) async {
     await _pumpApp(t, at: AppRoutes.welcome);
     await t.tap(find.text('Get started'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 100));
-    final mid = t.widget<Opacity>(
-      find.ancestor(of: _screen('auth'), matching: find.byType(Opacity)).first,
-    );
-    expect(mid.opacity, inExclusiveRange(0, 1));
-    await t.pump(const Duration(milliseconds: 300));
+    expect(opacityOf(t, 'welcome'), 0);
+    expect(opacityOf(t, 'auth'), inExclusiveRange(0, 1));
     await t.pumpAndSettle();
-    expect(_screen('auth'), findsOneWidget);
+    expect(opacityOf(t, 'auth'), 1);
+  });
+
+  testWidgets('back: leaving screen hides at once, previous slides in again', (
+    t,
+  ) async {
+    final router = await _pumpApp(t, at: AppRoutes.welcome);
+    await _tap(t, 'Get started');
+    router.pop();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 1));
+    expect(opacityOf(t, 'auth'), 0, reason: 'leaving screen');
+    await t.pump(const Duration(milliseconds: 100));
+    expect(opacityOf(t, 'welcome'), inExclusiveRange(0, 1));
+    final slide = t
+        .widgetList<Transform>(
+          find.ancestor(
+            of: _screen('welcome'),
+            matching: find.byType(Transform),
+          ),
+        )
+        .map((w) => w.transform.getTranslation().x)
+        .firstWhere((x) => x != 0);
+    expect(slide, inExclusiveRange(0, IsharaMotion.slideOffset));
+    await t.pumpAndSettle();
+    expect(_screen('auth'), findsNothing);
+    expect(opacityOf(t, 'welcome'), 1);
+  });
+
+  testWidgets('system back button pops the same way', (t) async {
+    await _pumpApp(t, at: AppRoutes.welcome);
+    await _tap(t, 'Get started');
+    final handled = await t.binding.handlePopRoute();
+    expect(handled, isTrue);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 1));
+    expect(opacityOf(t, 'auth'), 0);
+    await t.pumpAndSettle();
+    expect(_screen('welcome'), findsOneWidget);
+  });
+
+  testWidgets('hidden screens are out of the accessibility tree', (t) async {
+    final handle = t.ensureSemantics();
+    await _pumpApp(t, at: AppRoutes.welcome);
+    await t.tap(find.text('Get started'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 100));
+    expect(find.semantics.byLabel('I already have an account'), findsNothing);
+    await t.pumpAndSettle();
+    handle.dispose();
   });
 
   testWidgets('reduced motion: no entrance animation', (t) async {

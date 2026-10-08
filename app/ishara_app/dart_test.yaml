@@ -1,0 +1,4 @@
+# Benchmarks run only on request: flutter test --run-skipped --tags bench
+tags:
+  bench:
+    skip: "benchmark: run with --tags bench"

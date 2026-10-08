@@ -1,4 +1,4 @@
-package com.ishara.ishara_app
+package io.github.mmohamedtarek.ishara
 
 import io.flutter.embedding.android.FlutterActivity
 

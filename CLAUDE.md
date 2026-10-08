@@ -46,6 +46,9 @@ If one looks wrong, tell the user. Kit files reach the app only through `app/too
 All user decisions live in `app/DECISIONS.md` by ID (Q-…, C…). Follow them; a rule there overrides the prototype. Key ones: email-only auth (Q-B2); Spark plan, no Cloud Functions (Q-B1); theme follows the system (Q-D3); history stays on the phone, starred phrases sync (Q-B4). Release blocker RB-1: the avatar models are non-commercial samples and must stay swappable.
 Anything marked "draft" (new texts, Arabic spoken words, pair copy, new screens) is shown to the user before it ships.
 
+## Dependencies
+Check the licence of every new package (and whether it phones home) before adding it. `flutter_blue_plus` is not used (licence + build telemetry); the BLE library is pending the user's choice (DECISIONS.md).
+
 ## Devices
 Emulator `ishara_api36` for development and mock integration tests; the user's USB phone for anything BLE; CI runs everything that needs no device. Disk is tight: keep build outputs and caches lean.
 

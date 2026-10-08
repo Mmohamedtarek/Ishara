@@ -1,9 +1,9 @@
 /// Typed failures. Code never swallows an error: it either handles a specific
 /// [Failure] subtype or lets it reach the UI / logger.
 ///
-/// Feature steps add subtypes here (for example BLE, permission, auth) so a
-/// `switch` over [Failure] stays exhaustive.
-sealed class Failure implements Exception {
+/// Areas define their own subtypes next to their code (for example
+/// `core/glove/glove_failures.dart`).
+abstract class Failure implements Exception {
   const new(this.message, {this.cause, this.stackTrace});
 
   /// Developer-facing description (never shown to the user as is).

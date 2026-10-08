@@ -58,3 +58,54 @@
 1. Disk: 4.2 GB free (not the 13 GB expected); the emulator isn't running. An Android build plus the Gradle caches needs about 2.5 GB. OK to run it, or will you free space first?
 2. Android application id / iOS bundle id is `com.ishara.ishara_app` (from `flutter create --org com.ishara`). It can't change after the first store upload. Which id do you want?
 3. Strings left out (78, all listed by `extract_strings.py`). The ones that need a **new draft text** in later steps: `loginLead` (says the glove syncs), `terms` (mentions backups), `yourTurnSub` (per-finger check), `pose3s` (4 s → 3 s), `c2` (rename), `pairLead` / `tip1` / `tip2` (button, light), `mDailyS` ("3 minutes"), `sAboutS` / `sAvatarS` / glove rows (real values), plus the email label and error texts for Q-B2.
+
+### Step 2 follow-ups (2026-10-09)
+- **Android build: ✓** `flutter build apk --debug --dart-define=GLOVE=mock` succeeded (cold Gradle cache, 640 s). APK: 167 MB debug, package `io.github.mmohamedtarek.ishara`, label "Ishara", compile/target SDK 36, sha1 `417d9234…`. `build/` deleted afterwards (2.1 GB) to keep disk free.
+- App id changed to `io.github.mmohamedtarek.ishara` (Android namespace + Kotlin package, iOS bundle ids) before that build; `aapt2 dump badging` shows the new id and label.
+- Back animation now matches the prototype (see DECISIONS); 3 new tests fail on the old code and pass on the new.
+
+## Step 3: glove core (2026-10-09)
+
+**Built:** `lib/core/recognition/` (config, labels, calibration, normalizer, Decider, ensemble, recognizer with the gap rule, isolate engine, recognition service, providers) and `lib/core/glove/` (frame codec, EVENT parser + line assembler, `GloveSource`, `GloveClient` protocol, transport interfaces, mock glove + feed + recordings, providers, failures).
+
+| Checklist (source) | Status |
+|---|---|
+| Sample = seq + 11 raw values (AI-SPEC §1, BLE §4) | ✓ `GloveSample` |
+| Mock CSV parsing, `#` lines as messages, 16-bit seq (AI-SPEC §1) | ✓ `Recording` |
+| Frame decoder, all of `ble_frames.txt` (BLE §4, §9) | ✓ 10 frames / 50 samples identical; encode = inverse; bad frames rejected |
+| EVENT lines: split notifications, every contract line, unknown ignored (BLE §6) | ✓ |
+| Normalize 1e-4 (AI-SPEC §3) | ✓ 6/6 cases |
+| Window 100, run every 10 (AI-SPEC §4) | ✓ (ring buffer, order tested) |
+| Gap rule v3.2.1 + `gaps` vector (AI-SPEC §4, Q-K1) | ✓ 24/24 events at the exact inputs |
+| Ensemble, each model + average 1e-3 (AI-SPEC §4) | ✓ 6/6 cases, 3 models |
+| Decider exact, Python rounding, confirm_on_rest ignored (AI-SPEC §5, C7, C8) | ✓ 23/23 events at exact steps |
+| 88 mock files exact (C6) | ✓ **88/88** identical events and words |
+| Reset on reconnect and new `#CAL` (AI-SPEC §2, §5) | ✓ |
+| Isolate; events + smoothed probability per step (Q-L4) | ✓ `IsolateRecognizer` (tested with a real isolate), `RecognitionService` |
+| `GloveSource`: samples, calibration, battery, connection; mock at real 50 Hz with `#CAL`/`#BAT`/connection; frames through the same decoder | ✓ 50 Hz measured (≈500 samples / 10 s, consecutive seq) |
+| `BleGloveSource` per contract | ◐ protocol done and tested (`GloveClient` + scripted link: order, proto check, timeouts, rejections, disconnect, MTU error); **radio transport waiting for the BLE library decision** |
+| `GLOVE=mock\|ble` flag + developer switch; only `core/glove` knows | ✓ + architecture test that fails if any other file references it |
+| Labels/config from the kit, nothing hard-coded | ✓ + architecture test scanning `lib/` for label literals |
+| Scenario player (word / sentence with idle, A and B, practice files) | ✓ `MockFeed` (UI picker comes with Talk/Learn) |
+| Practice check on mock (Q-L5) | ✓ both people × 20 signs: "Sign now" confirms exactly that sign once |
+| Recognizer step < 20 ms | ✓ host: 0.43 ms mean, p95 0.48 ms (i7-13650HX). **Phone number pending** (performance step) |
+
+**Tests:** 247 passing + 1 skipped benchmark (`flutter test`); benchmark separate (`--run-skipped --tags bench`). **Coverage:** `lib/core` 97.2 % (1535/1579), every file loaded by a test.
+
+**Review:** `/code-review` (high) found 10 issues, all fixed, each with a regression test (`test/glove/review_regressions_test.dart`):
+1. A glove with `#CAL NONE` (or another glove, or the dev switch) kept the previous calibration → words from wrongly scaled data. Now the engine forgets the calibration and ignores samples until a `#CAL` (mutation check: re-introducing the bug makes the test fail).
+2. Resets (reconnect, new `#CAL`, link lost) dropped a tentative word without `cancel`, leaving it faded on screen forever → every reset now emits the cancel; the service resets when streaming stops.
+3. Any `Error` in the recognizer isolate killed it silently, and `spawn` could hang → the worker reports and keeps running; exit and errors are watched; `spawn` fails cleanly.
+4. `dispose` killed the worker before it freed the native interpreters → waits for the worker's acknowledgement (≤ 2 s).
+5. `connect` didn't notice a disconnect / dispose / second connect while linking (leaked links, timers) → connection generation token.
+6. A failed write left a stale pending command that stole the next reply → removed on write failure.
+7. Mock: an MTU drop while streaming looped forever → stops and sends `#ERR STREAM MTU` like the firmware.
+8. Mock: changing person while streaming threw on every tick until the file loaded → new recording loaded before switching.
+9. An `Error` during setup left the status stuck in "connecting" → always cleaned up, the `Error` still surfaces.
+10. Unsolicited `#ERR STREAM MTU` left the status "ready" → the session ends (reconnect offered); a broken `#CAL` reply fails GETCAL at once instead of timing out.
+**Mutation checks:** breaking the Decider `hold` rule fails 80+ mock files; shrinking the gap fill fails `gaps`.
+**Bugs found by tests and fixed:** `#BAT` lost to a subscribe/listen race; `CAL CANCEL` couldn't cancel a running step; wrong expectation in my float32 test (implementation matched numpy).
+
+**Open questions**
+1. **BLE library** (flutter_blue_plus licence + build telemetry): which one? Recommendation: `flutter_reactive_ble` (BSD-3, Philips Hue, Android + iOS, updated 2026-09).
+2. 16 KB page-size check of the LiteRT native libraries: on the next APK (performance step).

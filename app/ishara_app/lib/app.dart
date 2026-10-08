@@ -30,6 +30,10 @@ class IsharaApp extends ConsumerWidget {
       themeMode: settings.themeMode,
       theme: theme(Brightness.light),
       darkTheme: theme(Brightness.dark),
+      // The stage background (`.stage { background: var(--bg) }`) shows
+      // behind a screen while it fades in.
+      builder: (context, child) =>
+          ColoredBox(color: context.colors.bg, child: child),
     );
   }
 }
