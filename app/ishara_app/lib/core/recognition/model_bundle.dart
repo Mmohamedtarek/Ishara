@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ishara_app/core/errors/failure.dart';
+import 'package:ishara_app/core/packs/sign_language.dart';
 import 'package:ishara_app/core/recognition/ensemble.dart';
 import 'package:ishara_app/core/recognition/recognition_config.dart';
 import 'package:meta/meta.dart';
@@ -15,22 +16,20 @@ typedef AssetReader = Future<Uint8List> Function(String path);
 class ModelBundle {
   const new({required this.labels, required this.config, required this.models});
 
-  /// Default location of the synced kit (see `app/tools/sync_kit.sh`).
-  static const defaultDir = 'assets/packs/asl/kit/model';
-
-  static Future<ModelBundle> load(
-    AssetReader read, {
-    String dir = defaultDir,
-  }) async {
+  /// Loads from [dir], by default the default pack's models (the app passes
+  /// the active pack's `modelDir`).
+  static Future<ModelBundle> load(AssetReader read, {String? dir}) async {
+    final base =
+        dir ?? PackRegistry.packs[PackRegistry.defaultLanguage]!.modelDir;
     Future<Uint8List> get(String name) async {
       try {
-        return await read('$dir/$name');
+        return await read('$base/$name');
       } on Failure {
         rethrow;
       } on Exception catch (e, st) {
         throw AssetFailure(
           'missing',
-          path: '$dir/$name',
+          path: '$base/$name',
           cause: e,
           stackTrace: st,
         );

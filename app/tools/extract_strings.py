@@ -61,6 +61,18 @@ EXCLUDED = {
     "toastSoon": "placeholder toast", "sAboutS": "fixed version (draft)",
 }
 
+# Texts that are not in the prototype, approved by the user word for word
+# (key: (en, ar, where the approval is)). Drafts never go here.
+APPROVED_NEW = {
+    "comingSoon": ("Coming soon", "قريبًا", "user prompt, Sign language section"),
+    "arslComingSoon": (
+        "Egyptian Arabic Sign Language is coming in a future update. For now, Ishara uses American Sign Language (ASL).",
+        "لغة الإشارة المصرية هتكون متاحة في تحديث قريب. حاليًا Ishara بيستخدم لغة الإشارة الأمريكية (ASL).",
+        "user prompt, Sign language section",
+    ),
+    "ok": ("OK", "تمام", "user prompt, Sign language section"),
+}
+
 STR = r'"((?:[^"\\]|\\.)*)"'
 # Dart reserved words can't be getter names: such keys get a "Label" suffix.
 DART_RESERVED = {"assert", "break", "case", "catch", "class", "const", "continue", "default", "do", "else",
@@ -143,6 +155,13 @@ def main() -> int:
         if ph:
             meta["placeholders"] = ph
         out_en["@" + name] = meta
+
+    for key, (e, a, src) in APPROVED_NEW.items():
+        if key in out_en:
+            print(f"error: approved key {key} clashes with a prototype key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        out_en["@" + key] = {"description": f"approved new text ({src})"}
 
     OUT.mkdir(parents=True, exist_ok=True)
     for name, data in (("app_en.arb", out_en), ("app_ar.arb", out_ar)):

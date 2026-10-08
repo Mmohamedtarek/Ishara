@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ishara_app/core/glove/mock/recording.dart';
+import 'package:ishara_app/core/packs/sign_language.dart';
 import 'package:ishara_app/core/recognition/model_bundle.dart';
 import 'package:ishara_app/core/recognition/recognition_config.dart';
 import 'package:meta/meta.dart';
@@ -16,7 +17,10 @@ extension MockPersonDir on MockPerson {
 
 /// Loads (and caches) the kit's mock recordings.
 class MockLibrary {
-  new(this._read, {this.root = 'assets/packs/asl/kit/mock'});
+  /// [root] defaults to the default pack's mock folder (the app passes the
+  /// active pack's `mockDir`).
+  new(this._read, {String? root})
+    : root = root ?? PackRegistry.packs[PackRegistry.defaultLanguage]!.mockDir;
 
   final AssetReader _read;
   final String root;

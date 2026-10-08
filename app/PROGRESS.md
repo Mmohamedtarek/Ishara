@@ -118,3 +118,61 @@
 - **Not tested on hardware yet:** the real glove over BLE needs the user's phone (Pair step).
 - Totals: 264 tests passing (+1 skipped benchmark), analyze 0 issues. `lib/core` coverage 95.7 %: the uncovered lines are `FlutterReactiveBleApi`, the thin wrapper over the plugin (needs a device).
 - Note: the AI team fixed the AI-SPEC §8 sentence (Keras vs tflite); it reaches the app when the updated kit is synced.
+
+### Step 3 follow-up: BLE review (2026-10-09)
+`/code-review` of the BLE adapter found 10 issues; all fixed with 7 new regression tests (`a295b55`). Remaining by design: runtime permission prompts come with the Pair screen (step 6); iOS Bluetooth text is a draft.
+
+## Step 4: sign catalogue and language packs (2026-10-09)
+
+**Built:** `lib/core/packs/` (SignLanguage, SignLanguagePack, PackRegistry, providers), `lib/core/catalogue/` (SignCatalogue, WordNormalizer, SpeechToSign), `assets/packs/asl/signs.json` (25 signs), `lib/core/ui/sign_language_picker.dart` (pills + ArSL dialog). Kit assets moved to `assets/packs/asl/kit/`.
+
+| Checklist (source) | Status |
+|---|---|
+| `signs.json`: label, en/ar words + spoken + variants, category, glove, avatar, verified, description (prompt › Sign catalogue) | ✓ 25 entries (20 glove, 15 avatar) |
+| One word list; everyone reads the catalogue (prompt; CLAUDE.md) | ✓ provider `signCatalogueProvider`; Learn/Talk/avatar use it from their steps |
+| SignLanguage enum, pack per language under `assets/packs/<lang>/`, registry with `available`, one provider (prompt) | ✓ |
+| ASL default; ArSL → dialog EN/AR + OK/تمام, ASL kept, nothing saved; "Coming soon"/"قريبًا" badge; stored `arsl` → ASL; nothing runs with ArSL | ✓ tested (rules + widget, EN and AR) |
+| Exact speech → sign matching after normalization; Q-T5 aliases only (sign rule 7) | ✓ |
+| Tests: every model label has an entry; practice = glove signs; avatar:true ⊆ engine library; no normalized collisions; 4 sign-language tests | ✓ (avatar library = the prototype's SIGNS with love → iloveyou until the engine is ported) |
+| Drafts shown before shipping | ✓ table below |
+
+**Tests:** 317 passing (+1 skipped benchmark). **Coverage:** `lib/core` 96.0 %. Analyze: 0 issues.
+
+**Review:** `/code-review` found 10 issues, all fixed with tests: (1) speech mapped to signs the avatar can't perform → no sign, ready pose; (2) draft variants were live → skipped until approved; (3) a catalogue of another/unavailable language could load → refused; (4) phrases spanned punctuation ("Thank. You") → stop at sentence punctuation; (5) glued words ("hello,you") lost their signs → split; (6) non-text "language" threw a TypeError → ParseFailure; (7) the catalogue waited for the 3 model files → reads only labels.txt; (8) hard-coded ASL paths → derived from the pack registry; (9) a double tap opened two dialogs → guarded; (10) the dialog had no screen-reader name → semanticLabel.
+**Screens:** golden `test/goldens/goldens/linux/sign_language_picker.png` (EN/AR × light/dark) vs prototype Setup (`tools/proto_shot.py setup`): same pill style (glass, 1.5 px border, selected tint + check, 13.5 px / 800), both wrap onto two rows. Differences: ASL selected by default (decision), new "Coming soon" badge (draft), 48 dp height vs 44 px.
+
+**Drafts for approval (signs.json)** — G = glove, A = avatar, V = verified:
+
+| label | glove / avatar / verified | EN word · spoken · variants | AR word · spoken · variants | draft fields |
+|---|---|---|---|---|
+| one | G / - / V | One · one · one | واحد · واحد · واحد | en.word, ar.word, ar.spoken, ar.variants |
+| two | G / - / V | Two · two · two | اتنين · اتنين · اتنين, اثنين, اثنان | en.word, ar.word, ar.spoken, ar.variants |
+| three | G / - / V | Three · three · three | تلاتة · تلاتة · تلاتة, ثلاثة | en.word, ar.word, ar.spoken, ar.variants |
+| four | G / - / V | Four · four · four | أربعة · أربعة · أربعة | en.word, ar.word, ar.spoken, ar.variants |
+| five | G / - / V | Five · five · five | خمسة · خمسة · خمسة | en.word, ar.word, ar.spoken, ar.variants |
+| me | G / A / V | Me · me · me, i | أنا · أنا · أنا | en.word, ar.spoken |
+| you | G / A / V | You · you · you | إنت · إنت · إنت, إنتي | en.word, ar.word, ar.spoken |
+| hello | G / A / V | Hello · hello · hello, hi, hey | أهلاً · أهلاً · أهلاً, السلام عليكم | ar.spoken |
+| thanks | G / A / V | Thank you · thank you · thank you, thanks, thank | شكراً · شكراً · شكراً | ar.spoken |
+| please | G / A / V | Please · please · please | من فضلك · من فضلك · من فضلك, لو سمحت | ar.spoken, ar.variants:لو سمحت |
+| yes | G / A / V | Yes · yes · yes | أيوه · أيوه · أيوه | ar.spoken |
+| no | G / A / V | No · no · no | لأ · لأ · لأ, لا | ar.spoken |
+| sorry | G / A / V | Sorry · sorry · sorry | آسف · آسف · آسف, آسفة | ar.spoken, ar.variants:آسفة |
+| water | G / A / V | Water · water · water | مية · مية · مية | ar.spoken |
+| bye | G / - / V | Bye · bye · bye, goodbye | مع السلامة · مع السلامة · مع السلامة, باي | en.word, en.variants:goodbye, ar.word, ar.spoken, ar.variants |
+| come | G / - / V | Come · come · come | تعالى · تعالى · تعالى, تعال, تعالي | en.word, ar.word, ar.spoken, ar.variants |
+| drink | G / - / V | Drink · drink · drink | اشرب · اشرب · اشرب | en.word, ar.word, ar.spoken, ar.variants |
+| call | G / - / V | Call · call · call, phone | اتصل · اتصل · اتصل, تليفون | en.word, en.variants:phone, ar.word, ar.spoken, ar.variants |
+| iloveyou | G / A / V | I love you · I love you · i love you | بحبك · بحبك · بحبك | ar.spoken |
+| hungry | G / - / V | Hungry · hungry · hungry | جعان · جعان · جعان, جعانة | en.word, ar.word, ar.spoken, ar.variants |
+| coffee | - / A / ? | Coffee · coffee · coffee | قهوة · قهوة · قهوة | category, ar.spoken |
+| doctor | - / A / ? | Doctor · doctor · doctor, doctors | دكتور · دكتور · دكتور, الدكتور | category, ar.spoken |
+| home | - / A / V | Home · home · home | بيت · بيت · بيت, البيت | category, ar.spoken |
+| family | - / A / ? | Family · family · family | عيلة · عيلة · عيلة | category, ar.spoken |
+| help | - / A / ? | Help · help · help | مساعدة · مساعدة · مساعدة, ساعدني | category, ar.spoken |
+
+**Open questions**
+1. Your ArSL dialog text (Arabic) writes "Ishara" in Latin letters, but your rule says the name inside Arabic sentences is "إشارة". Keep the dialog exactly as given, or use "إشارة"?
+2. Arabic words with a gender (آسف/آسفة, جعان/جعانة, إنت/إنتي): which form should the voice speak for the signer? Both are matched for speech → sign. Proposal: masculine by default until a profile setting exists.
+3. iOS Bluetooth permission text (draft): "Ishara uses Bluetooth to connect to your Ishara glove and read your signs." Arabic version needs Xcode (Mac).
+4. "Coming soon" badge design (draft, see golden).

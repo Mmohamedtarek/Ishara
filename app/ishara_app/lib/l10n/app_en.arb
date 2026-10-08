@@ -1022,5 +1022,17 @@
   "yourTurn": "Your turn",
   "@yourTurn": {
     "description": "prototype I18N.yourTurn"
+  },
+  "comingSoon": "Coming soon",
+  "@comingSoon": {
+    "description": "approved new text (user prompt, Sign language section)"
+  },
+  "arslComingSoon": "Egyptian Arabic Sign Language is coming in a future update. For now, Ishara uses American Sign Language (ASL).",
+  "@arslComingSoon": {
+    "description": "approved new text (user prompt, Sign language section)"
+  },
+  "ok": "OK",
+  "@ok": {
+    "description": "approved new text (user prompt, Sign language section)"
   }
 }

@@ -5,6 +5,7 @@ import 'package:ishara_app/core/glove/glove_client.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
 import 'package:ishara_app/core/glove/mock/mock_feed.dart';
 import 'package:ishara_app/core/glove/mock/mock_glove.dart';
+import 'package:ishara_app/core/packs/pack_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'glove_providers.g.dart';
@@ -47,7 +48,9 @@ Future<Uint8List> _readAsset(String path) async =>
 @Riverpod(keepAlive: true)
 MockGlove? mockGlove(Ref ref) {
   if (ref.watch(activeGloveKindProvider) != GloveSourceKind.mock) return null;
-  final feed = MockFeed(MockLibrary(_readAsset));
+  final feed = MockFeed(
+    MockLibrary(_readAsset, root: ref.watch(activePackProvider).mockDir),
+  );
   ref.onDispose(feed.dispose);
   return MockGlove(feed);
 }

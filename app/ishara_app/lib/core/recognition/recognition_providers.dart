@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:ishara_app/core/glove/glove_providers.dart';
+import 'package:ishara_app/core/packs/pack_providers.dart';
 import 'package:ishara_app/core/recognition/model_bundle.dart';
 import 'package:ishara_app/core/recognition/recognition_engine.dart';
 import 'package:ishara_app/core/recognition/recognition_service.dart';
@@ -7,10 +8,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'recognition_providers.g.dart';
 
-/// The kit's `model/` folder (labels, config, models), loaded once.
+/// The active pack's models (labels, config, `.tflite`), loaded once.
 @Riverpod(keepAlive: true)
 Future<ModelBundle> modelBundle(Ref ref) => ModelBundle.load(
   (path) async => (await rootBundle.load(path)).buffer.asUint8List(),
+  dir: ref.watch(activePackProvider).modelDir,
 );
 
 /// The recognizer in its background isolate.

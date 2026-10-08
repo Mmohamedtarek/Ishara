@@ -44,6 +44,8 @@ flutter:
   generate: true
 
   assets:
+    # ASL pack: sign catalogue (signs.json)
+    - assets/packs/asl/
     # Mobile Kit: copied ONLY by app/tools/sync_kit.sh, checked by test/kit/kit_sync_test.dart
     - assets/packs/asl/kit/model/
     - assets/packs/asl/kit/mock/
