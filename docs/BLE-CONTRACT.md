@@ -29,7 +29,7 @@ Service **Ishara**: `6e1a0001-7b5c-4f3a-9a62-1d2c3b4a5f60`
 INFO (read once after connecting):
 
 ```json
-{"proto":1,"fw":"0.4.0","board":"devkit","rate_hz":50,"channels":11,
+{"proto":1,"fw":"0.3.0","board":"devkit","rate_hz":50,"channels":11,
  "acc_lsb_per_g":8192,"gyro_lsb_per_dps":65.5,"flex_max":4095,"samples_per_frame":5}
 ```
 

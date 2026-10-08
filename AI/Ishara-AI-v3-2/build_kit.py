@@ -3,8 +3,9 @@ build_kit.py — بيجهز Ishara-Mobile-Kit لفريق الموبايل من �
 ------------------------------------------------------------------------
   model/   ishara_cnn.tflite + ishara_cnn_2.tflite + ishara_cnn_3.tflite (ensemble) + labels.txt + decider.json
   mock/    جلافز وهمية بنفس سطر الـ USB serial: ملف لكل فئة لشخصين (A و B)، جمل، وحركة عادية
+           + practice/: كل إشارة ممسوكة (أو متكررة) زي المتعلم في الـ Learn، المفروض تطلّع الكلمة مرة واحدة
            + expected.json (الكلمات اللي التطبيق لازم يطلّعها من كل ملف) + ble_frames.txt
-  test/    test_vectors.json: normalize، الموديل، والـ Decider: أرقام التطبيق لازم تطابقها
+  test/    test_vectors.json: normalize، الموديل، والـ Decider، والفجوات في BLE (gaps): أرقام التطبيق لازم تطابقها
 
 التشغيل (بعد train_cnn.py و eval_live.py --tune):
   python build_kit.py ../Ishara-Mobile-Kit
@@ -115,10 +116,30 @@ def main():
         open(os.path.join(folder, "everyday.csv"), "w").write("\n".join([cal_line] + to_lines(raw)) + "\n")
         expected[f"{name}/everyday.csv"] = {"words": said, "events": decode.events}
         report.append((f"{name}/everyday", 1, not said))
+        # تمرين الـ Learn: (راحة، الإشارة ممسوكة ضعف الوقت، راحة) → الكلمة مرة واحدة
+        pfolder = os.path.join(folder, "practice")
+        os.makedirs(pfolder, exist_ok=True)
+        for f in os.listdir(pfolder):
+            if f.endswith(".csv"):
+                os.remove(os.path.join(pfolder, f))
+        for label in SIGN_LABELS:
+            for attempt in range(25):
+                raw = sim.stitch([sim.make_sample(s, person) for s in ["rest", label, label, "rest"]])
+                said, *_ = decode(predictor, cfg_out, raw, cal)
+                if [s["word"] for s in said] == [label]:
+                    break
+            open(os.path.join(pfolder, f"{label}.csv"), "w").write("\n".join([cal_line] + to_lines(raw)) + "\n")
+            expected[f"{name}/practice/{label}.csv"] = {"words": said, "events": decode.events}
+            report.append((f"{name}/practice/{label}", attempt + 1, [s["word"] for s in said] == [label]))
         if name == "A":
             hello_raw = np.loadtxt(os.path.join(folder, "hello.csv"), delimiter=",", skiprows=1)[:, 1:]
             write_frames(os.path.join(OUT, "mock", "ble_frames.txt"), hello_raw[:50])
             test_vectors(os.path.join(OUT, "test", "test_vectors.json"), predictor, cfg_out, raw_for_tests(folder), cal)
+            gaps = gap_case(predictor, cfg_out, raw_for_tests(folder), cal)
+    tv_path = os.path.join(OUT, "test", "test_vectors.json")
+    tv = json.load(open(tv_path))
+    tv["gaps"] = gaps
+    json.dump(tv, open(tv_path, "w"))
     json.dump({"note": "for each file: 'words' = confirmed words the app must show and speak, with the sample index (1-based "
                        "count of samples read) when each is confirmed; 'events' = every Decider event (word / tentative / "
                        "confirm / cancel) at its model step. Same as the Python reference.",
@@ -126,6 +147,49 @@ def main():
     bad = [r for r in report if not r[2]]
     print(f"mock: {len(report)} ملف، {len(bad)} مش مطابق للمطلوب: {bad}")
     print("محاولات:", sum(r[1] for r in report) - len(report), "إعادة")
+
+
+def gap_case(predictor, cfg, raw, cal):
+    """
+    نفس الجمل، بس بـ seq (16 bit، بيلف من 65535 لـ 0) وفيها مشاكل BLE زي الحقيقة:
+    فجوة 3 قراءات، seq مكرر، seq راجع لورا، وفجوة 12 قراءة بعد كلمة مبدئية على طول (لازم تتلغي).
+    """
+    raw = np.asarray(raw).round().astype(int)
+    n = len(raw)
+    seqs = [(65500 + k) % 65536 for k in range(n)]
+    sr, tent_at = live.StreamRecognizer(predictor, cfg, cal), None
+    for k in range(n):
+        if any(e == "tentative" for e, _ in sr.feed(seqs[k], raw[k])) and k > 800 and tent_at is None:
+            tent_at = k
+    assert tent_at is not None, "no tentative word after sample 800"
+    lines, k = [], 0
+    while k < n:
+        if k == 300:                        # فجوة 3: القراءات 300-302 ضاعت
+            k += 3
+            continue
+        if k == tent_at + 1:                # فجوة 12 بعد الكلمة المبدئية
+            k += 12
+            continue
+        lines.append([seqs[k], *raw[k].tolist()])
+        if k == 500:                        # نفس الرسالة وصلت مرتين
+            lines.append([seqs[k], *raw[k].tolist()])
+        if k == 700:                        # رسالة قديمة وصلت متأخر
+            lines.append([seqs[k - 5], *raw[k - 5].tolist()])
+        k += 1
+    sr, expected = live.StreamRecognizer(predictor, cfg, cal), []
+    for i, ln in enumerate(lines):
+        for e, w in sr.feed(ln[0], ln[1:]):
+            expected.append({"input": i, "event": e, "word": w})
+    assert any(e["event"] == "cancel" for e in expected), "the 12-sample gap should cancel a tentative word"
+    print(f"gaps: {len(lines)} قراءة، {len(expected)} حدث، أول seq {lines[0][0]}، الكلمة المبدئية عند القراءة {tent_at}")
+    return {"note": "feed 'input' one sample at a time: [seq, f0..f4, ax, ay, az, gx, gy, gz]. seq is uint16 and wraps "
+                    "65535 -> 0. Gap rule (AI-SPEC section 4): 1-5 missing samples -> repeat the last good sample that many "
+                    "times (they count as samples); more than 5 -> clear the window, restart the sample counter, reset the "
+                    "Decider, and emit cancel for a pending tentative word first; a duplicate or older seq "
+                    "((seq - expected) mod 65536 >= 32768) is dropped and not counted. 'expected' = every event, with the "
+                    "0-based index of the input sample that produced it. The file has a 3-sample gap, a duplicate, an older "
+                    "seq, a wrap, and a 12-sample gap right after a tentative word.",
+            "calibration": cal, "config": cfg, "input": lines, "expected": expected}
 
 
 def raw_for_tests(folder):

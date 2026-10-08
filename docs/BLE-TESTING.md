@@ -55,7 +55,7 @@ All five share the same tail `-7b5c-4f3a-9a62-1d2c3b4a5f60`. nRF Connect shows t
 
 ## Reading a DATA frame by hand
 
-Each DATA notification is one frame of 5 samples, 114 bytes. Switch DATA's display to **Hex**. Everything is little-endian: for a 2-byte number, the **second** byte is the high one (`5d 09` = `0x095d` = 2397).
+Each DATA notification is one frame of 5 samples, 114 bytes. Switch DATA's display to **Hex**. Everything is little-endian: for a 2-byte number, the **second** byte is the high one (`b1 09` = `0x09b1` = 2481).
 
 | Bytes | Meaning |
 |---|---|
@@ -68,15 +68,15 @@ Each DATA notification is one frame of 5 samples, 114 bytes. Switch DATA's displ
 Example: the first frame of `app/Ishara-Mobile-Kit/mock/ble_frames.txt` starts
 
 ```
-01 05 00 00  8e 07  5d 09  33 09  df 08  53 09  26 fe  de e0  e8 0a  cd fe  bb fe  f5 00 ...
+01 05 00 00  05 08  b1 09  1b 09  18 09  44 0a  69 f6  9f e2  d7 f9  86 fb  5e 03  a7 fe ...
 ver  n  seq   f0     f1     f2     f3     f4     ax     ay     az     gx     gy     gz
 ```
 
 - `01` = version 1, `05` = 5 samples, `00 00` = seq 0
-- `8e 07` = 0x078e = 1934 (thumb)
-- `26 fe` = 0xfe26 = 65062, which is above 32767, so subtract 65536: −474 (ax)
+- `05 08` = 0x0805 = 2053 (thumb)
+- `69 f6` = 0xf669 = 63081, which is above 32767, so subtract 65536: −2455 (ax)
 
-That sample is `0,1934,2397,2355,2271,2387,-474,-7970,2792,-307,-325,245` in the serial format. Flex values are 0–4095. Accel is 8192 per g, so a glove lying flat shows about 8192 on one axis. Gyro is 65.5 per °/s and stays near 0 when still.
+That sample is `0,2053,2481,2331,2328,2628,-2455,-7521,-1577,-1146,862,-345` in the serial format. Flex values are 0–4095. Accel is 8192 per g, so a glove lying flat shows about 8192 on one axis. Gyro is 65.5 per °/s and stays near 0 when still.
 
 `seq` should go up by exactly 5 from one frame to the next. A bigger jump means lost frames.
 

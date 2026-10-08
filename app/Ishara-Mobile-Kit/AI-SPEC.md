@@ -1,4 +1,6 @@
-# Ishara AI — what the app must do (spec v3.2)
+# Ishara AI — what the app must do (spec v3.2.1)
+
+**v3.2.1** adds the exact BLE gap rule (section 4, with a test in `test_vectors.json` → `gaps`) and practice mock files (`mock/*/practice/`). Models, labels, config and every other number are the same as v3.2.
 
 **v3.2 changes only the vocabulary** (Sign Vocabulary v2, ASL): `good` and `bad` are replaced by `water` and `bye`, and the models are retrained. The pipeline, the numbers format and the Decider are exactly the same as v3.1. Code that reads the labels from `labels.txt` needs no change.
 
@@ -47,7 +49,12 @@ No clipping, no rounding. Tolerance in the tests: 1e-4.
 - Run **every** model on the same window and take the **element-wise average** of their 22 probabilities. That average is what the Decider gets. (Three small models that disagree on a weird movement cancel each other's mistakes; together they cost about 15 ms per run on a phone.)
 - Output order = `model/labels.txt`, one label per line: the 20 signs, then `rest`, then `other`.
 - `rest` and `other` are **non-words** (never shown or spoken).
-- Missing samples (BLE gap): see BLE-CONTRACT section 4.
+- **Missing samples (BLE gap).** Every sample has a 16-bit `seq` (BLE-CONTRACT section 4; the first sample of a frame carries it, the next ones add 1). All `seq` arithmetic is mod 65536. Keep `expected` = last accepted `seq` + 1, and for each incoming sample compute `gap = (seq − expected) mod 65536`:
+  - `gap = 0`: normal sample.
+  - `1 ≤ gap ≤ 5`: first push the **last accepted raw sample** `gap` times, then this one. The repeated samples are normal samples: they enter the window and the sample counter (the counter counts 20 ms time slots), so a model run can happen on one of them.
+  - `5 < gap < 32768`: a real gap. If a tentative word is pending, emit `cancel` for it. Then **clear the window, set the sample counter to 0, and reset the Decider to its initial state**, and push this sample. The next model run comes when 100 new samples have arrived.
+  - `gap ≥ 32768`: a duplicate (same `seq` as the last one) or an older sample arriving late. **Drop it**: it is not pushed and not counted, and `expected` doesn't change.
+  - The very first sample after connecting (or after a reconnect / new `#CAL`, which reset everything) is accepted as is.
 
 ## 5. Decider: when to say a word
 
@@ -154,10 +161,13 @@ Events come out in this order inside one step. Reset all state (and the window) 
 - `normalize.cases`: raw window + `calibration` → first normalized row and the sum of the whole window must match (1e-4);
 - `model.cases`: raw window → each model's 22 probabilities (`probs_each`) and their average (`probs`) must match (1e-3);
 - `decider`: feed `probs` one by one with `config` → the events (word / tentative / confirm / cancel) must come out at exactly the `expected` steps.
+- `gaps`: feed `input` one sample at a time (`[seq, 11 raw values]`, with `calibration` and `config`) through the full pipeline with the gap rule of section 4 → exactly the `expected` events, each with the 0-based index of the input sample that produced it. The stream has a 3-sample gap, a duplicate, an older `seq`, a wrap from 65535 to 0, and a 12-sample gap right after a tentative word (which must be cancelled).
 
 **Step numbers in the test files:** `step` in `test_vectors.json` and `mock/expected.json` is the **0-based index of the model run** (the first model run is step 0). The pseudo-code counter above starts at 1, so compare `step - 1` with the files. `sample` in `expected.json` is the number of samples received when that model run happened.
 
-`mock/expected.json`: play each mock file at 50 Hz through the full pipeline → the app must produce the same confirmed `words`, and the same `events`. (Words are computed with the Keras model; the .tflite in the kit can differ by about 1e-6, which can very rarely move a word by one step.)
+`mock/expected.json`: play each mock file at 50 Hz through the full pipeline → the app must produce the same confirmed `words`, and the same `events`. The expected values are computed with the same `.tflite` files that are in the kit, and an independent implementation of this spec matched every file exactly.
+
+`mock/A/practice/` and `mock/B/practice/`: one file per sign, the way a learner signs in Learn (rest, the sign held or repeated for about 4 s, rest). Each one confirms its sign exactly once. Use them for the Learn practice check on the mock source.
 
 ## 9. What changes later, and what does not
 

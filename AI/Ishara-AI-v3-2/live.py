@@ -246,6 +246,50 @@ class Decider:
         return (words[0] if words else None), float(avg.max())
 
 
+class StreamRecognizer:
+    """
+    المرجع اللي التطبيق بيقارن بيه: قراءة قراءة ومعاها seq (16 bit) زي ما بتيجي من BLE (AI-SPEC قسم 4):
+      - فجوة 1-5 قراءات: نكرر آخر قراءة سليمة مكان الناقص، والمكرر بيتعد قراءة عادية
+      - فجوة أكتر من 5: نفضّي النافذة، والعداد يرجع 0، والـ Decider يبدأ من الأول
+        (ولو فيه كلمة مبدئية مستنية بنطلّع cancel ليها الأول)
+      - seq مكرر أو راجع لورا: القراءة بتتشال ومش بتتعد
+    feed() بترجع الأحداث [(event, word)] اللي طلعت بسبب القراءة دي
+    """
+
+    def __init__(self, predictor, cfg, cal):
+        self.predictor, self.cfg = predictor, cfg
+        self.o, self.f, self.b = (np.asarray(cal[k], float) for k in ("open", "fist", "gyro_bias_raw"))
+        self.expected, self.last = None, None
+        self._reset()
+
+    def _reset(self):
+        self.window, self.count = collections.deque(maxlen=WINDOW), 0
+        self.decider = Decider(self.predictor.classes, self.cfg)
+
+    def _push(self, raw, events):
+        self.window.append(normalize(np.asarray(raw, float)[None], self.o, self.f, self.b)[0])
+        self.count += 1
+        if len(self.window) == WINDOW and self.count % STEP == 0:
+            events += self.decider.step(self.predictor.batch(np.asarray(self.window)[None])[0])
+
+    def feed(self, seq, raw):
+        events = []
+        if self.expected is not None:
+            gap = (int(seq) - self.expected) % 65536
+            if gap >= 32768:                          # مكرر (= آخر seq) أو راجع لورا
+                return events
+            if 1 <= gap <= 5:
+                for _ in range(gap):
+                    self._push(self.last, events)
+            elif gap > 5:
+                if self.decider.pending is not None:
+                    events.append(("cancel", self.decider.pending))
+                self._reset()
+        self._push(raw, events)
+        self.last, self.expected = raw, (int(seq) + 1) % 65536
+        return events
+
+
 def rf_confirm(min_prob=0.2):
     """الـ Random Forest كموافقة تانية: لازم يشوف نفس الإشارة الأولى"""
     import joblib
