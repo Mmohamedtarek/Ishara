@@ -1,7 +1,7 @@
 # AI: files that can be regenerated
 AI/**/ishara_rf.joblib
 AI/**/data/
-AI/**/__pycache__/
+__pycache__/
 AI/**/.venv/
 
 # PlatformIO
