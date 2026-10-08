@@ -1,0 +1,84 @@
+name: ishara_app
+description: Ishara turns sign language from the glove into speech, and speech into signs.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.5
+  flutter: ">=3.47.6"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  flutter_svg: ^2.3.0
+  freezed_annotation: ^3.1.0
+  go_router: ^18.0.2
+  intl: ^0.20.2
+  json_annotation: ^4.12.0
+  logging: ^1.3.0
+  riverpod_annotation: ^4.0.7
+
+dev_dependencies:
+  alchemist: ^0.14.1
+  build_runner: ^2.16.2
+  crypto: ^3.0.7
+  flutter_test:
+    sdk: flutter
+  freezed: ^4.0.2
+  json_serializable: ^6.14.1
+  mocktail: ^1.0.5
+  path: ^1.9.0
+  riverpod_generator: ^4.0.9
+  very_good_analysis: ^11.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    # Mobile Kit: copied ONLY by app/tools/sync_kit.sh, checked by test/kit/kit_sync_test.dart
+    - assets/kit/model/
+    - assets/kit/mock/
+    - assets/kit/mock/A/
+    - assets/kit/mock/A/practice/
+    - assets/kit/mock/B/
+    - assets/kit/mock/B/practice/
+    - assets/kit/test/
+
+  # Built by app/tools/make_fonts.sh (OFL). Weights match the ones the prototype loads.
+  fonts:
+    - family: Figtree
+      fonts:
+        - asset: assets/fonts/Figtree-400.ttf
+          weight: 400
+        - asset: assets/fonts/Figtree-500.ttf
+          weight: 500
+        - asset: assets/fonts/Figtree-600.ttf
+          weight: 600
+        - asset: assets/fonts/Figtree-700.ttf
+          weight: 700
+        - asset: assets/fonts/Figtree-800.ttf
+          weight: 800
+        - asset: assets/fonts/Figtree-900.ttf
+          weight: 900
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-400.ttf
+          weight: 400
+        - asset: assets/fonts/Cairo-500.ttf
+          weight: 500
+        - asset: assets/fonts/Cairo-700.ttf
+          weight: 700
+        - asset: assets/fonts/Cairo-900.ttf
+          weight: 900
+    - family: BricolageGrotesque
+      fonts:
+        - asset: assets/fonts/BricolageGrotesque-600.ttf
+          weight: 600
+        - asset: assets/fonts/BricolageGrotesque-700.ttf
+          weight: 700
+        - asset: assets/fonts/BricolageGrotesque-800.ttf
+          weight: 800

@@ -2,7 +2,7 @@
 AI/**/ishara_rf.joblib
 AI/**/data/
 __pycache__/
-AI/**/.venv/
+.venv/
 
 # PlatformIO
 firmware/**/.pio/

@@ -1,0 +1,1026 @@
+{
+  "@@locale": "en",
+  "accuracyLbl": "accuracy",
+  "@accuracyLbl": {
+    "description": "prototype I18N.accuracyLbl"
+  },
+  "again": "Try again",
+  "@again": {
+    "description": "prototype I18N.again"
+  },
+  "allConv": "All conversations",
+  "@allConv": {
+    "description": "prototype I18N.allConv"
+  },
+  "arsl": "Egyptian Arabic Sign (ArSL)",
+  "@arsl": {
+    "description": "prototype I18N.arsl"
+  },
+  "asl": "American Sign (ASL)",
+  "@asl": {
+    "description": "prototype I18N.asl"
+  },
+  "avCredit": "Avatars: Avaturn and Avatar SDK (MetaPerson) sample models, for non-commercial use.",
+  "@avCredit": {
+    "description": "prototype I18N.avCredit"
+  },
+  "avFixed": "Pick who signs for you. Both know the same signs.",
+  "@avFixed": {
+    "description": "prototype I18N.avFixed"
+  },
+  "avIdle": "{gender, select, female{{name} will sign what they say} other{{name} will sign what they say}}",
+  "@avIdle": {
+    "description": "prototype I18N.avIdle",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "gender": {
+        "type": "String"
+      }
+    }
+  },
+  "avReady": "Ready",
+  "@avReady": {
+    "description": "prototype I18N.avReady"
+  },
+  "avSigning": "{gender, select, female{Signing} other{Signing}}",
+  "@avSigning": {
+    "description": "prototype I18N.avSigning",
+    "placeholders": {
+      "gender": {
+        "type": "String"
+      }
+    }
+  },
+  "avSigningFor": "{gender, select, female{Signing for you} other{Signing for you}}",
+  "@avSigningFor": {
+    "description": "prototype I18N.avSigningFor",
+    "placeholders": {
+      "gender": {
+        "type": "String"
+      }
+    }
+  },
+  "avSpeed": "Signing speed",
+  "@avSpeed": {
+    "description": "prototype I18N.avSpeed"
+  },
+  "avSpeedS": "Slower is clearer when you're learning",
+  "@avSpeedS": {
+    "description": "prototype I18N.avSpeedS"
+  },
+  "avSub": "{gender, select, female{{name} signs everything people say to you} other{{name} signs everything people say to you}}",
+  "@avSub": {
+    "description": "prototype I18N.avSub",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "gender": {
+        "type": "String"
+      }
+    }
+  },
+  "avTitle": "Your avatar",
+  "@avTitle": {
+    "description": "prototype I18N.avTitle"
+  },
+  "avWho": "Who signs for you",
+  "@avWho": {
+    "description": "prototype I18N.avWho"
+  },
+  "backToLearn": "Back to Learn",
+  "@backToLearn": {
+    "description": "prototype I18N.backToLearn"
+  },
+  "c1": "Connecting over Bluetooth",
+  "@c1": {
+    "description": "prototype I18N.c1"
+  },
+  "c3": "Syncing your settings",
+  "@c3": {
+    "description": "prototype I18N.c3"
+  },
+  "checkAnswer": "Check",
+  "@checkAnswer": {
+    "description": "prototype I18N.checkAnswer"
+  },
+  "connect": "Connect",
+  "@connect": {
+    "description": "prototype I18N.connect"
+  },
+  "connected": "Connected",
+  "@connected": {
+    "description": "prototype I18N.connected"
+  },
+  "connectedSub": "Your glove is ready to calibrate",
+  "@connectedSub": {
+    "description": "prototype I18N.connectedSub"
+  },
+  "connecting": "Connecting…",
+  "@connecting": {
+    "description": "prototype I18N.connecting"
+  },
+  "connectingSub": "This takes a few seconds",
+  "@connectingSub": {
+    "description": "prototype I18N.connectingSub"
+  },
+  "continueLabel": "Continue",
+  "@continueLabel": {
+    "description": "prototype I18N.continue"
+  },
+  "continueLearning": "Continue",
+  "@continueLearning": {
+    "description": "prototype I18N.continueLearning"
+  },
+  "correct": "Correct! That's {w}.",
+  "@correct": {
+    "description": "prototype I18N.correct",
+    "placeholders": {
+      "w": {
+        "type": "String"
+      }
+    }
+  },
+  "createAccount": "Create account",
+  "@createAccount": {
+    "description": "prototype I18N.createAccount"
+  },
+  "createLead": "Free. Takes a minute. Your progress and phrases follow you to any phone.",
+  "@createLead": {
+    "description": "prototype I18N.createLead"
+  },
+  "createNow": "Create account",
+  "@createNow": {
+    "description": "prototype I18N.createNow"
+  },
+  "createTitle": "Create your account",
+  "@createTitle": {
+    "description": "prototype I18N.createTitle"
+  },
+  "ctaAgain": "Scan again",
+  "@ctaAgain": {
+    "description": "prototype I18N.ctaAgain"
+  },
+  "ctaCal": "Continue to calibration",
+  "@ctaCal": {
+    "description": "prototype I18N.ctaCal"
+  },
+  "ctaCalNow": "Calibrate now",
+  "@ctaCalNow": {
+    "description": "prototype I18N.ctaCalNow"
+  },
+  "ctaCapture": "Start capture",
+  "@ctaCapture": {
+    "description": "prototype I18N.ctaCapture"
+  },
+  "ctaCaptured": "Captured",
+  "@ctaCaptured": {
+    "description": "prototype I18N.ctaCaptured"
+  },
+  "ctaConnect": "Waiting for your glove…",
+  "@ctaConnect": {
+    "description": "prototype I18N.ctaConnect"
+  },
+  "ctaConnectFirst": "Tap Connect above",
+  "@ctaConnectFirst": {
+    "description": "prototype I18N.ctaConnectFirst"
+  },
+  "ctaHelp": "Glove not showing up?",
+  "@ctaHelp": {
+    "description": "prototype I18N.ctaHelp"
+  },
+  "ctaHold": "Hold still…",
+  "@ctaHold": {
+    "description": "prototype I18N.ctaHold"
+  },
+  "ctaRedo": "Calibrate again",
+  "@ctaRedo": {
+    "description": "prototype I18N.ctaRedo"
+  },
+  "ctaSkip": "Skip calibration for now",
+  "@ctaSkip": {
+    "description": "prototype I18N.ctaSkip"
+  },
+  "ctaTalk": "Start talking",
+  "@ctaTalk": {
+    "description": "prototype I18N.ctaTalk"
+  },
+  "ctaTurn": "Keep turning…",
+  "@ctaTurn": {
+    "description": "prototype I18N.ctaTurn"
+  },
+  "days": "days",
+  "@days": {
+    "description": "prototype I18N.days"
+  },
+  "doneLead": "Your glove knows your hand now. You can recalibrate anytime from Settings.",
+  "@doneLead": {
+    "description": "prototype I18N.doneLead"
+  },
+  "doneLeadSkip": "You skipped calibration, so recognition may be less accurate. Calibrate anytime from Settings.",
+  "@doneLeadSkip": {
+    "description": "prototype I18N.doneLeadSkip"
+  },
+  "doneTitle": "You're all set",
+  "@doneTitle": {
+    "description": "prototype I18N.doneTitle"
+  },
+  "doneTitleSkip": "Your glove is connected",
+  "@doneTitleSkip": {
+    "description": "prototype I18N.doneTitleSkip"
+  },
+  "errName": "Enter your name",
+  "@errName": {
+    "description": "prototype I18N.errName"
+  },
+  "errPw": "Password must be at least 8 characters",
+  "@errPw": {
+    "description": "prototype I18N.errPw"
+  },
+  "f1": "Glove → voice, word by word, in real time",
+  "@f1": {
+    "description": "prototype I18N.f1"
+  },
+  "f2": "Voice → sign language with a 3D avatar",
+  "@f2": {
+    "description": "prototype I18N.f2"
+  },
+  "f2f": "Face to face",
+  "@f2f": {
+    "description": "prototype I18N.f2f"
+  },
+  "f3": "Learn signs with short missions and glove feedback",
+  "@f3": {
+    "description": "prototype I18N.f3"
+  },
+  "fIndex": "Index",
+  "@fIndex": {
+    "description": "prototype I18N.fIndex"
+  },
+  "fMiddle": "Middle",
+  "@fMiddle": {
+    "description": "prototype I18N.fMiddle"
+  },
+  "forgot": "Forgot password?",
+  "@forgot": {
+    "description": "prototype I18N.forgot"
+  },
+  "found": "Found your glove",
+  "@found": {
+    "description": "prototype I18N.found"
+  },
+  "foundSub": "Tap Connect to pair it",
+  "@foundSub": {
+    "description": "prototype I18N.foundSub"
+  },
+  "fPinky": "Pinky",
+  "@fPinky": {
+    "description": "prototype I18N.fPinky"
+  },
+  "fRing": "Ring",
+  "@fRing": {
+    "description": "prototype I18N.fRing"
+  },
+  "fThumb": "Thumb",
+  "@fThumb": {
+    "description": "prototype I18N.fThumb"
+  },
+  "getStarted": "Get started",
+  "@getStarted": {
+    "description": "prototype I18N.getStarted"
+  },
+  "gloveOn": "Glove connected",
+  "@gloveOn": {
+    "description": "prototype I18N.gloveOn"
+  },
+  "greatMatch": "Great! {p}% match",
+  "@greatMatch": {
+    "description": "prototype I18N.greatMatch",
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  },
+  "guestBanner": "Guest mode: your XP and medals stay on this phone only.",
+  "@guestBanner": {
+    "description": "prototype I18N.guestBanner"
+  },
+  "guestLink": "Continue as guest",
+  "@guestLink": {
+    "description": "prototype I18N.guestLink"
+  },
+  "guestName": "Guest",
+  "@guestName": {
+    "description": "prototype I18N.guestName"
+  },
+  "guestNote": "Create an account to save your progress on any phone",
+  "@guestNote": {
+    "description": "prototype I18N.guestNote"
+  },
+  "guestSub": "Try everything without an account. Your progress and saved phrases stay on this phone only.",
+  "@guestSub": {
+    "description": "prototype I18N.guestSub"
+  },
+  "guestTitle": "Continue as guest",
+  "@guestTitle": {
+    "description": "prototype I18N.guestTitle"
+  },
+  "haveAccount": "I already have an account",
+  "@haveAccount": {
+    "description": "prototype I18N.haveAccount"
+  },
+  "hide": "Hide password",
+  "@hide": {
+    "description": "prototype I18N.hide"
+  },
+  "hiNour": "Hi, I'm {name}!",
+  "@hiNour": {
+    "description": "prototype I18N.hiNour",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "histLead": "Saved on your phone only. Star a sentence to make it a quick phrase.",
+  "@histLead": {
+    "description": "prototype I18N.histLead"
+  },
+  "histTitle": "History",
+  "@histTitle": {
+    "description": "prototype I18N.histTitle"
+  },
+  "holdSign": "Hold the sign…",
+  "@holdSign": {
+    "description": "prototype I18N.holdSign"
+  },
+  "lblName": "Your name",
+  "@lblName": {
+    "description": "prototype I18N.lblName"
+  },
+  "lblPw": "Password",
+  "@lblPw": {
+    "description": "prototype I18N.lblPw"
+  },
+  "learnSub": "Watch {name}, then sign it with your glove",
+  "@learnSub": {
+    "description": "prototype I18N.learnSub",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "learnTitle": "Learn signs",
+  "@learnTitle": {
+    "description": "prototype I18N.learnTitle"
+  },
+  "listening": "Listening…",
+  "@listening": {
+    "description": "prototype I18N.listening"
+  },
+  "live": "LIVE",
+  "@live": {
+    "description": "prototype I18N.live"
+  },
+  "liveFrom": "Live from your glove",
+  "@liveFrom": {
+    "description": "prototype I18N.liveFrom"
+  },
+  "livePh": "Sign with your glove, words appear here",
+  "@livePh": {
+    "description": "prototype I18N.livePh"
+  },
+  "locked": "Finish the module above to unlock",
+  "@locked": {
+    "description": "prototype I18N.locked"
+  },
+  "mDaily": "Daily challenge",
+  "@mDaily": {
+    "description": "prototype I18N.mDaily"
+  },
+  "medals": "medals",
+  "@medals": {
+    "description": "prototype I18N.medals"
+  },
+  "meLabel": "You · live from your glove",
+  "@meLabel": {
+    "description": "prototype I18N.meLabel"
+  },
+  "micHintRest": "{gender, select, female{{name} signs it instantly.} other{{name} signs it instantly.}}",
+  "@micHintRest": {
+    "description": "prototype I18N.micHintRest",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "gender": {
+        "type": "String"
+      }
+    }
+  },
+  "micHintStrong": "Tap the mic and speak.",
+  "@micHintStrong": {
+    "description": "prototype I18N.micHintStrong"
+  },
+  "micIdle": "Mic ready",
+  "@micIdle": {
+    "description": "prototype I18N.micIdle"
+  },
+  "micReply": "Tap the mic to reply",
+  "@micReply": {
+    "description": "prototype I18N.micReply"
+  },
+  "missionContinue": "Continue",
+  "@missionContinue": {
+    "description": "prototype I18N.missionContinue"
+  },
+  "missionDone": "Mission complete!",
+  "@missionDone": {
+    "description": "prototype I18N.missionDone"
+  },
+  "missionDoneS": "You've unlocked the next module.",
+  "@missionDoneS": {
+    "description": "prototype I18N.missionDoneS"
+  },
+  "missionReview": "Review",
+  "@missionReview": {
+    "description": "prototype I18N.missionReview"
+  },
+  "missionStart": "Start",
+  "@missionStart": {
+    "description": "prototype I18N.missionStart"
+  },
+  "mStart": "Start here",
+  "@mStart": {
+    "description": "prototype I18N.mStart"
+  },
+  "mStartS": "Your first 5 signs: hello, thank you, please, yes, no",
+  "@mStartS": {
+    "description": "prototype I18N.mStartS"
+  },
+  "next": "Next",
+  "@next": {
+    "description": "prototype I18N.next"
+  },
+  "or": "or",
+  "@or": {
+    "description": "prototype I18N.or"
+  },
+  "p1": "Open",
+  "@p1": {
+    "description": "prototype I18N.p1"
+  },
+  "p2": "Fist",
+  "@p2": {
+    "description": "prototype I18N.p2"
+  },
+  "p3": "Turn",
+  "@p3": {
+    "description": "prototype I18N.p3"
+  },
+  "pairTitle": "Pair your glove",
+  "@pairTitle": {
+    "description": "prototype I18N.pairTitle"
+  },
+  "phName": "e.g. Abdelrahman",
+  "@phName": {
+    "description": "prototype I18N.phName"
+  },
+  "phPw": "At least 8 characters",
+  "@phPw": {
+    "description": "prototype I18N.phPw"
+  },
+  "pickWord": "Pick the meaning",
+  "@pickWord": {
+    "description": "prototype I18N.pickWord"
+  },
+  "pose1": "Open your hand",
+  "@pose1": {
+    "description": "prototype I18N.pose1"
+  },
+  "pose1s": "Spread your fingers flat and hold still for 2 seconds.",
+  "@pose1s": {
+    "description": "prototype I18N.pose1s"
+  },
+  "pose2": "Make a fist",
+  "@pose2": {
+    "description": "prototype I18N.pose2"
+  },
+  "pose2s": "Close your hand tight and hold still for 2 seconds.",
+  "@pose2s": {
+    "description": "prototype I18N.pose2s"
+  },
+  "pose3": "Turn your wrist",
+  "@pose3": {
+    "description": "prototype I18N.pose3"
+  },
+  "qAvatar": "Who signs for you?",
+  "@qAvatar": {
+    "description": "prototype I18N.qAvatar"
+  },
+  "qAvatarS": "You can change this later from Settings.",
+  "@qAvatarS": {
+    "description": "prototype I18N.qAvatarS"
+  },
+  "qDeaf": "I am deaf",
+  "@qDeaf": {
+    "description": "prototype I18N.qDeaf"
+  },
+  "qRepeat": "Please repeat",
+  "@qRepeat": {
+    "description": "prototype I18N.qRepeat"
+  },
+  "qSayDeaf": "I am deaf. I use this app to talk.",
+  "@qSayDeaf": {
+    "description": "prototype I18N.qSayDeaf"
+  },
+  "qSayRepeat": "Please repeat",
+  "@qSayRepeat": {
+    "description": "prototype I18N.qSayRepeat"
+  },
+  "qSaySlower": "Slower, please",
+  "@qSaySlower": {
+    "description": "prototype I18N.qSaySlower"
+  },
+  "qSaySos": "SOS · I need help",
+  "@qSaySos": {
+    "description": "prototype I18N.qSaySos"
+  },
+  "qSayThanks": "Thank you",
+  "@qSayThanks": {
+    "description": "prototype I18N.qSayThanks"
+  },
+  "qSayWrite": "Please write it",
+  "@qSayWrite": {
+    "description": "prototype I18N.qSayWrite"
+  },
+  "qSignLang": "Sign language",
+  "@qSignLang": {
+    "description": "prototype I18N.qSignLang"
+  },
+  "qSlower": "Slower, please",
+  "@qSlower": {
+    "description": "prototype I18N.qSlower"
+  },
+  "qSpoken": "Spoken language (the voice)",
+  "@qSpoken": {
+    "description": "prototype I18N.qSpoken"
+  },
+  "qThanks": "Thank you",
+  "@qThanks": {
+    "description": "prototype I18N.qThanks"
+  },
+  "qWho": "Who uses this phone?",
+  "@qWho": {
+    "description": "prototype I18N.qWho"
+  },
+  "qWrite": "Please write it",
+  "@qWrite": {
+    "description": "prototype I18N.qWrite"
+  },
+  "ready": "Ready",
+  "@ready": {
+    "description": "prototype I18N.ready"
+  },
+  "replay": "Replay",
+  "@replay": {
+    "description": "prototype I18N.replay"
+  },
+  "roleSign": "I sign",
+  "@roleSign": {
+    "description": "prototype I18N.roleSign"
+  },
+  "roleSpeak": "I speak",
+  "@roleSpeak": {
+    "description": "prototype I18N.roleSpeak"
+  },
+  "sAbout": "About Ishara",
+  "@sAbout": {
+    "description": "prototype I18N.sAbout"
+  },
+  "sAvatar": "Avatar: {name}",
+  "@sAvatar": {
+    "description": "prototype I18N.sAvatar",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "save": "Save",
+  "@save": {
+    "description": "prototype I18N.save"
+  },
+  "saveAvatar": "Save avatar",
+  "@saveAvatar": {
+    "description": "prototype I18N.saveAvatar"
+  },
+  "sCal": "Calibrate",
+  "@sCal": {
+    "description": "prototype I18N.sCal"
+  },
+  "scanning": "Looking for your glove…",
+  "@scanning": {
+    "description": "prototype I18N.scanning"
+  },
+  "scanningSub": "Bring it close to your phone",
+  "@scanningSub": {
+    "description": "prototype I18N.scanningSub"
+  },
+  "sContrast": "High contrast",
+  "@sContrast": {
+    "description": "prototype I18N.sContrast"
+  },
+  "sContrastS": "Stronger colors and borders",
+  "@sContrastS": {
+    "description": "prototype I18N.sContrastS"
+  },
+  "searchPh": "Search a word or a place",
+  "@searchPh": {
+    "description": "prototype I18N.searchPh"
+  },
+  "secAccess": "Accessibility",
+  "@secAccess": {
+    "description": "prototype I18N.secAccess"
+  },
+  "secAccount": "Account",
+  "@secAccount": {
+    "description": "prototype I18N.secAccount"
+  },
+  "secApp": "App",
+  "@secApp": {
+    "description": "prototype I18N.secApp"
+  },
+  "secAvatar": "Avatar & voice",
+  "@secAvatar": {
+    "description": "prototype I18N.secAvatar"
+  },
+  "secGlove": "Glove",
+  "@secGlove": {
+    "description": "prototype I18N.secGlove"
+  },
+  "setLead": "Everything in one place, nothing hidden.",
+  "@setLead": {
+    "description": "prototype I18N.setLead"
+  },
+  "setTitle": "Settings",
+  "@setTitle": {
+    "description": "prototype I18N.setTitle"
+  },
+  "setupLead": "Three quick answers. They decide what comes first on the Talk screen, and you can change them anytime.",
+  "@setupLead": {
+    "description": "prototype I18N.setupLead"
+  },
+  "setupTitle": "Let's set up Ishara",
+  "@setupTitle": {
+    "description": "prototype I18N.setupTitle"
+  },
+  "show": "Show password",
+  "@show": {
+    "description": "prototype I18N.show"
+  },
+  "signed": "{gender, select, female{Signed by {name}} other{Signed by {name}}}",
+  "@signed": {
+    "description": "prototype I18N.signed",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "gender": {
+        "type": "String"
+      }
+    }
+  },
+  "signedInAs": "Signed in · progress syncs automatically",
+  "@signedInAs": {
+    "description": "prototype I18N.signedInAs"
+  },
+  "signIn": "Sign in",
+  "@signIn": {
+    "description": "prototype I18N.signIn"
+  },
+  "signNow": "Sign now",
+  "@signNow": {
+    "description": "prototype I18N.signNow"
+  },
+  "signsCount": "{n} signs",
+  "@signsCount": {
+    "description": "prototype I18N.signsCount",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "signsLearned": "signs learned",
+  "@signsLearned": {
+    "description": "prototype I18N.signsLearned"
+  },
+  "sigStrong": "Strong signal",
+  "@sigStrong": {
+    "description": "prototype I18N.sigStrong"
+  },
+  "sLang": "App language",
+  "@sLang": {
+    "description": "prototype I18N.sLang"
+  },
+  "sLangS": "English · switch anytime from the top bar",
+  "@sLangS": {
+    "description": "prototype I18N.sLangS"
+  },
+  "sLogout": "Sign out",
+  "@sLogout": {
+    "description": "prototype I18N.sLogout"
+  },
+  "sLogoutS": "You'll return to the welcome screen",
+  "@sLogoutS": {
+    "description": "prototype I18N.sLogoutS"
+  },
+  "sos": "SOS · I need help",
+  "@sos": {
+    "description": "prototype I18N.sos"
+  },
+  "sPair": "Pair a new glove",
+  "@sPair": {
+    "description": "prototype I18N.sPair"
+  },
+  "sPairS": "Add a second glove or replace this one",
+  "@sPairS": {
+    "description": "prototype I18N.sPairS"
+  },
+  "speak": "Speak",
+  "@speak": {
+    "description": "prototype I18N.speak"
+  },
+  "speaking": "Speaking…",
+  "@speaking": {
+    "description": "prototype I18N.speaking"
+  },
+  "spoken": "Spoken",
+  "@spoken": {
+    "description": "prototype I18N.spoken"
+  },
+  "sPrivacy": "Privacy",
+  "@sPrivacy": {
+    "description": "prototype I18N.sPrivacy"
+  },
+  "sPrivacyS": "Conversations stay on this phone",
+  "@sPrivacyS": {
+    "description": "prototype I18N.sPrivacyS"
+  },
+  "sSubs": "Subtitles under the avatar",
+  "@sSubs": {
+    "description": "prototype I18N.sSubs"
+  },
+  "sSubsS": "Helps with words that have no sign yet",
+  "@sSubsS": {
+    "description": "prototype I18N.sSubsS"
+  },
+  "starred": "Starred",
+  "@starred": {
+    "description": "prototype I18N.starred"
+  },
+  "stCal": "Calibrate",
+  "@stCal": {
+    "description": "prototype I18N.stCal"
+  },
+  "stepOf": "Step {n} of 3",
+  "@stepOf": {
+    "description": "prototype I18N.stepOf",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "sText": "Large text",
+  "@sText": {
+    "description": "prototype I18N.sText"
+  },
+  "sTextS": "Conversation text 18pt",
+  "@sTextS": {
+    "description": "prototype I18N.sTextS"
+  },
+  "sTheme": "Dark mode",
+  "@sTheme": {
+    "description": "prototype I18N.sTheme"
+  },
+  "sThemeS": "Switch on for a dark look",
+  "@sThemeS": {
+    "description": "prototype I18N.sThemeS"
+  },
+  "stPair": "Glove",
+  "@stPair": {
+    "description": "prototype I18N.stPair"
+  },
+  "stSetup": "Setup",
+  "@stSetup": {
+    "description": "prototype I18N.stSetup"
+  },
+  "sVib": "Vibrate on every message",
+  "@sVib": {
+    "description": "prototype I18N.sVib"
+  },
+  "sVibS": "Short pulse for replies, long for SOS",
+  "@sVibS": {
+    "description": "prototype I18N.sVibS"
+  },
+  "sVoice": "Voice",
+  "@sVoice": {
+    "description": "prototype I18N.sVoice"
+  },
+  "tabHistory": "History",
+  "@tabHistory": {
+    "description": "prototype I18N.tabHistory"
+  },
+  "tabLearn": "Learn",
+  "@tabLearn": {
+    "description": "prototype I18N.tabLearn"
+  },
+  "tabSettings": "Settings",
+  "@tabSettings": {
+    "description": "prototype I18N.tabSettings"
+  },
+  "tabTalk": "Talk",
+  "@tabTalk": {
+    "description": "prototype I18N.tabTalk"
+  },
+  "tagline": "Your hands speak.",
+  "@tagline": {
+    "description": "prototype I18N.tagline"
+  },
+  "themLabel": "Person in front of you",
+  "@themLabel": {
+    "description": "prototype I18N.themLabel"
+  },
+  "themLabelF2f": "For the hearing person",
+  "@themLabelF2f": {
+    "description": "prototype I18N.themLabelF2f"
+  },
+  "timeLbl": "time",
+  "@timeLbl": {
+    "description": "prototype I18N.timeLbl"
+  },
+  "tip3": "Turn Bluetooth off and on again, then tap Scan again.",
+  "@tip3": {
+    "description": "prototype I18N.tip3"
+  },
+  "tipsTitle": "Glove not showing up?",
+  "@tipsTitle": {
+    "description": "prototype I18N.tipsTitle"
+  },
+  "toastAvatar": "{gender, select, female{{name} will sign for you now} other{{name} will sign for you now}}",
+  "@toastAvatar": {
+    "description": "prototype I18N.toastAvatar",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "gender": {
+        "type": "String"
+      }
+    }
+  },
+  "toastCreated": "Account created",
+  "@toastCreated": {
+    "description": "prototype I18N.toastCreated"
+  },
+  "toastF2fOff": "Face to face off",
+  "@toastF2fOff": {
+    "description": "prototype I18N.toastF2fOff"
+  },
+  "toastF2fOn": "Face to face: the mic card now faces the person opposite you",
+  "@toastF2fOn": {
+    "description": "prototype I18N.toastF2fOn"
+  },
+  "toastForgot": "Reset link sent",
+  "@toastForgot": {
+    "description": "prototype I18N.toastForgot"
+  },
+  "toastGuest": "You're in as a guest",
+  "@toastGuest": {
+    "description": "prototype I18N.toastGuest"
+  },
+  "toastLogout": "Signed out",
+  "@toastLogout": {
+    "description": "prototype I18N.toastLogout"
+  },
+  "toastSaved": "Saved",
+  "@toastSaved": {
+    "description": "prototype I18N.toastSaved"
+  },
+  "toastSignedIn": "Signed in",
+  "@toastSignedIn": {
+    "description": "prototype I18N.toastSignedIn"
+  },
+  "toastSkip": "You can calibrate later from Settings",
+  "@toastSkip": {
+    "description": "prototype I18N.toastSkip"
+  },
+  "toastSpeed": "Sign speed",
+  "@toastSpeed": {
+    "description": "prototype I18N.toastSpeed"
+  },
+  "toastStar": "Added to quick phrases",
+  "@toastStar": {
+    "description": "prototype I18N.toastStar"
+  },
+  "type": "Type",
+  "@type": {
+    "description": "prototype I18N.type"
+  },
+  "typePh": "Type what you want to say",
+  "@typePh": {
+    "description": "prototype I18N.typePh"
+  },
+  "voiceAr": "Voice: Arabic",
+  "@voiceAr": {
+    "description": "prototype I18N.voiceAr"
+  },
+  "voiceEn": "Voice: English",
+  "@voiceEn": {
+    "description": "prototype I18N.voiceEn"
+  },
+  "waitSigns": "Waiting for signs…",
+  "@waitSigns": {
+    "description": "prototype I18N.waitSigns"
+  },
+  "watch": "Watch {name}",
+  "@watch": {
+    "description": "prototype I18N.watch",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "watchSub": "Which word is this sign?",
+  "@watchSub": {
+    "description": "prototype I18N.watchSub"
+  },
+  "welcomeBack": "Welcome back",
+  "@welcomeBack": {
+    "description": "prototype I18N.welcomeBack"
+  },
+  "welLead": "{gender, select, female{Sign with the glove and be heard instantly. When people talk back, {name} signs it for you on screen.} other{Sign with the glove and be heard instantly. When people talk back, {name} signs it for you on screen.}}",
+  "@welLead": {
+    "description": "prototype I18N.welLead",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "gender": {
+        "type": "String"
+      }
+    }
+  },
+  "welTitle": "Your hands speak. Ishara gives them a voice.",
+  "@welTitle": {
+    "description": "prototype I18N.welTitle"
+  },
+  "whoSign": "I sign",
+  "@whoSign": {
+    "description": "prototype I18N.whoSign"
+  },
+  "whoSignS": "I wear the glove. Show me the avatar and big subtitles.",
+  "@whoSignS": {
+    "description": "prototype I18N.whoSignS"
+  },
+  "whoSpeak": "I speak",
+  "@whoSpeak": {
+    "description": "prototype I18N.whoSpeak"
+  },
+  "whoSpeakS": "I'm family, a friend or an interpreter. Put the mic first.",
+  "@whoSpeakS": {
+    "description": "prototype I18N.whoSpeakS"
+  },
+  "wrongA": "Not quite. That sign was {w}. Watch it again.",
+  "@wrongA": {
+    "description": "prototype I18N.wrongA",
+    "placeholders": {
+      "w": {
+        "type": "String"
+      }
+    }
+  },
+  "xp": "XP",
+  "@xp": {
+    "description": "prototype I18N.xp"
+  },
+  "xpLbl": "XP earned",
+  "@xpLbl": {
+    "description": "prototype I18N.xpLbl"
+  },
+  "yawLbl": "Rotation",
+  "@yawLbl": {
+    "description": "prototype I18N.yawLbl"
+  },
+  "yourTurn": "Your turn",
+  "@yourTurn": {
+    "description": "prototype I18N.yourTurn"
+  }
+}
