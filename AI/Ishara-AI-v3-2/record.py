@@ -9,8 +9,8 @@ record.py — تسجيل الداتا الحقيقية من الجلوف
 الاستخدام:
   python record.py calib ahmed          مرة واحدة لكل شخص: عاير الجلوف الأول (حرف c من التطبيق أو الـ Serial Monitor)
                                         وبعدين ده بيحفظ المعايرة في data/calib/ahmed.json
-  python record.py good ahmed           كل إشارة 20 مرة
-  python record.py good ahmed COM5      لو عايز تحدد البورت بنفسك (على Ubuntu: /dev/ttyACM0)
+  python record.py water ahmed           كل إشارة 20 مرة
+  python record.py water ahmed COM5      لو عايز تحدد البورت بنفسك (على Ubuntu: /dev/ttyACM0)
   python record.py other ahmed          حركات عادية مش إشارات (كتابة، موبايل، كوباية...): 2 ثانية كل Enter
   python record.py wear ahmed 60        تسجيل طويل (60 دقيقة) وانت لابس الجلوف في يومك العادي من غير إشارات.
                                         بيتحفظ في data/wear.csv، وبعدين: python mine_negatives.py --from-recording ahmed

@@ -1,4 +1,6 @@
-# Ishara AI — what the app must do (spec v3.1)
+# Ishara AI — what the app must do (spec v3.2)
+
+**v3.2 changes only the vocabulary** (Sign Vocabulary v2, ASL): `good` and `bad` are replaced by `water` and `bye`, and the models are retrained. The pipeline, the numbers format and the Decider are exactly the same as v3.1. Code that reads the labels from `labels.txt` needs no change.
 
 The recognizer in the app must behave **exactly** like `live.py` in the AI repo. This file is the full description. `test/test_vectors.json` checks every step with real numbers.
 
@@ -131,8 +133,8 @@ Events come out in this order inside one step. Reset all state (and the window) 
 |---|---|---|---|
 | one | one | no | no |
 | two | two | sorry | sorry |
-| three | three | good | good |
-| four | four | bad | bad |
+| three | three | water | water |
+| four | four | bye | bye |
 | five | five | come | come |
 | me | me | drink | drink |
 | you | you | call | call |
@@ -152,6 +154,8 @@ Events come out in this order inside one step. Reset all state (and the window) 
 - `normalize.cases`: raw window + `calibration` → first normalized row and the sum of the whole window must match (1e-4);
 - `model.cases`: raw window → each model's 22 probabilities (`probs_each`) and their average (`probs`) must match (1e-3);
 - `decider`: feed `probs` one by one with `config` → the events (word / tentative / confirm / cancel) must come out at exactly the `expected` steps.
+
+**Step numbers in the test files:** `step` in `test_vectors.json` and `mock/expected.json` is the **0-based index of the model run** (the first model run is step 0). The pseudo-code counter above starts at 1, so compare `step - 1` with the files. `sample` in `expected.json` is the number of samples received when that model run happened.
 
 `mock/expected.json`: play each mock file at 50 Hz through the full pipeline → the app must produce the same confirmed `words`, and the same `events`. (Words are computed with the Keras model; the .tflite in the kit can differ by about 1e-6, which can very rarely move a word by one step.)
 

@@ -67,7 +67,7 @@ def main():
     ap.add_argument("--data", default="data")
     args = ap.parse_args()
 
-    predictor = live.Predictor("cnn")
+    predictor = live.Predictor("cnn", members=["ishara_cnn"])   # الموديل الأساسي اللي لسه متدرّب على نفس الداتا
     take0 = 1_900_000_000_000 + args.round * 10_000_000
     total = 0
     if args.from_recording:

@@ -52,8 +52,8 @@ def decider_config(kind, path=DECIDER_FILE):
 # الكلمة اللي هتتقال بصوت لكل label
 WORDS = {"one": "one", "two": "two", "three": "three", "four": "four", "five": "five",
          "me": "me", "you": "you", "hello": "hello", "thanks": "thank you",
-         "please": "please", "yes": "yes", "no": "no", "sorry": "sorry", "good": "good",
-         "bad": "bad", "come": "come", "drink": "drink", "call": "call",
+         "please": "please", "yes": "yes", "no": "no", "sorry": "sorry", "water": "water",
+         "bye": "bye", "come": "come", "drink": "drink", "call": "call",
          "iloveyou": "I love you", "hungry": "hungry"}
 
 
@@ -297,8 +297,8 @@ class Speaker:
 
 
 # ===================== مصدر القراءات =====================
-DEMO_SENTENCES = [["me", "hungry"], ["me", "drink"], ["you", "come"], ["call", "me"],
-                  ["thanks", "good"], ["sorry"], ["iloveyou"]]
+DEMO_SENTENCES = [["me", "hungry"], ["me", "water"], ["water", "please"], ["you", "come"],
+                  ["call", "me"], ["hello", "thanks"], ["sorry", "bye"], ["iloveyou"]]
 
 
 def sim_source(fast):

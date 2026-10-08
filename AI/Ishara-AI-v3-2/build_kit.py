@@ -78,6 +78,9 @@ def main():
         cal, cal_line = glove_cal_line(person)
         folder = os.path.join(OUT, "mock", name)
         os.makedirs(folder, exist_ok=True)
+        for f in os.listdir(folder):                  # ملفات كلمات قديمة اتشالت من الـ labels تتمسح
+            if f.endswith(".csv"):
+                os.remove(os.path.join(folder, f))
         for label in LABELS:
             want = [label] * REPEATS if label in SIGN_LABELS else []
             for attempt in range(25):                # بناخد أمثلة الموديل بيفهمها (دي داتا تطوير، مش اختبار)

@@ -24,7 +24,7 @@
     "idle": {
       "confidence": 0.85,
       "hold": 3,
-      "max_null": 0.05,
+      "max_null": 0.03,
       "per_class": {}
     }
   }

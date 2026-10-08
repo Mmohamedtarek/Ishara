@@ -1,8 +1,14 @@
 #!/bin/bash
-# v3 pipeline on simulated data: data -> mine (2 rounds) -> train -> tune -> evaluate
+# v3 pipeline on simulated data: data -> train -> mine (2 rounds) -> train ensemble -> evaluate -> kit
+# The first training comes BEFORE mining, so round 1 mines with a fresh model trained on this data
+# (not with old model files left on disk from another vocabulary).
+# The Decider settings come from decider.json (config B). To search new settings: python eval_live.py --tune
 set -e
 PY=${PY:-python}
 $PY simulate_data.py
+rm -f ishara_cnn*.tflite ishara_cnn*.keras ishara_rf.joblib   # موديلات قديمة (ممكن تكون بكلمات تانية) متتخلطش بالجديدة
+$PY train_rf.py | tail -9
+$PY train_cnn.py 2>&1 | grep -E "الدقة|KB|labels" || true
 $PY mine_negatives.py --round 1
 $PY train_rf.py | tail -9
 $PY train_cnn.py 2>&1 | grep -E "الدقة|KB|labels" || true
@@ -11,6 +17,6 @@ $PY train_rf.py | tail -9
 $PY train_cnn.py 2>&1 | grep -E "الدقة|KB|labels" || true
 $PY train_cnn.py --member 2 2>&1 | grep -E "KB" || true
 $PY train_cnn.py --member 3 2>&1 | grep -E "KB" || true
-$PY eval_live.py --tune --hours 30
-$PY eval_live.py --sessions 20
+$PY eval_live.py --hours 30
+$PY eval_live.py --sessions 20 --no-stress --hours 1
 $PY build_kit.py ../Ishara-Mobile-Kit

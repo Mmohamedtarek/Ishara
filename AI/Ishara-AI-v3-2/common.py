@@ -31,12 +31,12 @@ WINDOW = 100              # take = ثانيتين = 100 قراءة
 ACC_SCALE = 8192.0        # MPU-6050 على ±4g  → 8192 = 1g
 GYRO_SCALE = 65.5         # MPU-6050 على ±500°/s → 65.5 = 1°/s
 
-# الـ 20 إشارة من ملف Sign Vocabulary v1، وبعدهم فئتين "مش كلام":
+# الـ 20 إشارة من ملف Sign Vocabulary v2 (ASL)، وبعدهم فئتين "مش كلام":
 #   rest   الإيد مرتاحة
 #   other  حركة عادية مش إشارة: كتابة، موبايل، كوباية، هرش، شنطة، إشارة بالإيد وانت بتتكلم...
 #          من غيرها الموديل مضطر يختار إشارة لأي حركة يشوفها، ودي أكبر سبب للكلمات اللي بتطلع لوحدها.
 SIGN_LABELS = ["one", "two", "three", "four", "five", "me", "you", "hello",
-               "thanks", "please", "yes", "no", "sorry", "good", "bad", "come",
+               "thanks", "please", "yes", "no", "sorry", "water", "bye", "come",
                "drink", "call", "iloveyou", "hungry"]
 NON_WORDS = ["rest", "other"]
 LABELS = SIGN_LABELS + NON_WORDS

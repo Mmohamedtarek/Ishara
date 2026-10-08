@@ -26,7 +26,7 @@ def find_port():
         return ports[0].device
     names = ", ".join(p.device for p in ports) or "مفيش"
     raise SystemExit(f"مش لاقي الجلوف. البورتات الموجودة: {names}\n"
-                     "حدد البورت بنفسك: python record.py good ahmed COM5   (أو /dev/ttyACM0 على Ubuntu)")
+                     "حدد البورت بنفسك: python record.py water ahmed COM5   (أو /dev/ttyACM0 على Ubuntu)")
 
 
 def open_glove(port=None):

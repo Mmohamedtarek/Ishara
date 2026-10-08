@@ -11,8 +11,8 @@ please
 yes
 no
 sorry
-good
-bad
+water
+bye
 come
 drink
 call

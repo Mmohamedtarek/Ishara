@@ -1,7 +1,7 @@
 """
 simulate_data.py — داتا وهمية بنفس شكل تسجيل الجلوف الحقيقي
 -------------------------------------------------------------
-بيعمل فولدر data/ فيه takes لكل الـ 21 فئة من ملف Sign Vocabulary v1،
+بيعمل فولدر data/ فيه takes لكل الـ 22 فئة من ملف Sign Vocabulary v2 (ASL)،
 لكذا شخص، بنفس الأعمدة اللي record.py بيسجلها بالظبط.
 
 الهدف: نجرّب ونقارن الموديلات دلوقتي، ولما الجلوف يجهز
@@ -29,17 +29,22 @@ OPEN = [0, 0, 0, 0, 0]
 FIST = [0.6, 1, 1, 1, 1]                          # الإبهام نايم على الصوابع
 INDEX = [1, 0, 1, 1, 1]
 C_SHAPE = [0.4, 0.5, 0.5, 0.5, 0.5]
-THUMB = [0, 1, 1, 1, 1]
+B_HAND = [0.8, 0, 0, 0, 0]                        # كف مفرود والإبهام نايم على الكف (hello / thanks)
+W_HAND = [0.8, 0, 0, 0, 1]                        # سبابة + وسطى + بنصر، والإبهام ماسك الخنصر (water)
+NO_OPEN = [0.3, 0, 0, 1, 1]                       # سبابة + وسطى مفرودين والإبهام برّه (no، قبل القفلة)
 
 # ===== اتجاه الإيد = اتجاه الجاذبية اللي الـ MPU-6050 حاسس بيه =====
 UP = [0, 1, 0]                 # الإيد واقفة والصوابع لفوق
 TO_CHEST = [0, 0.3, 0.95]      # السبابة ناحية الصدر
 FORWARD = [0, 0.3, -0.95]      # السبابة لقدام
 ON_CHEST = [0, 0.2, 0.98]      # الكف على الصدر
-THUMB_UP = [0.95, 0.3, 0]
-THUMB_DOWN = [-0.95, 0.3, 0]
+AT_FOREHEAD = [-0.3, 0.9, 0.2]  # الإيد جنب الجبهة ومايلة ناحية الراس (hello)
+OUT_FOREHEAD = [0.35, 0.9, 0.2] # الإيد بعدت عن الجبهة لبرّه
+AT_CHIN = [0.3, 0.9, 0.3]       # الصوابع لفوق عند الدقن والكف ناحية الشمال (water)
+SHOULDER = [0, 0.75, -0.65]     # قدام الكتف والصوابع لقدام (no)
 
 # كل إشارة: (الصوابع، الاتجاه في الأول، الاتجاه في الآخر، نوع الحركة)
+# الأشكال والحركات من ملف Sign Vocabulary v2، وهي الشكل المعتاد في ASL
 SIGNS = {
     "one":      (INDEX, UP, UP, "still"),
     "two":      ([1, 0, 0, 1, 1], UP, UP, "still"),
@@ -48,14 +53,14 @@ SIGNS = {
     "five":     (OPEN, UP, UP, "still"),
     "me":       (INDEX, TO_CHEST, TO_CHEST, "still"),
     "you":      (INDEX, FORWARD, FORWARD, "still"),
-    "hello":    (OPEN, UP, UP, "wave"),
-    "thanks":   (OPEN, [0, 0.6, 0.8], [0, 0.8, -0.6], "push"),
+    "hello":    (B_HAND, AT_FOREHEAD, OUT_FOREHEAD, "salute"),
+    "thanks":   (B_HAND, [0, 0.6, 0.8], [0, 0.8, -0.6], "push"),
     "please":   (OPEN, ON_CHEST, ON_CHEST, "circle"),
     "yes":      (FIST, UP, UP, "nod"),
-    "no":       (INDEX, UP, UP, "shake"),
+    "no":       (NO_OPEN, SHOULDER, SHOULDER, "snap"),
     "sorry":    (FIST, ON_CHEST, ON_CHEST, "circle"),
-    "good":     (THUMB, THUMB_UP, THUMB_UP, "still"),
-    "bad":      (THUMB, THUMB_DOWN, THUMB_DOWN, "still"),
+    "water":    (W_HAND, AT_CHIN, AT_CHIN, "tap"),
+    "bye":      (OPEN, UP, UP, "flap"),
     "come":     (INDEX, [0, 0.5, -0.85], [0, 0.5, -0.85], "beckon"),
     "drink":    (C_SHAPE, [0.6, 0.8, 0], [0.6, 0.4, 0.7], "tilt"),
     "call":     ([0, 1, 1, 1, 0], [0.8, 0.6, 0], [0.8, 0.6, 0], "still"),
@@ -81,21 +86,39 @@ def envelope(t0, dur):
 
 
 def motion(kind, amp, speed):
-    """بيرجع (تسارع إضافي، دوران، تغيير في السبابة) لكل نوع حركة"""
+    """بيرجع (تسارع إضافي، دوران، تغيير في ثني كل صباع، تقدّم الحركة) لكل نوع حركة"""
     acc = np.zeros((WINDOW, 3))
     gyro = np.zeros((WINDOW, 3))
-    index_bend = np.zeros(WINDOW)
+    bend = np.zeros((WINDOW, 5))
     t0 = rng.uniform(0.1, 0.7)
     dur = rng.uniform(1.0, 1.3) / speed
     env, x = envelope(t0, dur)
     tau = np.clip(t - t0, 0, None)
     f = speed
 
-    if kind == "wave":          # hello: الإيد تتهز يمين وشمال
+    if kind == "wave":          # تلويح يمين وشمال (مش إشارة في v2، بس بيتعمل وانت بتتكلم)
         s = np.sin(2 * np.pi * 2.0 * f * tau)
         gyro[:, 2] = 150 * amp * s * env
         acc[:, 0] = 0.4 * amp * s * env
-    elif kind == "shake":       # no: هزة أسرع وأصغر
+    elif kind == "salute":      # hello: الإيد تبعد عن الجبهة لبرّه مرة واحدة
+        gyro[:, 2] = -110 * amp * env
+        acc[:, 0] = 0.35 * amp * np.sin(2 * np.pi * x) * (x > 0) * (x < 1)
+        acc[:, 2] = -0.15 * amp * env
+    elif kind == "snap":        # no: السبابة والوسطى بيقفلوا على الإبهام مرتين
+        sn = 0.5 * (1 - np.cos(2 * np.pi * 2.2 * f * tau)) * (env > 0.05)
+        bend[:, 0] = 0.4 * sn
+        bend[:, 1] = 0.6 * sn
+        bend[:, 2] = 0.6 * sn
+        gyro[:, 0] = 25 * amp * np.sin(2 * np.pi * 2.2 * f * tau) * env
+    elif kind == "flap":        # bye: الصوابع الأربعة تتني لتحت وترجع مع بعض
+        sn = 0.5 * (1 - np.cos(2 * np.pi * 2.5 * f * tau)) * (env > 0.05)
+        bend[:, 1:5] = 0.7 * sn[:, None]
+        gyro[:, 0] = 20 * amp * np.sin(2 * np.pi * 2.5 * f * tau) * env
+    elif kind == "tap":         # water: طرف السبابة يخبط على الدقن مرتين
+        sn = np.sin(2 * np.pi * 2.5 * f * tau) * env
+        acc[:, 2] = 0.2 * amp * sn
+        gyro[:, 0] = 45 * amp * sn
+    elif kind == "shake":       # هزة أسرع وأصغر (مش إشارة في v2، بس بيتعمل وانت بتتكلم)
         s = np.sin(2 * np.pi * 2.6 * f * tau)
         gyro[:, 2] = 110 * amp * s * env
         acc[:, 0] = 0.25 * amp * s * env
@@ -118,9 +141,9 @@ def motion(kind, amp, speed):
         acc[:, 1] = -0.4 * amp * np.sin(2 * np.pi * x) * (x > 0) * (x < 1)
         gyro[:, 0] = 25 * amp * env
     elif kind == "beckon":      # come: السبابة تتني وتتفرد
-        index_bend = 0.5 * (1 - np.cos(2 * np.pi * 1.5 * f * tau)) * (env > 0.05)
+        bend[:, 1] = 0.5 * (1 - np.cos(2 * np.pi * 1.5 * f * tau)) * (env > 0.05)
         gyro[:, 0] = 30 * amp * np.sin(2 * np.pi * 1.5 * f * tau) * env
-    return acc, gyro, index_bend, x
+    return acc, gyro, bend, x
 
 
 def make_take(sign, person):
@@ -137,10 +160,10 @@ def make_take(sign, person):
         gyro = np.cumsum(rng.normal(0, 6, (WINDOW, 3)), 0) * rng.uniform(0.2, 1.0)
         acc_dyn = rng.normal(0, 0.05, (WINDOW, 3)) + 0.15 * np.sin(2 * np.pi * rng.uniform(0.5, 2) * t)[:, None] * rng.uniform(0, 1, 3)
     else:
-        acc_dyn, gyro, index_bend, x = motion(kind, amp, speed)
+        acc_dyn, gyro, bend, x = motion(kind, amp, speed)
         shape = np.array(fingers, float) + person["shape_bias"] + rng.normal(0, 0.15, 5)
         shape = np.tile(shape, (WINDOW, 1))
-        shape[:, 1] = np.clip(shape[:, 1] + index_bend, 0, 1.1)
+        shape = np.clip(shape + bend, 0, 1.1)
         p0 = rotate_small(pose0, 18) @ person["tilt"].T
         p1 = rotate_small(pose1, 18) @ person["tilt"].T
         k = (3 * x ** 2 - 2 * x ** 3)[:, None]      # انتقال ناعم بين الاتجاهين
@@ -200,7 +223,7 @@ def make_everyday(person, kind=None):
     elif kind == "talking":     # بيحرّك إيده وهو بيتكلم: أي شكل، أي حركة
         shape = np.tile(rng.uniform(0.05, 0.9, 5), (WINDOW, 1))
         pose = np.tile(rotate_small(unit(rng.normal(0, 1, 3)), 0), (WINDOW, 1))
-        mk = ["wave", "shake", "nod", "circle", "push", "tilt", "down"][rng.integers(7)]
+        mk = ["wave", "shake", "nod", "circle", "push", "tilt", "down", "salute"][rng.integers(8)]
         a, g, _, _ = motion(mk, amp * rng.uniform(0.3, 0.9), speed)
         acc_dyn, gyro = acc_dyn + a, gyro + g
     elif kind == "carry":       # ماسك شنطة وماشي: قبضة والإيد بتتمرجح
