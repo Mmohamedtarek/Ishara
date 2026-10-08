@@ -18,3 +18,5 @@ hardware/**/fp-info-cache
 # misc
 *.zip
 .DS_Store
+# app: regenerated outputs
+app/tools/out/
