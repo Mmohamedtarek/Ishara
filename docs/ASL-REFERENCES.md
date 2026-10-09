@@ -36,3 +36,12 @@ The avatar animations (app Step 5) and the glove recordings (AI team) both follo
 | `sorry` | Sorry (A fist) | [lifeprint.com/asl101/pages-signs/s/sorry.htm](https://www.lifeprint.com/asl101/pages-signs/s/sorry.htm) | A hand, clockwise circles on the chest (Lifeprint recommends A over S). Matches v2.1. | Claude (page text only; videos not watched) |
 | `water` | Water | [lifeprint.com/asl101/pages-signs/w/water.htm](https://www.lifeprint.com/asl101/pages-signs/w/water.htm) | **Check:** W hand, the index finger taps the **mouth / lips** twice. **Decided: we use this form** (vocabulary v2.2). The avatar taps the mouth, not the chin. | Claude (page text only; videos not watched) |
 | `iloveyou` | I love you | [lifeprint.com/asl101/pages-signs/i/i-love-you.htm](https://www.lifeprint.com/asl101/pages-signs/i/i-love-you.htm) | ILY hand, palm out. v2.1: held still. | Claude (page text only; videos not watched) |
+
+## Avatar-only signs (two-handed; the glove can't recognize them; only "watch and pick" in Learn)
+
+| Label | Word | Link | Notes | Checked by |
+|---|---|---|---|---|
+| `help` | Help | [lifeprint.com/asl101/pages-signs/h/help.htm](https://www.lifeprint.com/asl101/pages-signs/h/help.htm) | Loose-thumb A hand (or S) resting on the other flat palm, both lift together. Lifeprint notes several variants exist. | Claude (page text only; videos not watched) |
+| `coffee` | Coffee | [lifeprint.com/asl101/pages-signs/c/coffee.htm](https://www.lifeprint.com/asl101/pages-signs/c/coffee.htm) | Two S hands stacked; the bottom hand stays still, the top hand circles like turning a coffee grinder. | Claude (page text only; videos not watched) |
+| `doctor` | Doctor | [lifeprint.com/asl101/pages-signs/d/doctor.htm](https://www.lifeprint.com/asl101/pages-signs/d/doctor.htm) | Recommended version: tap the fingertips of the dominant bent-B hand on the inside of the other wrist (the pulse). Other versions exist. | Claude (page text only; videos not watched) |
+| `family` | Family | [lifeprint.com/asl101/pages-signs/f/family.htm](https://www.lifeprint.com/asl101/pages-signs/f/family.htm) | Two F hands trace a circle (start palms out, end palms in), like a family around a table. | Claude (page text only; videos not watched) |
