@@ -61,6 +61,23 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | Q-A6 | Add finger spread to the engine as data plus a few lines in `curlHand`. Show FIVE vs FOUR and TWO vs NO in the preview screen. |
 | Q-A7 | The user sends references for the 10 new signs before step 5. Steps 2–4 don't wait for them. |
 
+## Step 4 approvals (2026-10-09)
+| ID | Decision |
+|---|---|
+| S4-1 | `signs.json` drafts approved: all Arabic spoken words, all extra variants (goodbye, phone, لو سمحت, آسفة, تليفون, باي, …) and the categories of the 5 avatar-only signs. No field is marked `draft` any more. |
+| S4-2 | Inside Arabic sentences the app name is always "إشارة". ArSL dialog (AR): "لغة الإشارة المصرية هتكون متاحة في تحديث قريب. حاليًا إشارة بيستخدم لغة الإشارة الأمريكية (ASL)." |
+| S4-3 | Gendered Arabic words (آسف/آسفة, جعان/جعانة, إنت/إنتي): the voice speaks the masculine form for now; both forms match for speech → sign. **Future:** a profile setting for the signer's gender picks the spoken form. |
+| S4-4 | iOS `NSBluetoothAlwaysUsageDescription` approved: "Ishara uses Bluetooth to connect to your Ishara glove and read your signs." (Arabic version still needs Xcode on a Mac.) |
+| S4-5 | The "Coming soon" badge design (amber `.xp`-style chip) approved. |
+
+## Vocabulary v2.2 (2026-10-09)
+| ID | Decision |
+|---|---|
+| V-1 | `docs/ASL-REFERENCES.md` (user, commit `331fbfa`) holds one Lifeprint reference per sign; avatar animations follow it together with the vocabulary PDF. |
+| V-2 | COME = index forward, palm up, **one quick arc toward you** (not a repeated beckon). |
+| V-3 | WATER = W hand, the index fingertip taps the **mouth** twice (not the chin). The avatar's existing WATER is changed. |
+| V-4 | The AI team retrains for v2.2 and delivers kit v3.2.2 (new models, same labels and spec, plus the §8 doc fix). The kit isn't edited here; sync only when the user says so. Until then the repo PDF still reads v2.1 for COME / WATER; V-2 and V-3 win. |
+
 ## Backend
 | ID | Decision |
 |---|---|
@@ -112,7 +129,7 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | 2026-10-09 | `compileSdk = 37` (targetSdk stays 36, minSdk unchanged), with `android.suppressUnsupportedCompileSdk=37`. | `reactive_ble_mobile` 5.6.0 requires apps to compile against API 37; AGP 9.1 only recommends ≤ 36 (warning, the build works). |
 | 2026-10-09 | Android permissions: `BLUETOOTH_SCAN` (neverForLocation), `BLUETOOTH_CONNECT`, `ACCESS_FINE_LOCATION` only up to API 30; the `uses-permission-sdk-23` location entries merged in by RxAndroidBle are removed (`tools:node="remove"`). `bluetooth_le` feature not required. | The scan never derives location; no location prompt or Play location disclosure on Android 12+. Without BLE the app still offers speech → avatar and Learn. |
 | 2026-10-09 | The BLE plugin object is created on first use only. | It talks to the platform as soon as it exists; mock mode and tests never need it. |
-| 2026-10-09 | Open: iOS `NSBluetoothAlwaysUsageDescription` (user-facing text) comes with the Pair screen drafts (step 6). | Every user-facing text is a draft for approval (Q-D2). Needed before any iOS run with the real glove. |
+| 2026-10-09 | ~~Open: iOS `NSBluetoothAlwaysUsageDescription`~~ **Resolved:** approved (S4-4). | Every user-facing text is a draft for approval (Q-D2). Needed before any iOS run with the real glove. |
 | 2026-10-09 | Language packs: everything of a sign language lives under `assets/packs/<lang>/`: `signs.json`, the kit (`kit/model`, `kit/mock`, `kit/test`, synced by `sync_kit.sh`) and later the avatar library. `PackRegistry` (ASL available, ArSL not); `activeSignLanguageProvider` + `activePackProvider` are the only way to a pack; `PackRegistry.require` throws for an unavailable pack. | Prompt: "recognizer models under assets/packs/<lang>/"; ArSL later = new data only. |
 | 2026-10-09 | `signs.json` is the only word list. Variants are matched exactly after normalization (case, Arabic diacritics + tatweel, أ إ آ ٱ → ا, ؤ → و, ئ → ي, ة → ه, ى → ي; apostrophes removed so "I'm" never becomes "I"), longest phrase first. Loading refuses a catalogue where a normalized variant leads to two signs, or that disagrees with `labels.txt`. | Sign rule 7; prompt catalogue tests. |
 | 2026-10-09 | Normalizer characters are written as code points. | A tool turned `\u` escapes into invisible combining characters during this step; code points can't be mangled and are reviewable. |

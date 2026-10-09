@@ -318,24 +318,46 @@ void main() {
     });
 
     test('draft variants are not matched until approved', () {
-      for (final w in ['phone', 'goodbye']) {
-        expect(cat.labelFor(w, SpokenLanguage.en), isNull, reason: w);
-      }
-      for (final w in ['لو سمحت', 'آسفة', 'واحد', 'تليفون', 'اثنين']) {
-        expect(
-          cat.labelFor(WordNormalizer.normalize(w), SpokenLanguage.ar),
-          isNull,
-          reason: w,
-        );
-      }
+      final j = jsonDecode(readText(_catalogue)) as Map<String, dynamic>;
+      final call = (j['signs'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .firstWhere((s) => s['label'] == 'call');
+      call['draft'] = ['en.variants:phone', 'ar.variants'];
+      final drafted = SignCatalogue.parse(jsonEncode(j), labels: labels);
+      expect(drafted.labelFor('phone', SpokenLanguage.en), isNull);
+      expect(drafted.labelFor('call', SpokenLanguage.en), 'call');
       expect(
-        cat.byLabel('call')!.isDraftVariant(SpokenLanguage.en, 'phone'),
+        drafted.labelFor(WordNormalizer.normalize('تليفون'), SpokenLanguage.ar),
+        isNull,
+      );
+      expect(
+        drafted.byLabel('call')!.isDraftVariant(SpokenLanguage.en, 'phone'),
         isTrue,
       );
       expect(
-        cat.byLabel('call')!.isDraftVariant(SpokenLanguage.en, 'call'),
+        drafted.byLabel('call')!.isDraftVariant(SpokenLanguage.en, 'call'),
         isFalse,
       );
+    });
+
+    test('approved variants (step 4 approvals) are matched', () {
+      expect(cat.labelFor('phone', SpokenLanguage.en), 'call');
+      expect(cat.labelFor('goodbye', SpokenLanguage.en), 'bye');
+      const ar = {
+        'لو سمحت': 'please',
+        'آسفة': 'sorry',
+        'واحد': 'one',
+        'تليفون': 'call',
+        'اثنين': 'two',
+        'باي': 'bye',
+      };
+      for (final MapEntry(:key, :value) in ar.entries) {
+        expect(
+          cat.labelFor(WordNormalizer.normalize(key), SpokenLanguage.ar),
+          value,
+          reason: key,
+        );
+      }
     });
 
     test('a phrase never spans sentence punctuation', () {
@@ -370,9 +392,16 @@ void main() {
     });
   });
 
-  test('drafts are marked: Arabic spoken text needs approval (Q-T5)', () {
+  test('the shipped catalogue has no unapproved drafts', () {
     for (final s in cat.signs) {
-      expect(s.draft, contains('ar.spoken'), reason: s.label);
+      expect(s.draft, isEmpty, reason: s.label);
     }
+  });
+
+  test('vocabulary v2.2 forms: WATER at the mouth, COME one arc', () {
+    expect(cat.byLabel('water')!.description, contains('taps the mouth'));
+    expect(cat.byLabel('water')!.description, isNot(contains('chin')));
+    expect(cat.byLabel('come')!.description, contains('one quick arc'));
+    expect(cat.byLabel('come')!.description, isNot(contains('beckon')));
   });
 }

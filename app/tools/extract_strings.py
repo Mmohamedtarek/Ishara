@@ -67,8 +67,8 @@ APPROVED_NEW = {
     "comingSoon": ("Coming soon", "قريبًا", "user prompt, Sign language section"),
     "arslComingSoon": (
         "Egyptian Arabic Sign Language is coming in a future update. For now, Ishara uses American Sign Language (ASL).",
-        "لغة الإشارة المصرية هتكون متاحة في تحديث قريب. حاليًا Ishara بيستخدم لغة الإشارة الأمريكية (ASL).",
-        "user prompt, Sign language section",
+        "لغة الإشارة المصرية هتكون متاحة في تحديث قريب. حاليًا إشارة بيستخدم لغة الإشارة الأمريكية (ASL).",
+        "user prompt, Sign language section; AR name fixed to إشارة in step 4 approvals",
     ),
     "ok": ("OK", "تمام", "user prompt, Sign language section"),
 }

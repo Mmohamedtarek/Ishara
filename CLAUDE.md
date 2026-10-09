@@ -17,6 +17,7 @@ If anything is unclear, or two sources disagree, **stop and ask the user**. Neve
 | `app/Ishara-Mobile-Kit/README.md` | kit rules |
 | `docs/BLE-CONTRACT.md`, `docs/BLE-TESTING.md` | everything over Bluetooth |
 | `docs/Ishara-Sign-Vocabulary-v2-ASL.pdf` | the 20 glove signs and the ASL form of each (reference for every avatar animation) |
+| `docs/ASL-REFERENCES.md` | one ASL video reference per sign; vocabulary v2.2 decisions (COME = one arc toward you, WATER taps the mouth) win over the v2.1 PDF (DECISIONS V-1…V-4) |
 
 ## Never change
 `app/Ishara-Mobile-Kit/`, `docs/BLE-CONTRACT.md`, `docs/Ishara-Sign-Vocabulary-v2-ASL.pdf`, `design/`, `AI/`, `firmware/`, `hardware/`.
@@ -47,7 +48,7 @@ All user decisions live in `app/DECISIONS.md` by ID (Q-…, C…). Follow them; 
 Anything marked "draft" (new texts, Arabic spoken words, pair copy, new screens) is shown to the user before it ships.
 
 ## Dependencies
-Check the licence of every new package (and whether it phones home) before adding it. `flutter_blue_plus` is not used (licence + build telemetry); the BLE library is pending the user's choice (DECISIONS.md).
+Check the licence of every new package (and whether it phones home) before adding it. `flutter_blue_plus` is not used (licence + build telemetry); the BLE library is `flutter_reactive_ble` 5.6.0 (user decision).
 
 ## Devices
 Emulator `ishara_api36` for development and mock integration tests; the user's USB phone for anything BLE; CI runs everything that needs no device. Disk is tight: keep build outputs and caches lean.

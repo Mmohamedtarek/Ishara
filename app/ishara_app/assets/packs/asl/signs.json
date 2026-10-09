@@ -1,182 +1,157 @@
 {
   "language": "asl",
   "version": 1,
-  "note": "One entry per sign. glove = the model recognizes it (labels.txt); avatar = the avatar engine can perform it; verified = its form was checked against an ASL reference (Sign Vocabulary v2.1). en/ar.word = display text; spoken = text-to-speech; variants = what speech-to-text may hear for this sign (matched exactly after normalization, never fuzzy). draft = text not yet approved by the user.",
+  "note": "One entry per sign. glove = the model recognizes it (labels.txt); avatar = the avatar engine can perform it; verified = its form was checked against an ASL reference (Sign Vocabulary v2.2, docs/ASL-REFERENCES.md). en/ar.word = display text; spoken = text-to-speech; variants = what speech-to-text may hear for this sign (matched exactly after normalization, never fuzzy). draft = text not yet approved by the user.",
   "signs": [
     {
       "label": "one", "category": "numbers", "glove": true, "avatar": false, "verified": true,
       "en": {"word": "One", "spoken": "one", "variants": ["one"]},
       "ar": {"word": "واحد", "spoken": "واحد", "variants": ["واحد"]},
-      "description": "Index straight, other fingers closed, thumb over them; index up, palm toward you, still.",
-      "draft": ["en.word", "ar.word", "ar.spoken", "ar.variants"]
+      "description": "Index straight, other fingers closed, thumb over them; index up, palm toward you, still."
     },
     {
       "label": "two", "category": "numbers", "glove": true, "avatar": false, "verified": true,
       "en": {"word": "Two", "spoken": "two", "variants": ["two"]},
       "ar": {"word": "اتنين", "spoken": "اتنين", "variants": ["اتنين", "اثنين", "اثنان"]},
-      "description": "Index and middle straight (V), thumb holds ring and pinky; fingers up, palm toward you, still.",
-      "draft": ["en.word", "ar.word", "ar.spoken", "ar.variants"]
+      "description": "Index and middle straight (V), thumb holds ring and pinky; fingers up, palm toward you, still."
     },
     {
       "label": "three", "category": "numbers", "glove": true, "avatar": false, "verified": true,
       "en": {"word": "Three", "spoken": "three", "variants": ["three"]},
       "ar": {"word": "تلاتة", "spoken": "تلاتة", "variants": ["تلاتة", "ثلاثة"]},
-      "description": "Thumb, index and middle straight (ASL form); fingers up, palm toward you, still.",
-      "draft": ["en.word", "ar.word", "ar.spoken", "ar.variants"]
+      "description": "Thumb, index and middle straight (ASL form); fingers up, palm toward you, still."
     },
     {
       "label": "four", "category": "numbers", "glove": true, "avatar": false, "verified": true,
       "en": {"word": "Four", "spoken": "four", "variants": ["four"]},
       "ar": {"word": "أربعة", "spoken": "أربعة", "variants": ["أربعة"]},
-      "description": "Four fingers straight, thumb folded on the palm; fingers up, palm toward you, still.",
-      "draft": ["en.word", "ar.word", "ar.spoken", "ar.variants"]
+      "description": "Four fingers straight, thumb folded on the palm; fingers up, palm toward you, still."
     },
     {
       "label": "five", "category": "numbers", "glove": true, "avatar": false, "verified": true,
       "en": {"word": "Five", "spoken": "five", "variants": ["five"]},
       "ar": {"word": "خمسة", "spoken": "خمسة", "variants": ["خمسة"]},
-      "description": "Whole hand open, fingers spread; fingers up, still.",
-      "draft": ["en.word", "ar.word", "ar.spoken", "ar.variants"]
+      "description": "Whole hand open, fingers spread; fingers up, still."
     },
     {
       "label": "me", "category": "pronouns", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Me", "spoken": "me", "variants": ["me", "i"]},
       "ar": {"word": "أنا", "spoken": "أنا", "variants": ["أنا"]},
-      "description": "Index straight; points to your own chest and touches it.",
-      "draft": ["en.word", "ar.spoken"]
+      "description": "Index straight; points to your own chest and touches it."
     },
     {
       "label": "you", "category": "pronouns", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "You", "spoken": "you", "variants": ["you"]},
       "ar": {"word": "إنت", "spoken": "إنت", "variants": ["إنت", "إنتي"]},
-      "description": "Index straight; points forward at the other person.",
-      "draft": ["en.word", "ar.word", "ar.spoken"]
+      "description": "Index straight; points forward at the other person."
     },
     {
       "label": "hello", "category": "social", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Hello", "spoken": "hello", "variants": ["hello", "hi", "hey"]},
       "ar": {"word": "أهلاً", "spoken": "أهلاً", "variants": ["أهلاً", "السلام عليكم"]},
-      "description": "Flat hand (B), fingers together, thumb folded; salute: fingertips at the side of the forehead, the hand moves out and away.",
-      "draft": ["ar.spoken"]
+      "description": "Flat hand (B), fingers together, thumb folded; salute: fingertips at the side of the forehead, the hand moves out and away."
     },
     {
       "label": "thanks", "category": "social", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Thank you", "spoken": "thank you", "variants": ["thank you", "thanks", "thank"]},
       "ar": {"word": "شكراً", "spoken": "شكراً", "variants": ["شكراً"]},
-      "description": "Flat hand (B); fingertips at the chin, the hand moves forward and down, ends palm up.",
-      "draft": ["ar.spoken"]
+      "description": "Flat hand (B); fingertips at the chin, the hand moves forward and down, ends palm up."
     },
     {
       "label": "please", "category": "social", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Please", "spoken": "please", "variants": ["please"]},
       "ar": {"word": "من فضلك", "spoken": "من فضلك", "variants": ["من فضلك", "لو سمحت"]},
-      "description": "Flat B hand; palm flat on the chest, circles.",
-      "draft": ["ar.spoken", "ar.variants:لو سمحت"]
+      "description": "Flat B hand; palm flat on the chest, circles."
     },
     {
       "label": "yes", "category": "social", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Yes", "spoken": "yes", "variants": ["yes"]},
       "ar": {"word": "أيوه", "spoken": "أيوه", "variants": ["أيوه"]},
-      "description": "Fist (S); the wrist nods up and down, like a head nodding.",
-      "draft": ["ar.spoken"]
+      "description": "Fist (S); the wrist nods up and down, like a head nodding."
     },
     {
       "label": "no", "category": "social", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "No", "spoken": "no", "variants": ["no"]},
       "ar": {"word": "لأ", "spoken": "لأ", "variants": ["لأ", "لا"]},
-      "description": "Index and middle straight together, snap shut onto the thumb; in front of the shoulder, twice.",
-      "draft": ["ar.spoken"]
+      "description": "Index and middle straight together, snap shut onto the thumb; in front of the shoulder, twice."
     },
     {
       "label": "sorry", "category": "social", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Sorry", "spoken": "sorry", "variants": ["sorry"]},
       "ar": {"word": "آسف", "spoken": "آسف", "variants": ["آسف", "آسفة"]},
-      "description": "A fist (thumb straight up along the side); on the chest, circles.",
-      "draft": ["ar.spoken", "ar.variants:آسفة"]
+      "description": "A fist (thumb straight up along the side); on the chest, circles."
     },
     {
       "label": "water", "category": "needs", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Water", "spoken": "water", "variants": ["water"]},
       "ar": {"word": "مية", "spoken": "مية", "variants": ["مية"]},
-      "description": "Index, middle and ring straight (W), thumb holds the pinky; the index fingertip taps the chin twice.",
-      "draft": ["ar.spoken"]
+      "description": "Index, middle and ring straight (W), thumb holds the pinky; the index fingertip taps the mouth twice."
     },
     {
       "label": "bye", "category": "social", "glove": true, "avatar": false, "verified": true,
       "en": {"word": "Bye", "spoken": "bye", "variants": ["bye", "goodbye"]},
       "ar": {"word": "مع السلامة", "spoken": "مع السلامة", "variants": ["مع السلامة", "باي"]},
-      "description": "Open hand, fingers bend down and up together, twice or more; palm out, at shoulder height, the arm stays still.",
-      "draft": ["en.word", "en.variants:goodbye", "ar.word", "ar.spoken", "ar.variants"]
+      "description": "Open hand, fingers bend down and up together, twice or more; palm out, at shoulder height, the arm stays still."
     },
     {
       "label": "come", "category": "actions", "glove": true, "avatar": false, "verified": true,
       "en": {"word": "Come", "spoken": "come", "variants": ["come"]},
       "ar": {"word": "تعالى", "spoken": "تعالى", "variants": ["تعالى", "تعال", "تعالي"]},
-      "description": "Index curls in and straightens (one-handed form); palm up, beckons toward you.",
-      "draft": ["en.word", "ar.word", "ar.spoken", "ar.variants"]
+      "description": "Index straight, pointing forward, palm up; one quick arc toward you (one-handed form)."
     },
     {
       "label": "drink", "category": "needs", "glove": true, "avatar": false, "verified": true,
       "en": {"word": "Drink", "spoken": "drink", "variants": ["drink"]},
       "ar": {"word": "اشرب", "spoken": "اشرب", "variants": ["اشرب"]},
-      "description": "C shape, as if holding a cup; at the mouth, tilts toward you.",
-      "draft": ["en.word", "ar.word", "ar.spoken", "ar.variants"]
+      "description": "C shape, as if holding a cup; at the mouth, tilts toward you."
     },
     {
       "label": "call", "category": "actions", "glove": true, "avatar": false, "verified": true,
       "en": {"word": "Call", "spoken": "call", "variants": ["call", "phone"]},
       "ar": {"word": "اتصل", "spoken": "اتصل", "variants": ["اتصل", "تليفون"]},
-      "description": "Thumb and pinky straight (Y); beside the ear and cheek.",
-      "draft": ["en.word", "en.variants:phone", "ar.word", "ar.spoken", "ar.variants"]
+      "description": "Thumb and pinky straight (Y); beside the ear and cheek."
     },
     {
       "label": "iloveyou", "category": "feelings", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "I love you", "spoken": "I love you", "variants": ["i love you"]},
       "ar": {"word": "بحبك", "spoken": "بحبك", "variants": ["بحبك"]},
-      "description": "Thumb, index and pinky straight (ILY); palm out, held still in front.",
-      "draft": ["ar.spoken"]
+      "description": "Thumb, index and pinky straight (ILY); palm out, held still in front."
     },
     {
       "label": "hungry", "category": "needs", "glove": true, "avatar": false, "verified": true,
       "en": {"word": "Hungry", "spoken": "hungry", "variants": ["hungry"]},
       "ar": {"word": "جعان", "spoken": "جعان", "variants": ["جعان", "جعانة"]},
-      "description": "C shape; on the upper chest, moves down once.",
-      "draft": ["en.word", "ar.word", "ar.spoken", "ar.variants"]
+      "description": "C shape; on the upper chest, moves down once."
     },
     {
       "label": "coffee", "category": "needs", "glove": false, "avatar": true, "verified": false,
       "en": {"word": "Coffee", "spoken": "coffee", "variants": ["coffee"]},
       "ar": {"word": "قهوة", "spoken": "قهوة", "variants": ["قهوة"]},
-      "description": "Two S fists stacked, the top one grinds in a small circle (two-handed; not in Sign Vocabulary v2).",
-      "draft": ["category", "ar.spoken"]
+      "description": "Two S fists stacked, the top one grinds in a small circle (two-handed; not in Sign Vocabulary v2)."
     },
     {
       "label": "doctor", "category": "people", "glove": false, "avatar": true, "verified": false,
       "en": {"word": "Doctor", "spoken": "doctor", "variants": ["doctor", "doctors"]},
       "ar": {"word": "دكتور", "spoken": "دكتور", "variants": ["دكتور", "الدكتور"]},
-      "description": "Bent fingertips tap the inside of the other wrist, twice (two-handed; not in Sign Vocabulary v2).",
-      "draft": ["category", "ar.spoken"]
+      "description": "Bent fingertips tap the inside of the other wrist, twice (two-handed; not in Sign Vocabulary v2)."
     },
     {
       "label": "home", "category": "places", "glove": false, "avatar": true, "verified": true,
       "en": {"word": "Home", "spoken": "home", "variants": ["home"]},
       "ar": {"word": "بيت", "spoken": "بيت", "variants": ["بيت", "البيت"]},
-      "description": "Fingertips together (flat O); mouth, then cheek (Sign Vocabulary v2 backup sign).",
-      "draft": ["category", "ar.spoken"]
+      "description": "Fingertips together (flat O); mouth, then cheek (Sign Vocabulary v2 backup sign)."
     },
     {
       "label": "family", "category": "people", "glove": false, "avatar": true, "verified": false,
       "en": {"word": "Family", "spoken": "family", "variants": ["family"]},
       "ar": {"word": "عيلة", "spoken": "عيلة", "variants": ["عيلة"]},
-      "description": "Two F hands, palms out, circle outward and meet with the palms in (two-handed; not in Sign Vocabulary v2).",
-      "draft": ["category", "ar.spoken"]
+      "description": "Two F hands, palms out, circle outward and meet with the palms in (two-handed; not in Sign Vocabulary v2)."
     },
     {
       "label": "help", "category": "actions", "glove": false, "avatar": true, "verified": false,
       "en": {"word": "Help", "spoken": "help", "variants": ["help"]},
       "ar": {"word": "مساعدة", "spoken": "مساعدة", "variants": ["مساعدة", "ساعدني"]},
-      "description": "A hand (thumb up) on the flat other palm, both lift (two-handed; not in Sign Vocabulary v2).",
-      "draft": ["category", "ar.spoken"]
+      "description": "A hand (thumb up) on the flat other palm, both lift (two-handed; not in Sign Vocabulary v2)."
     }
   ]
 }

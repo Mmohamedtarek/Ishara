@@ -171,8 +171,4 @@
 | family | - / A / ? | Family · family · family | عيلة · عيلة · عيلة | category, ar.spoken |
 | help | - / A / ? | Help · help · help | مساعدة · مساعدة · مساعدة, ساعدني | category, ar.spoken |
 
-**Open questions**
-1. Your ArSL dialog text (Arabic) writes "Ishara" in Latin letters, but your rule says the name inside Arabic sentences is "إشارة". Keep the dialog exactly as given, or use "إشارة"?
-2. Arabic words with a gender (آسف/آسفة, جعان/جعانة, إنت/إنتي): which form should the voice speak for the signer? Both are matched for speech → sign. Proposal: masculine by default until a profile setting exists.
-3. iOS Bluetooth permission text (draft): "Ishara uses Bluetooth to connect to your Ishara glove and read your signs." Arabic version needs Xcode (Mac).
-4. "Coming soon" badge design (draft, see golden).
+**Open questions:** all answered 2026-10-09 (DECISIONS S4-1…S4-5): drafts approved and removed from `signs.json`; ArSL dialog (AR) uses "إشارة"; masculine spoken forms for now (future profile setting); iOS Bluetooth text and badge approved. Vocabulary v2.2 (V-2, V-3): WATER/COME descriptions updated.

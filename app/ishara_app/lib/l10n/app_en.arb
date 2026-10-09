@@ -1029,7 +1029,7 @@
   },
   "arslComingSoon": "Egyptian Arabic Sign Language is coming in a future update. For now, Ishara uses American Sign Language (ASL).",
   "@arslComingSoon": {
-    "description": "approved new text (user prompt, Sign language section)"
+    "description": "approved new text (user prompt, Sign language section; AR name fixed to إشارة in step 4 approvals)"
   },
   "ok": "OK",
   "@ok": {
