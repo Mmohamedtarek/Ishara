@@ -45,9 +45,12 @@ void main() {
       for (final label in labels) {
         if (!RegExp('[\'"]$label[\'"]').hasMatch(src)) continue;
         // AI-SPEC §4 names the two non-words; that constant is allowed.
+        // The avatar engine reserves "rest" for its ready pose (not a label).
         final allowed =
-            (label == 'rest' || label == 'other') &&
-            f.path == 'lib/core/recognition/recognition_config.dart';
+            ((label == 'rest' || label == 'other') &&
+                f.path == 'lib/core/recognition/recognition_config.dart') ||
+            (label == 'rest' &&
+                f.path == 'lib/core/avatar/avatar_library.dart');
         if (!allowed) offenders.add('${f.path}: "$label"');
       }
     }

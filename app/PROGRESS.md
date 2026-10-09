@@ -172,3 +172,61 @@
 | help | - / A / ? | Help · help · help | مساعدة · مساعدة · مساعدة, ساعدني | category, ar.spoken |
 
 **Open questions:** all answered 2026-10-09 (DECISIONS S4-1…S4-5): drafts approved and removed from `signs.json`; ArSL dialog (AR) uses "إشارة"; masculine spoken forms for now (future profile setting); iOS Bluetooth text and badge approved. Vocabulary v2.2 (V-2, V-3): WATER/COME descriptions updated.
+
+## Step 5: avatar WebView (started 2026-10-09)
+
+**Checklist (before coding)**
+
+| # | Requirement | Source |
+|---|---|---|
+| 1 | WebView runs the prototype's Three.js engine, **ported, not rewritten** (same IK, CURL, baking, playback, camera, lights, face) | prompt › Avatar; prototype l.1393–2105 |
+| 2 | three.js 0.186.0 + GLTFLoader + meshopt decoder + the 2 GLBs bundled as local assets; no CDN, works offline | prompt › Avatar; Phase 0 §2 |
+| 3 | Served by a local loader so ES modules load (loopback HTTP server, 127.0.0.1, random port + token, assets allow-list only) | prompt › Avatar; DECISIONS (2026-10-08 webview_flutter + loopback) |
+| 4 | One typed `AvatarController`: `play(label, speed, loop)`, `stop()`, `setCharacter()`, `customize()`; events `ready`, `signStarted`, `signEnded`, `error` | prompt › Avatar |
+| 5 | One WebView alive for the whole app, moved between screens (slots) | prompt › Avatar; Phase 0 architecture |
+| 6 | Sign library per pack (`assets/packs/asl/`), labels only; no word mapping inside the engine (catalogue does it; Q-A5 aliases gone) | prompt › packs; sign rule 7; Q-A5 |
+| 7 | `love` → `iloveyou` (Q-A4); I LOVE YOU held still (Q-A3); PLEASE B hand, SORRY A hand unchanged (Q-A3) | DECISIONS |
+| 8 | WATER: index fingertip taps the **mouth** (V-3) | DECISIONS V-3; ASL-REFERENCES |
+| 9 | Finger spread in the engine as data + a few lines in `curlHand`; FIVE vs FOUR and TWO vs NO shown in the preview | Q-A6 |
+| 10 | 10 new signs in the engine format (one two three four five bye come drink call hungry), new CURL shapes (C, Y, numbers, bye flap), COME = one arc (V-2) | prompt sign rule 2; ASL-REFERENCES; vocabulary v2.1 + V-2 |
+| 11 | Preview screen for every sign, front + side; new signs stay `avatar: false` (no speech/Learn use) until the user approves the preview | prompt step 5; sign rule 2 |
+| 12 | Every `avatar: true` sign exists in the engine library | prompt › Catalogue tests |
+| 13 | No leaks (WebView, channels, server), WebView can't navigate anywhere else; avatar never blocks the UI | prompt › review; security |
+| 14 | 60 fps target on a mid-range Android phone (measured on device later; emulator number recorded) | prompt › Performance |
+| 15 | Reduced motion honoured (OS setting passed in, not the WebView media query) | prototype `reduce`; accessibility |
+| 16 | RB-1: characters are data (cast list), nothing in code depends on the model files | DECISIONS RB-1 |
+
+**Built:** `assets/avatar/` (engine.js ported from the prototype, index.html with CSP, style.css, cast.json, three.js 0.186.0 vendored by `tools/vendor_three.sh` with SHA256SUMS, nour/sara GLBs), `assets/packs/asl/avatar/library.json` (15 ported signs + 10 new drafts, shapes incl. spread, previewPairs), `lib/core/avatar/` (AvatarLibrary, AvatarCast, AvatarEvent, AvatarController, AvatarAssetServer, WebViewAvatarPage / UnavailableAvatarSurface, AvatarSlotRegistry / AvatarSlot / AvatarParking, AvatarHost / AvatarStage, providers), `lib/features/dev/presentation/sign_preview_screen.dart` (`/dev/signs`, debug/profile only), Android INTERNET + loopback-only cleartext, iOS NSAllowsLocalNetworking. Tools: `extract_avatar_library.mjs`, `fmt_avatar_library.py`, `avatar_shots.py` (front/side contact sheets), `avatar_port_check.py` (port vs prototype pixels).
+
+| # | Status | Evidence |
+|---|---|---|
+| 1 ported, not rewritten | ✓ | `avatar_port_check.py`: 71 frames of the 13 unchanged signs, worst mean pixel difference 0.07/255 vs the prototype; library test: 13 signs byte-identical to the prototype data (sha256-pinned fixture) |
+| 2 offline, local three.js + GLBs | ✓ | page test: no remote URL, CSP `default-src 'none'`; three.js checksums |
+| 3 loopback loader | ✓ | 6 server tests (types, token, traversal, host header, methods) |
+| 4 typed AvatarController + events | ✓ | 14 controller/protocol tests |
+| 5 one WebView for the app | ✓ | host widget tests: one view instance, never recreated across push/pop, parked + paused offstage, tabs, lifecycle |
+| 6 library per pack, no word mapping in the engine | ✓ | page test (no ALIASES/poseNameFor code); catalogue test vs library |
+| 7 Q-A3/Q-A4 | ✓ | iloveyou held still (test) |
+| 8 V-3 WATER at the mouth | ✓ landmark; ✗ contact (see open questions) | review sheet `tools/out/avatar_review/water_nour.png` |
+| 9 spread (Q-A6) | ✓ | shapes v/three/four/five/y; preview pairs FIVE/FOUR, TWO/NO |
+| 10 10 new signs | drafts; CALL not right | sheets in `tools/out/avatar_review/` |
+| 11 preview screen | ✓ | widget test; emulator |
+| 12 avatar:true ⊆ library | ✓ | catalogue test (new signs stay avatar:false until approved) |
+| 13 leaks / navigation lock | ✓ | dispose paths tested; WebView may only open the server's pages |
+| 14 60 fps | emulator ✓ (RTX 4050 host GPU): 58.9–60.5 fps; phone pending | `integration_test/avatar_test.dart` |
+| 15 reduce motion from the OS | ✓ | host test |
+| 16 RB-1 characters as data | ✓ | cast.json; cast tests |
+
+**Emulator (`ishara_api36`, -gpu host via NVIDIA PRIME offload):** `integration_test/avatar_test.dart` 3/3 runs pass: ready in 2.9–3.8 s, 25/25 signs play to the end with the library's timing, 58.9–60.5 fps. Earlier on the software GPU: ~20 fps, and 2 runs where no page event arrived after `ready` (machine overloaded; the emulator itself died twice). Not reproduced on the hardware GPU in 3 runs. Mitigation for Talk (step 7): never wait for `signEnded` without a timeout (library duration + margin).
+
+**Review:** `/code-review` found 10 issues, all fixed with tests: (1) a dialog over an avatar screen took the avatar away and paused it → slot visibility = route on stage and not leaving; (2) the preview screen left the shared avatar turned / frozen → reset on close; (3) commands sent while the page reloaded were lost and state (pause, stats, caption, tint) not restored → `pageStarted` event, queue, replay; open signs end as interrupted; (4) a page load failure stayed `loading` forever → `page` is fatal; (5) the engine hard-coded `hello` → pack data `greeting`; (6) `setCharacter` returned an id that might never end → returns nothing; (7) assets read with the whole backing buffer → `readAssetBytes` with offset/length; (8) paused signs were still reported as played → pause interrupts; (9) encoded `/` or leading `.` in a path segment → refused; (10) three copies of the asset reader → one. Also from my own review: on iOS the dispose `about:blank` load was blocked by the navigation guard → allowed.
+
+**Tests:** 375 passing (+1 skipped benchmark), `lib/core` 94.8 % (webview_avatar_page.dart 30 %: only testable on a device, covered by the emulator test). Analyze: 0 issues. Emulator (hardware GPU): avatar test passes, incl. pause → interrupted; screenshot `tools/out/avatar_review/device_preview_emulator.png`.
+
+**Screens:** the only new screen is the developer preview (not in the prototype, debug only, English). The avatar stage uses the prototype's `#avatar` look (radius 24, stage gradient tokens, silhouette placeholder). Differences: the inset shadow is a bottom gradient (Flutter has no inset shadow); the placeholder has no drop shadow. Talk / Welcome / Mission screens with captions come in their steps.
+
+**Open questions (step 5)**
+1. New sign previews for approval (front + side, keyframe moments): `app/tools/out/avatar_review/{one,two,three,four,five,bye,come,drink,hungry,call}_nour.png`; FIVE vs FOUR and TWO vs NO in the same folder (`no_nour.png`). They stay `avatar: false` until approved.
+2. CALL is not right yet (7 attempts): the engine has one fixed elbow direction and fixed thumb opposition, so a Y hand at the ear either lifts the elbow to shoulder height or turns the thumb forward instead of up to the ear. Options: (a) accept a simpler form (Y hand beside the cheek, as now) for v1; (b) let a keyframe set the elbow direction (engine change, beyond "port, not rewrite"); (c) you send a frame-by-frame reference and I try again.
+3. Contact depth: the prototype's body-depth measurement finds no vertices for both characters, so every contact (WATER at the mouth, ME at the chest, THANK YOU at the chin) uses one fixed depth; the fingertips stop about 2–4 cm in front of the face. Fix the measurement (engine change) or keep the prototype behaviour?
+4. Real FPS on your phone (`flutter test integration_test/avatar_test.dart -d <phone>`).

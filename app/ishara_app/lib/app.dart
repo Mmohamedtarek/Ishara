@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ishara_app/core/avatar/avatar_host.dart';
 import 'package:ishara_app/core/router/app_router.dart';
 import 'package:ishara_app/core/settings/app_settings.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
@@ -32,8 +33,11 @@ class IsharaApp extends ConsumerWidget {
       darkTheme: theme(Brightness.dark),
       // The stage background (`.stage { background: var(--bg) }`) shows
       // behind a screen while it fades in.
-      builder: (context, child) =>
-          ColoredBox(color: context.colors.bg, child: child),
+      // One avatar WebView for the whole app (AvatarHost).
+      builder: (context, child) => ColoredBox(
+        color: context.colors.bg,
+        child: AvatarHost(child: child ?? const SizedBox.shrink()),
+      ),
     );
   }
 }

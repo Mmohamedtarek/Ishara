@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+import 'package:ishara_app/core/assets/asset_bytes.dart';
 import 'package:ishara_app/core/glove/ble/reactive_ble_transport.dart';
 import 'package:ishara_app/core/glove/glove_client.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
@@ -39,17 +39,13 @@ class GloveSourceOverride extends _$GloveSourceOverride {
 GloveSourceKind activeGloveKind(Ref ref) =>
     ref.watch(gloveSourceOverrideProvider) ?? gloveKindFromEnvironment();
 
-/// Reads app assets (the kit's mock recordings).
-Future<Uint8List> _readAsset(String path) async =>
-    (await rootBundle.load(path)).buffer.asUint8List();
-
 /// The simulated glove, or null when the real glove is active. Exposed for
 /// the developer demo controls only.
 @Riverpod(keepAlive: true)
 MockGlove? mockGlove(Ref ref) {
   if (ref.watch(activeGloveKindProvider) != GloveSourceKind.mock) return null;
   final feed = MockFeed(
-    MockLibrary(_readAsset, root: ref.watch(activePackProvider).mockDir),
+    MockLibrary(readAssetBytes, root: ref.watch(activePackProvider).mockDir),
   );
   ref.onDispose(feed.dispose);
   return MockGlove(feed);

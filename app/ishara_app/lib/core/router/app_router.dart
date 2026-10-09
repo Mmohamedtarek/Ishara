@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
@@ -6,6 +7,7 @@ import 'package:ishara_app/core/router/transitions.dart';
 import 'package:ishara_app/features/avatar_studio/presentation/avatar_studio_screen.dart';
 import 'package:ishara_app/features/calibration/presentation/calibrate_screen.dart';
 import 'package:ishara_app/features/calibration/presentation/ready_screen.dart';
+import 'package:ishara_app/features/dev/presentation/sign_preview_screen.dart';
 import 'package:ishara_app/features/history/presentation/history_screen.dart';
 import 'package:ishara_app/features/learn/presentation/learn_screen.dart';
 import 'package:ishara_app/features/learn/presentation/mission_screen.dart';
@@ -55,6 +57,9 @@ GoRouter buildRouter({String initialLocation = AppRoutes.splash}) => GoRouter(
       entrance: ScreenEntrance.pop,
     ),
     _route(AppRoutes.avatarStudio, (_) => const AvatarStudioScreen()),
+    // Developer tool: no entry point in release builds.
+    if (!kReleaseMode)
+      _route(AppRoutes.signPreview, (_) => const SignPreviewScreen()),
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => TabShell(shell: shell),
       branches: [

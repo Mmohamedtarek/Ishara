@@ -63,6 +63,17 @@ are local only and are the images used for the screenshot review.
 | `sync_kit.sh` | Copies the Mobile Kit into the app's assets (the only allowed way). |
 | `coverage_check.py` | Coverage gate used by CI. |
 | `proto_shot.py` | Screenshots prototype screens (EN/AR × light/dark) with Playwright + system Chrome, for UI review. Needs `python3 -m venv app/tools/.venv && app/tools/.venv/bin/pip install 'playwright==1.*'`. |
+| `vendor_three.sh` | Copies three.js 0.186.0 (the prototype's version, MIT) from npm into `assets/avatar/three/` with `SHA256SUMS` (a test checks them). |
+| `extract_avatar_library.mjs` | Extracts the prototype engine's hand shapes and signs into `test/fixtures/prototype_avatar_library.json` (port-fidelity test). `node app/tools/extract_avatar_library.mjs` |
+| `fmt_avatar_library.py` | Re-formats `assets/packs/<lang>/avatar/library.json` (one keyframe per line). |
+| `avatar_shots.py` | Front / side contact sheets of avatar signs with the app's own engine page (headless Chrome). `app/tools/.venv/bin/python app/tools/avatar_shots.py water --views 0,-90` |
+| `avatar_port_check.py` | Renders the unchanged signs in the prototype and in the port and compares the pixels (needs the network for the prototype's CDN three.js). |
+
+## Avatar on a device
+
+- Integration test (WebView + WebGL): `flutter test integration_test/avatar_test.dart -d <device>`: avatar ready, every sign plays to its end, frame rate.
+- Emulator on this laptop (hybrid GPU): `__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia __VK_LAYER_NV_optimus=NVIDIA_only emulator -avd ishara_api36 -no-snapshot -gpu host &`. Run one heavy job at a time.
+- Developer sign preview: Settings → "Sign preview (dev)" (debug / profile builds only).
 
 ## Firebase emulators *(later: backend step)*
 

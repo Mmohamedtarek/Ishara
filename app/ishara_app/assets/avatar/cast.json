@@ -1,0 +1,52 @@
+{
+  "note": "The characters the avatar can use (RB-1: sample models for non-commercial use; replace before any store release; the credits line is the avCredit string). Values from the prototype's CAST; src = the .glb next to the engine page. en/ar/fem/tag are shown by the app.",
+  "default": "nour",
+  "characters": {
+    "nour": {
+      "en": "Nour",
+      "ar": "نور",
+      "fem": false,
+      "tagEn": "Signs for you",
+      "tagAr": "بيعمل الإشارة ليك",
+      "kind": "glb",
+      "src": "characters/nour.glb",
+      "curl0": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "plainTop": "#2F3A56",
+      "lmAdj": {
+        "chin": 0.025,
+        "mouth": 0.008,
+        "forehead": -0.012,
+        "chest": 0.08
+      }
+    },
+    "sara": {
+      "en": "Sara",
+      "ar": "سارة",
+      "fem": true,
+      "tagEn": "Signs for you",
+      "tagAr": "بتعمل الإشارة ليك",
+      "kind": "glb",
+      "src": "characters/sara.glb",
+      "curl0": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "lmAdj": {
+        "chin": 0.043,
+        "mouth": 0.018,
+        "cheek": 0.01,
+        "forehead": -0.035,
+        "chest": 0.09
+      }
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
@@ -19,6 +20,12 @@ class SettingsScreen extends StatelessWidget {
         SkeletonAction(l.sPair, () => context.push(AppRoutes.pair)),
         SkeletonAction(l.avTitle, () => context.push(AppRoutes.avatarStudio)),
         SkeletonAction(l.sLogout, () => context.go(AppRoutes.welcome)),
+        // Developer only (not localized, never in release builds).
+        if (!kReleaseMode)
+          SkeletonAction(
+            'Sign preview (dev)',
+            () => context.push(AppRoutes.signPreview),
+          ),
       ],
     );
   }

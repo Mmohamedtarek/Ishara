@@ -2,40 +2,19 @@
 library;
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ishara_app/core/avatar/avatar_library.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/catalogue/speech_to_sign.dart';
 import 'package:ishara_app/core/catalogue/word_normalizer.dart';
 import 'package:ishara_app/core/errors/failure.dart';
 import 'package:ishara_app/core/packs/sign_language.dart';
 import 'package:ishara_app/core/recognition/recognition_config.dart';
-import 'package:path/path.dart' as p;
 
 import '../support/kit.dart';
 
 const _catalogue = 'assets/packs/asl/signs.json';
-
-/// The avatar engine's sign library in the prototype (`var SIGNS = {...}`),
-/// with the Q-A4 rename love → iloveyou. Replaced by the ported engine
-/// library in the avatar step.
-Set<String> _prototypeAvatarSigns() {
-  final html = File(
-    p.join(Directory.current.path, '..', '..', 'design', 'prototype.html'),
-  ).readAsStringSync();
-  final start = html.indexOf('var SIGNS = {');
-  final end = html.indexOf('// ---------- skeleton name aliases', start);
-  final keys =
-      RegExp(
-          r'^    (\w+): \{',
-          multiLine: true,
-        ).allMatches(html.substring(start, end)).map((m) => m.group(1)!).toSet()
-        ..remove('rest');
-  // Q-A4: the prototype's `love` is the model's `iloveyou`.
-  const renamed = {'love': 'iloveyou'};
-  return {for (final k in keys) renamed[k] ?? k};
-}
 
 void main() {
   late Labels labels;
@@ -74,13 +53,26 @@ void main() {
     });
 
     test('every avatar: true sign exists in the avatar library', () {
-      final library = _prototypeAvatarSigns();
-      expect(library, hasLength(15));
+      final library = AvatarLibrary.parse(
+        readText('assets/packs/asl/avatar/library.json'),
+        language: SignLanguage.asl,
+      ).labels;
+      final avatar = cat.avatarSigns.map((s) => s.label).toSet();
       expect(
-        cat.avatarSigns.map((s) => s.label).toSet(),
-        library,
-        reason: 'avatar: true must be exactly what the engine can perform',
+        library.containsAll(avatar),
+        isTrue,
+        reason: 'missing: ${avatar.difference(library)}',
       );
+      expect(
+        library.difference({for (final s in cat.signs) s.label}),
+        isEmpty,
+        reason: 'the library only animates catalogue signs',
+      );
+      // Sign rule 2: animated but waiting for the user's preview approval.
+      expect(library.difference(avatar), {
+        'one', 'two', 'three', 'four', 'five', //
+        'bye', 'come', 'drink', 'call', 'hungry',
+      });
     });
 
     test('every entry has words in both languages and a description', () {

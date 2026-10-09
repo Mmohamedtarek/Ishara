@@ -42,8 +42,8 @@ class SignLanguagePack {
   /// Mock glove recordings for this language.
   String get mockDir => '$dir/kit/mock';
 
-  /// The avatar sign library (keyframes), added with the avatar.
-  String get avatarLibraryAsset => '$dir/avatar_signs.js';
+  /// The avatar sign library (keyframes and hand shapes).
+  String get avatarLibraryAsset => '$dir/avatar/library.json';
 }
 
 /// A pack that isn't available was requested.

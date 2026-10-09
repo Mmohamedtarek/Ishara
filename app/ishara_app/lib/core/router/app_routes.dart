@@ -12,6 +12,10 @@ abstract final class AppRoutes {
   static const settings = '/settings';
   static const avatarStudio = '/avatar';
 
+  /// Developer only (debug / profile builds): every avatar sign, front and
+  /// side (sign rule 2 previews).
+  static const signPreview = '/dev/signs';
+
   static const authPath = '/auth';
   static const missionPath = '/mission/:moduleId';
 

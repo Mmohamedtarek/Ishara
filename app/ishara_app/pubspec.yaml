@@ -24,6 +24,7 @@ dependencies:
   logging: ^1.3.0
   meta: ^1.19.0
   riverpod_annotation: ^4.0.7
+  webview_flutter: 4.14.1
 
 dev_dependencies:
   alchemist: ^0.14.1
@@ -33,11 +34,14 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   freezed: ^4.0.2
+  integration_test:
+    sdk: flutter
   json_serializable: ^6.14.1
   mocktail: ^1.0.5
   path: ^1.9.0
   riverpod_generator: ^4.0.9
   very_good_analysis: ^11.0.0
+  webview_flutter_platform_interface: ^2.15.1
 
 flutter:
   uses-material-design: true
@@ -54,6 +58,17 @@ flutter:
     - assets/packs/asl/kit/mock/B/
     - assets/packs/asl/kit/mock/B/practice/
     - assets/packs/asl/kit/test/
+    # ASL avatar sign library (keyframes, hand shapes)
+    - assets/packs/asl/avatar/
+    # Avatar engine page (ported from the prototype), served on loopback by AvatarAssetServer
+    - assets/avatar/
+    - assets/avatar/characters/
+    # three.js 0.186.0 (MIT), copied ONLY by app/tools/vendor_three.sh
+    - assets/avatar/three/
+    - assets/avatar/three/build/
+    - assets/avatar/three/examples/jsm/loaders/
+    - assets/avatar/three/examples/jsm/utils/
+    - assets/avatar/three/examples/jsm/libs/
 
   # Built by app/tools/make_fonts.sh (OFL). Weights match the ones the prototype loads.
   fonts:

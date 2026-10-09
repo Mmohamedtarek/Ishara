@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<!-- Only this server: no network, no inline script except the import map (hash). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'sha256-4fvzLOFsGVGtYeUNyIOhvTla0IL7atujVy1lXy4bURg='; connect-src 'self' blob: data:; img-src 'self' blob: data:; style-src 'self'; base-uri 'none'; form-action 'none'">
+<title>Ishara avatar</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"./three/build/three.module.js","three/addons/":"./three/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="avatar"></div>
+<script src="engine.js"></script>
+</body>
+</html>

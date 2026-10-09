@@ -1,4 +1,4 @@
-import 'package:flutter/services.dart';
+import 'package:ishara_app/core/assets/asset_bytes.dart';
 import 'package:ishara_app/core/glove/glove_providers.dart';
 import 'package:ishara_app/core/packs/pack_providers.dart';
 import 'package:ishara_app/core/recognition/model_bundle.dart';
@@ -11,7 +11,7 @@ part 'recognition_providers.g.dart';
 /// The active pack's models (labels, config, `.tflite`), loaded once.
 @Riverpod(keepAlive: true)
 Future<ModelBundle> modelBundle(Ref ref) => ModelBundle.load(
-  (path) async => (await rootBundle.load(path)).buffer.asUint8List(),
+  readAssetBytes,
   dir: ref.watch(activePackProvider).modelDir,
 );
 
