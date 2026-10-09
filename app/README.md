@@ -68,6 +68,9 @@ are local only and are the images used for the screenshot review.
 | `fmt_avatar_library.py` | Re-formats `assets/packs/<lang>/avatar/library.json` (one keyframe per line). |
 | `avatar_shots.py` | Front / side contact sheets of avatar signs with the app's own engine page (headless Chrome). `app/tools/.venv/bin/python app/tools/avatar_shots.py water --views 0,-90` |
 | `avatar_port_check.py` | Renders the unchanged signs in the prototype and in the port and compares the pixels (needs the network for the prototype's CDN three.js). |
+| `avatar_contacts.py` | Prints how far each body contact lands from its target (mm), per character, from the engine's own bake. |
+| `make_sign_report.py` | Builds the sign review page (`out/review2/index.html`): sheets, Lifeprint links, status per sign. |
+| `make_brand.py` | Generates every app icon and native launch image (Android adaptive + monochrome, legacy PNGs, Android 12+ splash; iOS AppIcon, LaunchImage, LaunchBackground) from `ishara_app/brand/ishara_mark.svg`. |
 
 ## Avatar on a device
 

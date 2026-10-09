@@ -25,7 +25,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 HERE = Path(__file__).resolve().parent
-ASSETS = HERE.parent / "ishara_app" / "assets"
+ASSETS = HERE.parent / "ishara_app" / "assets"   # --assets to render another copy (e.g. an older commit)
 
 
 class _Quiet(http.server.SimpleHTTPRequestHandler):
@@ -36,8 +36,8 @@ class _Quiet(http.server.SimpleHTTPRequestHandler):
         pass
 
 
-def serve() -> tuple[http.server.ThreadingHTTPServer, int]:
-    h = functools.partial(_Quiet, directory=str(ASSETS))
+def serve(assets: Path | None = None) -> tuple[http.server.ThreadingHTTPServer, int]:
+    h = functools.partial(_Quiet, directory=str(assets or ASSETS))
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), h)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, srv.server_address[1]
@@ -62,15 +62,17 @@ def main() -> int:
     ap.add_argument("--size", default="340x300")
     ap.add_argument("--out", type=Path, default=HERE / "out" / "avatar")
     ap.add_argument("--crop", default="", help="x,y,w,h of each shot to keep (close-ups of the hand)")
+    ap.add_argument("--assets", type=Path, default=None, help="assets folder to serve (default: the app's)")
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     w, h = (int(x) for x in args.size.split("x"))
     lib_rel = f"packs/{args.pack}/avatar/library.json"
-    lib = json.loads((ASSETS / lib_rel).read_text(encoding="utf-8"))
+    assets = args.assets or ASSETS
+    lib = json.loads((assets / lib_rel).read_text(encoding="utf-8"))
     labels = args.labels or list(lib["signs"])
     views = [float(v) for v in args.views.split(",")]
 
-    srv, port = serve()
+    srv, port = serve(assets)
     try:
         with sync_playwright() as pw:
             browser = pw.chromium.launch(channel="chrome", args=["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"])

@@ -230,3 +230,17 @@
 2. CALL is not right yet (7 attempts): the engine has one fixed elbow direction and fixed thumb opposition, so a Y hand at the ear either lifts the elbow to shoulder height or turns the thumb forward instead of up to the ear. Options: (a) accept a simpler form (Y hand beside the cheek, as now) for v1; (b) let a keyframe set the elbow direction (engine change, beyond "port, not rewrite"); (c) you send a frame-by-frame reference and I try again.
 3. Contact depth: the prototype's body-depth measurement finds no vertices for both characters, so every contact (WATER at the mouth, ME at the chest, THANK YOU at the chin) uses one fixed depth; the fingertips stop about 2–4 cm in front of the face. Fix the measurement (engine change) or keep the prototype behaviour?
 4. Real FPS on your phone (`flutter test integration_test/avatar_test.dart -d <phone>`).
+
+### Step 5 follow-up: AI-team review of the emulator recording (2026-10-09)
+
+| Item | Status | Evidence |
+|---|---|---|
+| 1 Logo / splash / launcher | ✓ | `brand/ishara_mark.svg` + `tools/make_brand.py`; adaptive + monochrome icon, legacy PNGs, Android 12+ splash, light / dark launch background, iOS AppIcon / LaunchScreen; splash golden EN/AR × light/dark (`test/goldens/goldens/linux/splash.png`); `test/brand/brand_assets_test.dart` (no icon equals any of 87 Flutter template images); emulator: `tools/out/device/launcher_drawer.png`, `launch_sequence_{light,dark}.png` (no white / light flash, no Flutter logo) |
+| 2 Preview follows the playing sign | ✓ | widget test (another caller's `play`, live time at 1x and 1.5x); recording `tools/out/device/signs_preview_recording.mp4`, frames `recording_frames.png` |
+| 3 CALL / HOME elbow (b), contact depth fix, guard | ✓ | engine: skinned-vertex measurement, contact correction (0 mm residual, `tools/avatar_contacts.py`), `E` elbow keys; port check: 6 untouched signs worst 0.06 / 255; before / after side views `tools/out/before_side/`, `after_side/`, front `tools/out/port/` |
+| 4 Signs | see report | `tools/out/review2/index.html`: 25 signs, front + side at every keyframe, Lifeprint link, status (fixed / unchanged / needs your call) |
+| Emulator test | ✓ | 25/25 signs, pause interrupts, 60 fps (hardware GPU) |
+
+**Tests:** 386 passing (+1 skipped benchmark), `lib/core` 94.8 %, analyze 0 issues.
+
+**Review (follow-up):** `/code-review` found 10 issues, all fixed: (1) the preview's clock could be created during dispose (debug assertion) → created in initState, test "opened and closed untouched"; (2) the splash created CurvedAnimations on every rebuild (listener leak) → curves made once with `drive`; (3) the port check exempted whole signs → only contact / elbow frames (and YOU) are exempt: 38 frames must match the prototype, worst 0.055 / 255; (4) a rig without fingertip end bones would press contacts in by one segment → tip extrapolated past the last joint; (5) the measurement skinned every mesh → eyes, lashes, teeth, shoes and trousers skipped (same surface depths); (6) splash colours duplicated tokens → `track`, `stageB`; (7) a second copy of the pop-in transform → shared `PopIn` / `popInMatrix`; (8) thumb-spread comments were wrong → corrected; (9) the preview kept following a dead controller → detaches; (10) `_dbg.contacts()` repeated hold frames → skipped.

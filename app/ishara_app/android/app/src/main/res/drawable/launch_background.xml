@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- Launch screen before Flutter draws (Android 11 and older): the prototype
+     background (@color/ishara_bg, light / dark) with the Ishara mark, 88 dp.
+     Android 12+ uses the splash attributes in values-v31. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+    <item android:drawable="@color/ishara_bg" />
+    <item
+        android:width="88dp"
+        android:height="88dp"
+        android:gravity="center"
+        android:drawable="@drawable/launch_mark" />
 </layer-list>

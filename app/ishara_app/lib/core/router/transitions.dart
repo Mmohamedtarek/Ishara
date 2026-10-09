@@ -119,12 +119,7 @@ class ScreenEntranceTransition extends StatelessWidget {
             final dx = (1 - v) * IsharaMotion.slideOffset * (rtl ? -1 : 1);
             m = Matrix4.translationValues(dx, 0, 0);
           case ScreenEntrance.pop:
-            final s = IsharaMotion.popScale + (1 - IsharaMotion.popScale) * v;
-            m = Matrix4.translationValues(
-              0,
-              (1 - v) * IsharaMotion.popOffset,
-              0,
-            )..scaleByDouble(s, s, 1, 1);
+            m = popInMatrix(v);
         }
         return Opacity(
           opacity: v.clamp(0, 1),
@@ -137,4 +132,38 @@ class ScreenEntranceTransition extends StatelessWidget {
       },
     );
   }
+}
+
+/// The prototype `@keyframes popin` at progress [v] (0 → 1): from 14 px
+/// lower and 98 % size to its place.
+Matrix4 popInMatrix(double v) {
+  final s = IsharaMotion.popScale + (1 - IsharaMotion.popScale) * v;
+  return Matrix4.translationValues(0, (1 - v) * IsharaMotion.popOffset, 0)
+    ..scaleByDouble(s, s, 1, 1);
+}
+
+/// An element popping in (`animation: popin`), driven by [animation]
+/// (already curved). Fades in while it moves to its place.
+class PopIn extends StatelessWidget {
+  const new({required this.animation, required this.child, super.key});
+
+  final Animation<double> animation;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: animation,
+    child: child,
+    builder: (context, child) {
+      final v = animation.value;
+      return Opacity(
+        opacity: v.clamp(0, 1),
+        child: Transform(
+          transform: popInMatrix(v),
+          alignment: Alignment.center,
+          child: child,
+        ),
+      );
+    },
+  );
 }

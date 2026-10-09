@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/core/avatar/avatar_controller.dart';
+import 'package:ishara_app/core/avatar/avatar_events.dart';
 import 'package:ishara_app/core/avatar/avatar_host.dart';
+import 'package:ishara_app/core/avatar/avatar_library.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/packs/pack_providers.dart';
@@ -11,6 +16,10 @@ import 'package:ishara_app/core/theme/ishara_theme.dart';
 /// avatar sign, freezes it at any moment and shows it from the front or the
 /// side, to check it against the vocabulary and the references (sign rules
 /// 1–2) and to compare FIVE / FOUR and TWO / NO (Q-A6).
+///
+/// It always shows the sign the avatar is playing, whoever started it (this
+/// screen or any `AvatarController.play`): label, words, chips,
+/// description and the live time, so screen recordings can be reviewed.
 class SignPreviewScreen extends ConsumerStatefulWidget {
   const new({super.key});
 
@@ -26,7 +35,8 @@ const _views = <(String, double)>[
   ('Side (left)', 90),
 ];
 
-class _SignPreviewState extends ConsumerState<SignPreviewScreen> {
+class _SignPreviewState extends ConsumerState<SignPreviewScreen>
+    with SingleTickerProviderStateMixin {
   String? _label;
   double _view = 0;
   double _t = 0;
@@ -34,12 +44,78 @@ class _SignPreviewState extends ConsumerState<SignPreviewScreen> {
   bool _frozen = true;
 
   AvatarController? _seen;
+  StreamSubscription<AvatarEvent>? _events;
+  late final Ticker _clock;
+
+  // The sign playing now (from SignStarted), to show its live time.
+  int? _playingId;
+  double _playingSpeed = 1;
 
   AvatarController? get _c =>
       _seen ??= ref.read(avatarRuntimeProvider).value?.controller;
 
   @override
+  void initState() {
+    super.initState();
+    // Created here, not on first use: dispose() must never create it.
+    _clock = createTicker(_tick);
+    ref.listenManual(
+      avatarRuntimeProvider,
+      (_, next) => _follow(next.value?.controller),
+      fireImmediately: true,
+    );
+  }
+
+  void _follow(AvatarController? c) {
+    if (identical(c, _seen) && (c == null || _events != null)) return;
+    // A new runtime (or none): stop following the old controller.
+    unawaited(_events?.cancel());
+    _events = null;
+    _seen = c;
+    if (c != null) _events = c.events.listen(_onEvent);
+  }
+
+  void _onEvent(AvatarEvent e) {
+    final library = _seen?.library;
+    if (!mounted || library == null) return;
+    switch (e) {
+      case SignStarted(:final id, :final String label) when library.has(label):
+        final base = library.duration(label).inMicroseconds;
+        _playingId = id;
+        _playingSpeed = e.duration.inMicroseconds > 0
+            ? base / e.duration.inMicroseconds
+            : 1;
+        setState(() {
+          _label = label;
+          _t = 0;
+          _frozen = false;
+        });
+        _clock
+          ..stop()
+          ..start();
+      case SignEnded(:final id) when id == _playingId:
+        _clock.stop();
+      default:
+        break;
+    }
+  }
+
+  // Sign time = elapsed × speed − the engine's lead-in, within the frames.
+  void _tick(Duration elapsed) {
+    final label = _label;
+    final library = _seen?.library;
+    if (label == null || library == null) return;
+    final t =
+        (elapsed.inMicroseconds / 1e6 * _playingSpeed - AvatarLibrary.lead)
+            .clamp(0, library.lastFrameTime(label))
+            .toDouble();
+    if (t != _t) setState(() => _t = t);
+  }
+
+  @override
   void dispose() {
+    _clock.dispose();
+    unawaited(_events?.cancel());
     // The avatar is shared: leave it as other screens expect it (front
     // view, not frozen, ready pose).
     _seen
@@ -59,6 +135,7 @@ class _SignPreviewState extends ConsumerState<SignPreviewScreen> {
       if (t != null) _t = t;
       _frozen = true;
     });
+    _clock.stop();
     c?.preview(label: _label, t: _t, view: _view);
   }
 

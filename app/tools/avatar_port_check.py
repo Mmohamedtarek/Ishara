@@ -25,6 +25,30 @@ import avatar_shots
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 CHANGED = {"water", "love"}   # V-3; Q-A3 + Q-A4 (iloveyou)
+# Step 5 review (user, S5-1 / S5-2): only frames posed by a body contact
+# (landmark point, at tip / palm: now measured and touching) or by an elbow
+# key (E) may differ, plus YOU (asked to point level). Every other frame,
+# including the other frames of those signs, must render like the prototype.
+FIXED_SIGNS = {"you"}
+
+
+def allowed_frames() -> set[tuple[str, float]]:
+    lib = json.loads((REPO / "app/ishara_app/assets/packs/asl/avatar/library.json").read_text())
+    out = set()
+    for label, sign in lib["signs"].items():
+        name = "love" if label == "iloveyou" else label
+        keys = {"R": None, "L": None}
+        for f in sign["frames"]:
+            for h in ("R", "L"):
+                if f.get(h):
+                    keys[h] = f[h]
+            touched = any(
+                k and ("E" in k or (isinstance(k["P"][0], str) and k.get("at") in ("tip", "palm")))
+                for k in keys.values()
+            )
+            if touched or label in FIXED_SIGNS:
+                out.add((name, round(float(f["t"]), 3)))
+    return out
 W, H = 340, 300
 # Mean absolute difference per channel (0-255). Blinks are random in both
 # pages; anything else (pose, light, camera, materials) moves far more.
@@ -140,8 +164,15 @@ def main() -> int:
         srv.shutdown()
     for label, t, d in rows:
         print(f"{label:8s} t={t:5.2f}  mean |diff| = {d:6.3f}" + ("  <-- DIFFERS" if d > THRESHOLD else ""))
-    print(f"{len(rows)} frames, worst {worst:.3f} (threshold {THRESHOLD})")
-    return 0 if worst <= THRESHOLD else 1
+    ok = allowed_frames()
+    strict = [r for r in rows if (r[0], round(r[1], 3)) not in ok]
+    worst_strict = max((d for _, _, d in strict), default=0.0)
+    bad = [f"{l} t={t:.2f}" for l, t, d in strict if d > THRESHOLD]
+    allowed = sorted({f"{l} t={t:.2f}" for l, t, d in rows if (l, round(t, 3)) in ok and d > THRESHOLD})
+    print(f"{len(rows)} frames; {len(strict)} must match the prototype: worst {worst_strict:.3f} "
+          f"(threshold {THRESHOLD}){'; DIFFER: ' + ', '.join(bad) if bad else ''}")
+    print(f"contact / elbow / YOU frames that differ (allowed): {allowed}")
+    return 0 if worst_strict <= THRESHOLD else 1
 
 
 if __name__ == "__main__":

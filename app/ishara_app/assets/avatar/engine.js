@@ -59,7 +59,7 @@
   // Ishara app: the shapes (CURL), their contact reach (REACH) and finger
   // spread (SPREAD, degrees per finger, + = toward the thumb side; Q-A6) come
   // from the language pack's library.json.
-  var CURL = {}, REACH = {}, SPREAD = {};
+  var CURL = {}, REACH = {}, SPREAD = {}, TIPF = {};
   var FINGERS = ['Thumb','Index','Middle','Ring','Pinky'];
   var FMAX = [80, 250, 255, 255, 250];
   var FSPLIT = [[.3,.4,.3], [.36,.4,.24]];
@@ -82,6 +82,7 @@
     Object.keys(lib.shapes).forEach(function(k){
       var s = lib.shapes[k];
       CURL[k] = s.curl; REACH[k] = s.reach; if (s.spread) SPREAD[k] = s.spread;
+      TIPF[k] = s.tip || 'middle';
     });
     Object.keys(lib.signs).forEach(function(k){ if (k !== 'rest') SIGNS[k] = lib.signs[k]; });
   }
@@ -145,9 +146,17 @@
       obj.updateMatrixWorld(true);
       obj.traverse(function(n){
         if (!n.isMesh || !n.geometry || !n.geometry.attributes.position) return;
+        // Ishara app: only surfaces a hand can touch (skinning every vertex
+        // of eyes, lashes, teeth, shoes and trousers costs load time)
+        if (/eye|lash|teeth|tongue|shoe|bottom/i.test(n.name || '')) return;
         var p = n.geometry.attributes.position, v = new V3(), m = n.matrixWorld;
+        // Ishara app: skinned, quantized meshes (KHR_mesh_quantization) store
+        // positions in -1..1; only the skinned position is the body surface.
+        // The prototype read the raw values, found no vertex and used one
+        // fixed depth for every contact.
+        var skinned = n.isSkinnedMesh && typeof n.getVertexPosition === 'function';
         for (var i = 0; i < p.count; i++){
-          v.fromBufferAttribute(p, i).applyMatrix4(m);
+          if (skinned) n.getVertexPosition(i, v).applyMatrix4(m); else v.fromBufferAttribute(p, i).applyMatrix4(m);
           if (Math.abs(v.x) > .2 || v.y < .85 * k || v.y > 1.7 * k) continue;
           var key = Math.round(v.x / CELL) + ':' + Math.round(v.y / CELL);
           if (grid[key] === undefined || v.z > grid[key]) grid[key] = v.z;
@@ -155,14 +164,21 @@
       });
       C.front = function(xw, y){
         var cx = Math.round(xw / CELL), cy = Math.round(y / CELL), best = -1;
-        for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++){ var z = grid[(cx + dx) + ':' + (cy + dy)]; if (z !== undefined && z > best) best = z; }
+        // Ishara app: the nearest measured ring (1, then up to 3 cells = 3 cm)
+        // instead of the fixed fallback beside the face, where cells are sparse
+        for (var rr = 1; rr <= 3 && best === -1; rr++)
+          for (var dx = -rr; dx <= rr; dx++) for (var dy = -rr; dy <= rr; dy++){ var z = grid[(cx + dx) + ':' + (cy + dy)]; if (z !== undefined && z > best) best = z; }
         return best > -1 ? best : .08 * k;
       };
       var h0 = B.Head ? wpos(B.Head).y : 1.36 * k, top = C.top, hh = top - h0;
+      C.headZ = B.Head ? wpos(B.Head).z : 0;
       if (B.LeftEye && B.RightEye){
         var ey = (wpos(B.LeftEye).y + wpos(B.RightEye).y) / 2, adj = C.lmAdj || {};
         C.lm = { chin: ey - .118 * k + (adj.chin || 0), mouth: ey - .072 * k + (adj.mouth || 0), cheek: ey - .035 * k + (adj.cheek || 0), forehead: ey + .052 * k + (adj.forehead || 0),
           chest: (B.Spine2 ? wpos(B.Spine2).y : 1.2 * k) + (adj.chest || 0) };
+        // Ishara app: 'ear' = beside the head (CALL): its depth is measured from
+        // the head bone, not from the skin (the side of the face is too uneven)
+        C.lm.ear = ey - .02 * k;
       } else C.lm = { chin: h0 - .17 * hh, mouth: h0 + .01 * hh, cheek: h0 + .05 * hh, forehead: h0 + .6 * hh,
         chest: B.Spine2 ? wpos(B.Spine2).y - .01 * k : 1.16 * k };
       var hand = B.RightHand, tip = B.RightHandMiddle4 || B.RightHandMiddle3;
@@ -172,7 +188,9 @@
     // ---------- IK: a hand key → arm spec (upper arm, forearm, hand, palm directions) ----------
     function resolvePoint(C, key, side){
       var P = key.P, sx = side === 'Right' ? 1 : -1, x, y, z;
-      if (typeof P[0] === 'string'){
+      if (P[0] === 'ear'){
+        x = P[1]; y = C.lm.ear + P[2]; z = C.headZ + P[3];   // Ishara app: from the head bone
+      } else if (typeof P[0] === 'string'){
         x = P[1]; y = C.lm[P[0]] + P[2];
         z = C.front(-x, y) + P[3];                   // signer x → world x is mirrored
       } else { x = P[0] * C.k; y = P[1] * C.k; z = P[2] * C.k; }
@@ -183,15 +201,19 @@
       // signer frame → this arm's side-local frame (x = outward on that side)
       return { p: new V3(p.x * sx, p.y, p.z), H: [H.x * sx, H.y, H.z], N: [N.x * sx, N.y, N.z] };
     }
-    function solveArm(C, S, key){
+    function solveArm(C, S, key, off){
       var r = resolvePoint(C, key, S), o = C.outSign[S], B = C.bones;
+      if (off) r.p.add(off);   // Ishara app: contact correction (bakeFrame)
       var sw = wpos(B[S + 'Arm']), sh = new V3(sw.x * o, sw.y, sw.z);
       var L1 = C.len[S][0], L2 = C.len[S][1];
       var d = r.p.clone().sub(sh), D = d.length();
       D = Math.min(Math.max(D, Math.abs(L1 - L2) + .01), L1 + L2 - .002);
       d.normalize();
       var a = (L1 * L1 - L2 * L2 + D * D) / (2 * D), h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
-      var pole = new V3(.42, -1, -.28).normalize(); pole.sub(d.clone().multiplyScalar(pole.dot(d))).normalize();
+      // Ishara app: a key may set the elbow direction E (signer frame, like H);
+      // without it, the prototype's fixed pole.
+      var pole = key.E ? new V3(key.E[0] * (S === 'Right' ? 1 : -1), key.E[1], key.E[2]).normalize() : new V3(.42, -1, -.28).normalize();
+      pole.sub(d.clone().multiplyScalar(pole.dot(d))).normalize();
       var elbow = sh.clone().addScaledVector(d, a).addScaledVector(pole, h);
       var wrist = sh.clone().addScaledVector(d, D);
       var u = elbow.clone().sub(sh).normalize(), f = wrist.clone().sub(elbow).normalize();
@@ -230,11 +252,14 @@
       var B = C.bones, H = B[S + 'Hand'], M1 = B[S + 'HandMiddle1'], I1 = B[S + 'HandIndex1'], P1 = B[S + 'HandPinky1'];
       if (!H || !M1 || !I1 || !P1) return;
       var N = palmNormal(C, S), L = dirTo(P1, I1);
-      // Ishara app (Q-A6): finger spread first, at the knuckle, in the palm plane:
-      // + turns the finger toward the thumb side (the pinky → index direction).
+      // Ishara app (Q-A6): finger spread first, at the knuckle: each finger
+      // turns toward the pinky → index direction by `spread` degrees (+), the
+      // thumb included, which swings it sideways away from the fingers (as in
+      // FIVE). If a finger already points along that direction, its spread
+      // has no axis and is skipped.
       if (spread) FINGERS.forEach(function(f, fi){
         var j1 = B[S + 'Hand' + f + '1'], j2 = B[S + 'Hand' + f + '2'];
-        if (fi === 0 || !j1 || !j2 || !spread[fi]) return;
+        if (!j1 || !j2 || !spread[fi]) return;
         var d0 = dirTo(j1, j2), ax = new V3().crossVectors(d0, L);
         if (ax.lengthSq() < 1e-6) return;
         rollAbout(j1, ax.normalize(), spread[fi] * DEG);
@@ -257,10 +282,49 @@
       if (nk){ rollAbout(nk, YA, h[0] * .4 * DEG); rollAbout(nk, XA, h[1] * .4 * DEG); }
       if (hd){ rollAbout(hd, YA, h[0] * .6 * DEG); rollAbout(hd, XA, h[1] * .6 * DEG); }
     }
+    // Ishara app: body contacts land on the skin. For a key measured from a
+    // landmark with at 'tip' / 'palm', the real fingertip (the shape's `tip`
+    // finger) or palm centre is measured after posing and the target moved
+    // by the error, a few times. Other keys are posed exactly as before.
+    function isContact(key){ return typeof key.P[0] === 'string' && key.P[0] !== 'ear' && (key.at === 'tip' || key.at === 'palm'); }
+    function toLocal(C, S, w){ return new V3(w.x * C.outSign[S], w.y, w.z); }
+    function contactWant(C, S, key){
+      var x = key.P[1], y = C.lm[key.P[0]] + key.P[2];
+      return new V3(x * (S === 'Right' ? 1 : -1), y, C.front(-x, y) + key.P[3]);
+    }
+    function contactGot(C, S, key){
+      var B = C.bones;
+      if (key.at === 'tip'){
+        var f = TIPF[key.c] || 'middle', F = f.charAt(0).toUpperCase() + f.slice(1);
+        var end = B[S + 'Hand' + F + '4'];
+        if (end) return toLocal(C, S, wpos(end));
+        // no end bone: the tip is one more segment past the last joint
+        var j2 = B[S + 'Hand' + F + '2'], j3 = B[S + 'Hand' + F + '3'];
+        if (!j2 || !j3) return null;
+        var p3 = wpos(j3);
+        return toLocal(C, S, p3.clone().add(p3.clone().sub(wpos(j2))));
+      }
+      var H = B[S + 'Hand'], M1 = B[S + 'HandMiddle1'];
+      if (!H || !M1 || !B[S + 'HandIndex1'] || !B[S + 'HandPinky1']) return null;
+      var fist = /^(s|a)$/.test(key.c);
+      var c = wpos(H).add(wpos(M1)).multiplyScalar(.5).addScaledVector(palmNormal(C, S), (fist ? .03 : .012) * C.k);
+      return toLocal(C, S, c);
+    }
     function bakeFrame(C, R, L, head){
-      resetBind(C);
-      poseArm(C, 'Right', solveArm(C, 'Right', R));
-      poseArm(C, 'Left', solveArm(C, 'Left', L));
+      var offR = isContact(R) ? new V3() : null, offL = isContact(L) ? new V3() : null;
+      for (var it = 0; it < 5; it++){
+        resetBind(C);
+        poseArm(C, 'Right', solveArm(C, 'Right', R, offR));
+        poseArm(C, 'Left', solveArm(C, 'Left', L, offL));
+        var more = false;
+        [[R, offR, 'Right'], [L, offL, 'Left']].forEach(function(e){
+          if (!e[1]) return;
+          var got = contactGot(C, e[2], e[0]); if (!got) return;
+          var err = contactWant(C, e[2], e[0]).sub(got);
+          if (err.length() > .002){ e[1].add(err); more = true; }
+        });
+        if (!more) break;
+      }
       headTurn(C, head);
       var out = {}; C.boneList.forEach(function(n){ out[n] = C.raw[n].quaternion.clone(); }); return out;
     }
@@ -580,6 +644,27 @@
       },
       whenReady: function(fn){ if (ready) fn(); else readyResolvers.push(fn); },
       _dbg: { T: T, SIGNS: SIGNS, CURL: CURL, camera: camera, scene: scene, renderer: renderer, avatar: function(){ return A; }, resize: resize,
+        // contact check: for every landmark contact key, the distance (mm)
+        // between the target and the real tip / palm after baking
+        contacts: function(){
+          var out = [];
+          Object.keys(SIGNS).forEach(function(k){
+            var R = READY_R, L = READY_L;
+            SIGNS[k].frames.forEach(function(fr, i){
+              if (!fr.R && !fr.L) return;   // a hold frame repeats the last pose
+              if (fr.R) R = fr.R; if (fr.L) L = fr.L;
+              if (!isContact(R) && !isContact(L)) return;
+              bakeFrame(A, R, L, [0,0]);
+              [[R, 'Right'], [L, 'Left']].forEach(function(e){
+                if (!isContact(e[0])) return;
+                var w = contactWant(A, e[1], e[0]), g = contactGot(A, e[1], e[0]);
+                out.push({ sign: k, frame: i, side: e[1], want: w.toArray().map(function(v){ return +v.toFixed(3); }), got: g && g.toArray().map(function(v){ return +v.toFixed(3); }), mm: g ? Math.round(w.distanceTo(g) * 1000) : null });
+              });
+            });
+          });
+          resetBind(A);
+          return out;
+        },
         lm: function(){ return A && { lm: A.lm, handLen: A.handLen, len: A.len, chinZ: A.front(0, A.lm.chin), mouthZ: A.front(0, A.lm.mouth), chestZ: A.front(0, A.lm.chest) }; } }
     };
     window.__avatarEngine = engine;

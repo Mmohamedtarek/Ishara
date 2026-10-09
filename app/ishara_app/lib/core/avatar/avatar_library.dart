@@ -94,8 +94,19 @@ class AvatarLibrary {
   /// The engine's name for its ready pose (`SIGNS.rest`): never a sign.
   static const readyPose = 'rest';
 
+  /// Fingers a shape's contact `tip` may name.
+  static const fingers = {'thumb', 'index', 'middle', 'ring', 'pinky'};
+
   /// Landmarks a point may be measured from (engine `measure`).
-  static const landmarks = {'chin', 'mouth', 'cheek', 'forehead', 'chest'};
+  /// `ear` is beside the head, its depth from the head bone (not the skin).
+  static const landmarks = {
+    'chin',
+    'mouth',
+    'cheek',
+    'forehead',
+    'chest',
+    'ear',
+  };
 
   final SignLanguage language;
   final Set<String> shapes;
@@ -148,6 +159,10 @@ class AvatarLibrary {
         (!_nums(spread, 5) ||
             (spread as List).cast<num>().any((d) => d.abs() > 30))) {
       _fail('shape $name: spread must be 5 angles within ±30°');
+    }
+    final tip = v['tip'];
+    if (tip != null && !fingers.contains(tip)) {
+      _fail('shape $name: tip must be one of $fingers');
     }
   }
 
@@ -206,6 +221,20 @@ class AvatarLibrary {
       _fail('$where: at must be wrist, tip or palm');
     }
     if (!shapes.contains(k['c'])) _fail('$where: unknown shape ${k['c']}');
+    final e = k['E'];
+    if (e != null &&
+        (!_nums(e, 3) || (e as List).cast<num>().every((x) => x == 0))) {
+      _fail('$where: E (elbow direction) must be a non-zero direction');
+    }
+    final extra = k.keys.toSet().difference(const {
+      'P',
+      'H',
+      'N',
+      'c',
+      'at',
+      'E',
+    });
+    if (extra.isNotEmpty) _fail('$where: unknown $extra');
   }
 
   static bool _nums(Object? v, int n) =>

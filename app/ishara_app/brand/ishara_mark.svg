@@ -1,0 +1,24 @@
+<!--
+  Ishara mark: the ONE vector source for every app icon and splash image
+  (app/tools/make_brand.py generates Android, iOS and Flutter assets from it).
+  From design/prototype.html: `.mark` = rounded square, radius 26/88,
+  linear-gradient(135deg, #4B5BD6, #3446C9 55%, #24309A); the white logo hand
+  = ICONS.logo (24 x 24, stroke 2.4), 48/88 of the mark, centred.
+  ids: `mark-bg` (square), `hand` (the hand group).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" width="88" height="88">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="88" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4B5BD6"/>
+      <stop offset="0.55" stop-color="#3446C9"/>
+      <stop offset="1" stop-color="#24309A"/>
+    </linearGradient>
+  </defs>
+  <rect id="mark-bg" width="88" height="88" rx="26" ry="26" fill="url(#g)"/>
+  <g id="hand" transform="translate(20 20) scale(2)" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 11V6a2 2 0 0 0-4 0v1"/>
+    <path d="M14 10V4a2 2 0 0 0-4 0v2"/>
+    <path d="M10 10.5V6a2 2 0 0 0-4 0v8"/>
+    <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+  </g>
+</svg>

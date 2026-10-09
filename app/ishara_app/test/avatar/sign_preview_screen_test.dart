@@ -56,7 +56,9 @@ void main() {
     );
     addTearDown(container.dispose);
     // Asset loading needs real async (not the test's fake clock).
-    await t.runAsync(() => container.read(signCatalogueProvider.future));
+    final catalogue = (await t.runAsync(
+      () => container.read(signCatalogueProvider.future),
+    ))!;
     await t.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -112,6 +114,62 @@ void main() {
     await t.tap(find.byKey(const ValueKey('sign-doctor')));
     await t.pumpAndSettle();
     expect(find.text('being reviewed'), findsOneWidget);
+    // Whoever starts a sign, the screen shows it: header, words, chips,
+    // description, live time (screen recordings are reviewed this way).
+    final id = c.play('water');
+    surface.out.add(
+      jsonEncode({
+        'type': 'signStarted',
+        'id': id,
+        'label': 'water',
+        'ms': library.duration('water').inMilliseconds,
+        'loop': false,
+      }),
+    );
+    await t.pump(); // page → controller → screen: the clock starts
+    await t.pump(); // its first tick (elapsed 0)
+    await t.pump(const Duration(milliseconds: 700));
+    expect(find.textContaining('·  water'), findsOneWidget);
+    expect(find.text('Water  ·  water'), findsOneWidget);
+    expect(find.text(catalogue.byLabel('water')!.description), findsOneWidget);
+    expect(find.text('glove'), findsOneWidget);
+    expect(find.text('pending approval (avatar: false)'), findsNothing);
+    final live = t.widget<Slider>(find.byType(Slider)).value;
+    // 0.7 s after the start, at speed 1: 0.7 − 0.32 lead-in = 0.38 s
+    expect(live, closeTo(.38, .05));
+    surface.out.add(
+      jsonEncode({
+        'type': 'signEnded',
+        'id': id,
+        'label': 'water',
+        'interrupted': false,
+      }),
+    );
+    await t.pump();
+    final stopped = t.widget<Slider>(find.byType(Slider)).value;
+    await t.pump(const Duration(milliseconds: 300));
+    expect(t.widget<Slider>(find.byType(Slider)).value, stopped);
+    // a new sign at another speed (e.g. Talk at 1.5x) replaces it
+    final id2 = c.play('bye', speed: 1.5);
+    surface.out.add(
+      jsonEncode({
+        'type': 'signStarted',
+        'id': id2,
+        'label': 'bye',
+        'ms': library.duration('bye', speed: 1.5).inMilliseconds,
+        'loop': false,
+      }),
+    );
+    await t.pump();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 600));
+    expect(find.text('Bye  ·  bye'), findsOneWidget);
+    expect(find.text('pending approval (avatar: false)'), findsOneWidget);
+    expect(
+      t.widget<Slider>(find.byType(Slider)).value,
+      closeTo(.6 * 1.5 - .32, .05),
+    );
+
     // Closing the screen gives the shared avatar back as others expect it.
     await t.pumpWidget(const SizedBox());
     await t.pump();
@@ -120,5 +178,44 @@ void main() {
       {'cmd': 'stop'},
     ]);
     await t.runAsync(c.dispose); // a broadcast cancel needs real async
+  });
+
+  testWidgets('opened and closed without any interaction: no error', (t) async {
+    final library = AvatarLibrary.parse(
+      readText('assets/packs/asl/avatar/library.json'),
+      language: SignLanguage.asl,
+    );
+    final surface = _Surface();
+    final c = AvatarController(
+      page: surface,
+      library: library,
+      libraryUrl: 'l',
+      castUrl: 'c',
+    );
+    final container = ProviderContainer(
+      overrides: [
+        avatarRuntimeProvider.overrideWith(
+          (ref) async => AvatarRuntime(c, surface),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await t.runAsync(() => container.read(signCatalogueProvider.future));
+    await t.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: IsharaTheme.build(
+            brightness: Brightness.dark,
+            isArabic: false,
+          ),
+          home: const SignPreviewScreen(),
+        ),
+      ),
+    );
+    await t.pump();
+    await t.pumpWidget(const SizedBox());
+    expect(t.takeException(), isNull);
+    await t.runAsync(c.dispose);
   });
 }

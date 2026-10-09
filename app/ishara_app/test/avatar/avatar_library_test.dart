@@ -140,31 +140,77 @@ void main() {
       }
     });
 
-    test('13 prototype signs are byte-for-byte the prototype frames', () {
+    // A copy of a sign without what the step 5 review allowed to change:
+    // the depth of body contacts (dz of landmark points, now measured on the
+    // real surface) and an elbow direction E (option b).
+    Map<String, dynamic> core(Object? sign) {
+      final c = jsonDecode(jsonEncode(sign)) as Map<String, dynamic>;
+      for (final f in c['frames'] as List<dynamic>) {
+        for (final hand in const ['R', 'L']) {
+          final k = (f as Map<String, dynamic>)[hand];
+          if (k is! Map<String, dynamic>) continue;
+          k.remove('E');
+          final pt = k['P'] as List<dynamic>;
+          if (pt.first is String) pt[3] = 0;
+        }
+      }
+      return c;
+    }
+
+    test('6 prototype signs are byte-for-byte the prototype frames', () {
       final signs = _lib()['signs'] as Map<String, dynamic>;
       final p = proto['signs'] as Map<String, dynamic>;
-      const changed = {'water', 'love', 'rest'};
-      for (final k in p.keys.where((k) => !changed.contains(k))) {
+      for (final k in const [
+        'yes',
+        'no',
+        'help',
+        'coffee',
+        'doctor',
+        'family',
+      ]) {
         expect(signs[k], p[k], reason: k);
       }
     });
 
-    test('decided changes only: Q-A4 rename, Q-A3 held still, V-3 mouth', () {
+    test('contact signs differ only in contact depth (and HOME: elbow, '
+        'cheek height; YOU: level pointing)', () {
+      final signs = _lib()['signs'] as Map<String, dynamic>;
+      final p = proto['signs'] as Map<String, dynamic>;
+      for (final k in const ['hello', 'thanks', 'please', 'sorry', 'me']) {
+        expect(core(signs[k]), core(p[k]), reason: k);
+        expect(signs[k], isNot(p[k]), reason: '$k: contacts now touch');
+      }
+      // HOME: E on every key; the cheek touch 2.5 cm lower (review: it
+      // landed at the eye once the elbow came down).
+      final home = core(p['home']);
+      _put(home, ['frames', 2, 'R', 'P', 2], -0.025);
+      expect(core(signs['home']), home);
+      expect(_at(signs, ['home', 'frames', 0, 'R', 'E']), isNotNull);
+      // YOU: points level at the other person (review), shorter push.
+      final you = core(p['you']);
+      for (final i in [0, 1]) {
+        _put(you, ['frames', i, 'R', 'H'], [-0.05, 0.15, 1]);
+      }
+      _put(you, ['frames', 1, 'R', 'P', 2], 0.32);
+      expect(core(signs['you']), you);
+    });
+
+    test('decided changes: Q-A4 rename, Q-A3 held still, V-3 mouth', () {
       final signs = _lib()['signs'] as Map<String, dynamic>;
       final p = proto['signs'] as Map<String, dynamic>;
       // I LOVE YOU: same frames except the second keeps the first position.
       final ily = jsonDecode(jsonEncode(p['love'])) as Map<String, dynamic>;
       _put(ily, ['frames', 1, 'R', 'P'], _at(ily, ['frames', 0, 'R', 'P']));
       expect(signs['iloveyou'], ily);
-      // WATER: same frames at the mouth instead of the chin.
-      final water = jsonDecode(jsonEncode(p['water'])) as Map<String, dynamic>;
+      // WATER: same frames at the mouth instead of the chin (+ contact depth).
+      final water = core(p['water']);
       final frames = water['frames'] as List<dynamic>;
       for (var i = 0; i < frames.length; i++) {
         if (_at(frames, [i, 'R']) == null) continue;
         expect(_at(frames, [i, 'R', 'P', 0]), 'chin');
         _put(frames, [i, 'R', 'P', 0], 'mouth');
       }
-      expect(signs['water'], water);
+      expect(core(signs['water']), water);
     });
 
     test('the ready pose matches the engine copy', () {
@@ -233,6 +279,9 @@ void main() {
             _put(j, ['signs', 'help', 'frames', 0, 'L'], 'left'),
         'previewPairs must be a list': (j) => j['previewPairs'] = 'five',
         'greeting must name a sign': (j) => j['greeting'] = 'wave',
+        'tip must be one of': (j) => _put(j, ['shapes', 'w', 'tip'], 'toe'),
+        'E (elbow direction)': (j) => _put(j, [...h0, 'R', 'E'], [0, 0, 0]),
+        'unknown {Q}': (j) => _put(j, [...h0, 'R', 'Q'], 1),
         'must name two signs': (j) => j['previewPairs'] = [
           ['five', 'six'],
         ],

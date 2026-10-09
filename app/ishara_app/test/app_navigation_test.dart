@@ -37,9 +37,11 @@ Future<void> _tap(WidgetTester t, String label) async {
 void main() {
   testWidgets('onboarding flow follows the prototype order', (t) async {
     await _pumpApp(t);
-    expect(_screen('splash'), findsOneWidget);
+    final splash = find.byKey(const ValueKey('screen-splash'));
+    expect(splash, findsOneWidget);
     expect(find.byType(IsharaTabBar), findsNothing);
-    await _tap(t, 'Get started');
+    await t.tap(splash); // prototype: a tap ends the splash
+    await t.pumpAndSettle();
     expect(_screen('welcome'), findsOneWidget);
     await _tap(t, 'Get started');
     expect(_screen('auth'), findsOneWidget);
