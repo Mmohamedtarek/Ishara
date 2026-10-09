@@ -244,3 +244,18 @@
 **Tests:** 386 passing (+1 skipped benchmark), `lib/core` 94.8 %, analyze 0 issues.
 
 **Review (follow-up):** `/code-review` found 10 issues, all fixed: (1) the preview's clock could be created during dispose (debug assertion) → created in initState, test "opened and closed untouched"; (2) the splash created CurvedAnimations on every rebuild (listener leak) → curves made once with `drive`; (3) the port check exempted whole signs → only contact / elbow frames (and YOU) are exempt: 38 frames must match the prototype, worst 0.055 / 255; (4) a rig without fingertip end bones would press contacts in by one segment → tip extrapolated past the last joint; (5) the measurement skinned every mesh → eyes, lashes, teeth, shoes and trousers skipped (same surface depths); (6) splash colours duplicated tokens → `track`, `stageB`; (7) a second copy of the pop-in transform → shared `PopIn` / `popInMatrix`; (8) thumb-spread comments were wrong → corrected; (9) the preview kept following a dead controller → detaches; (10) `_dbg.contacts()` repeated hold frames → skipped.
+
+### Step 5 review, round 2 (2026-10-10)
+
+| Item | Status | Evidence |
+|---|---|---|
+| 1 Splash debug text style | ✓ fixed | `Material` above the splash; real-root golden `test/goldens/goldens/linux/splash.png`; test fails if any splash text uses the debug style (verified by removing the fix) |
+| 2 Mark moves from the native centre into the group | ✓ | layout delegate; tests: first frame at the screen centre, in place after 300 ms, group centred, no movement with reduced motion, late window size; emulator `tools/out/device2/l4/{light,dark}_run1.png` |
+| 3 CALL / HOME | ✓ (for your eye) | `tools/out/call3/call_nour.png`, `tools/out/home3/home_nour.png` (front, side, 3/4); Sara CALL `tools/out/call_both/both.png` (hair clipping: known issue) |
+| 4 HELP / COFFEE / DOCTOR / FAMILY vs references | HELP, COFFEE, FAMILY match; DOCTOR differs (palm, not wrist) — your call | `tools/out/review2/index.html` |
+
+**Also found and fixed on the emulator:** the splash measured its target at a 0 × 0 window (mark sent to a corner); the gradient divided by zero at 0 × 0; the splash time ran out before the first visible frame on a cold start; an instant Android 12 splash exit showed black frames (reverted to the default).
+**Guard:** 38 prototype frames still match (worst 0.061 / 255).
+**Tests:** 389 passing, `lib/core` 94.8 %, analyze 0 issues.
+
+**Review (round 2):** `/code-review` found 8 issues, all fixed: (1–3) HOME, CALL and the flat-O shape are now pinned exactly in the tests (a mutation of HOME's cheek touch fails); (4) the splash no longer forces frames while the window is 0 × 0: the layout delegate reports the first real size and the clock starts once, after that frame; (5) reduce-motion is read in `didChangeDependencies` only; (6) the HOME test name matched an old check → renamed; (7) one mark widget, placed by the delegate in both modes; (8) the mark's move runs on its own 300 ms controller, so layout follows it only while it moves.

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ishara_app/app.dart';
+import 'package:ishara_app/core/router/app_router.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/ishara_mark.dart';
 import 'package:ishara_app/features/onboarding/presentation/splash_screen.dart';
@@ -32,6 +35,8 @@ double _opacityOf(WidgetTester t, Finder f) => t
     .opacity;
 
 void main() {
+  textStyleChecks();
+  lateSizeCheck();
   testWidgets('mark, name (Latin), tagline and bar; Welcome after 2.1 s', (
     t,
   ) async {
@@ -39,10 +44,29 @@ void main() {
     expect(find.byType(IsharaMark), findsOneWidget);
     expect(find.text('Ishara'), findsOneWidget);
     expect(find.text('Your hands speak.'), findsOneWidget);
-    // pop-ins: the mark first, the name .15 s later, the tagline .3 s later
+    // the mark is on screen from the first frame, at the screen centre
+    // (where the native launch screen shows it); the name pops in later
+    final screen = t.getCenter(find.byKey(const ValueKey('screen-splash')));
+    expect(t.getCenter(find.byType(IsharaMark)), screen);
+    await t.pump(); // the clock starts after the first frame
     await t.pump(const Duration(milliseconds: 150));
-    expect(_opacityOf(t, find.byType(IsharaMark)), greaterThan(0));
     expect(_opacityOf(t, find.text('Ishara')), 0);
+    final halfway = t.getCenter(find.byType(IsharaMark));
+    expect(halfway.dy, lessThan(screen.dy), reason: 'moving up');
+    // after 300 ms it sits in its place in the centred group (prototype)
+    await t.pump(const Duration(milliseconds: 200));
+    final placed = t.getCenter(find.byType(IsharaMark));
+    expect(placed.dy, lessThan(halfway.dy));
+    expect(placed.dx, screen.dx);
+    final groupTop = placed.dy - 44;
+    final groupBottom = t.getBottomLeft(find.byType(ClipRRect).last).dy;
+    expect(
+      (groupTop + groupBottom) / 2,
+      closeTo(screen.dy, 1),
+      reason: 'the whole group is centred, as the prototype',
+    );
+    await t.pump(const Duration(milliseconds: 100));
+    expect(t.getCenter(find.byType(IsharaMark)), placed, reason: 'no drift');
     await t.pump(const Duration(milliseconds: 1600));
     expect(_opacityOf(t, find.text('Your hands speak.')), 1);
     expect(find.text('WELCOME'), findsNothing);
@@ -65,7 +89,14 @@ void main() {
 
   testWidgets('reduce motion: everything shown at once', (t) async {
     await t.pumpWidget(_app(reduceMotion: true));
+    final placed = t.getCenter(find.byType(IsharaMark));
+    expect(
+      placed.dy,
+      lessThan(t.getCenter(find.byKey(const ValueKey('screen-splash'))).dy),
+      reason: 'already in its place: no movement',
+    );
     await t.pump();
+    expect(t.getCenter(find.byType(IsharaMark)), placed);
     expect(_opacityOf(t, find.text('Your hands speak.')), 1);
     final bar = t.widget<FractionallySizedBox>(
       find.byType(FractionallySizedBox),
@@ -88,6 +119,77 @@ void main() {
     await t.pump(const Duration(seconds: 2));
     expect(find.text('Ishara'), findsOneWidget);
     expect(find.text('إيديك بتتكلم.'), findsOneWidget);
+    await t.pumpWidget(const SizedBox());
+  });
+}
+
+/// WidgetsApp's error text style: what a Text shows (yellow double
+/// underline) when no Material / DefaultTextStyle sits above it.
+bool _isDebugFallback(TextStyle? s) =>
+    s != null &&
+    s.decoration == TextDecoration.underline &&
+    s.decorationStyle == TextDecorationStyle.double;
+
+void textStyleChecks() {
+  testWidgets('no Text on the splash falls back to the debug style', (t) async {
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [appRouterProvider.overrideWith((ref) => buildRouter())],
+        child: const IsharaApp(),
+      ),
+    );
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 1800));
+    final splash = find.byKey(const ValueKey('screen-splash'));
+    final texts = find.descendant(of: splash, matching: find.byType(RichText));
+    expect(texts, findsAtLeastNWidgets(2));
+    for (final e in texts.evaluate()) {
+      final rich = e.widget as RichText;
+      expect(
+        _isDebugFallback(rich.text.style) ||
+            _isDebugFallback(DefaultTextStyle.of(e).style),
+        isFalse,
+        reason: '"${rich.text.toPlainText()}" uses the debug text style',
+      );
+    }
+    // the check works: a Text with no Material above it has that style
+    await t.pumpWidget(const MaterialApp(home: Text('x')));
+    expect(
+      _isDebugFallback(DefaultTextStyle.of(t.element(find.text('x'))).style),
+      isTrue,
+    );
+  });
+}
+
+void lateSizeCheck() {
+  testWidgets('a window that gets its size late: the mark still ends in '
+      'its place (not in a corner)', (t) async {
+    final size = ValueNotifier(Size.zero);
+    addTearDown(size.dispose);
+    await t.pumpWidget(
+      MaterialApp(
+        theme: IsharaTheme.build(brightness: Brightness.dark, isArabic: false),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: ValueListenableBuilder(
+          valueListenable: size,
+          builder: (_, s, _) => Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox.fromSize(
+              size: s,
+              child: const SplashScreen(hold: Duration(days: 1)),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump(const Duration(milliseconds: 50));
+    size.value = const Size(390, 844); // the real size arrives
+    await t.pump(const Duration(milliseconds: 600));
+    final mark = t.getCenter(find.byType(IsharaMark));
+    expect(mark.dx, closeTo(195, .5));
+    expect(mark.dy, greaterThan(200), reason: 'in the group, not at the top');
+    expect(mark.dy, lessThan(422), reason: 'above the screen centre');
     await t.pumpWidget(const SizedBox());
   });
 }

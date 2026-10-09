@@ -87,6 +87,13 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | S5-4 | App logo, launcher icons and native splash exactly as the prototype mark; adaptive + monochrome Android icon from one vector source kept in the repo; Android 12+ splash API; no white flash, no Flutter logo, no light flash in dark mode; iOS AppIcon + LaunchScreen from the same source; golden + "not Flutter's icon" test. |
 | S5-5 | The sign preview always shows the sign that is playing, whoever started it (screen recordings are reviewed). |
 
+## Step 5 review, round 2 (2026-10-10)
+| ID | Decision |
+|---|---|
+| S5-6 | Splash keeps the prototype layout (whole group centred). The mark moves from the native-splash centre to its place in the group (300 ms, prototype easing); with reduced motion it doesn't move. |
+| S5-7 | CALL: the hand beside the head (thumb at the ear, pinky toward the jaw / mouth corner, eye uncovered), elbow down and slightly out, below the shoulder. HOME: flat-O at the mouth corner, then the cheekbone, elbow low. Sara's hair clipping in CALL: no per-character hand adjustment in the engine → known issue, not blocking. |
+| S5-8 | HELP, COFFEE, DOCTOR, FAMILY references added (docs/ASL-REFERENCES.md); check and report. New signs stay `avatar: false`. |
+
 ## Backend
 | ID | Decision |
 |---|---|
@@ -164,3 +171,8 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | 2026-10-09 | Native launch: `windowBackground` (LaunchTheme and NormalTheme) and the Android 12+ `windowSplashScreenBackground` are `@color/ishara_bg` = prototype `--bg` (light `#F4F2EC`, dark `#121318`). The Flutter splash is the prototype `#splash` (radial gradient, mark with glow, "Ishara", tagline, loading bar, pop-ins; Welcome after 2.1 s or a tap). | No white flash, no Flutter logo, no light flash in dark mode (emulator burst screenshots). Known difference: the mark moves up about 60 dp when the Flutter splash takes over (the native splash can only centre the mark; the prototype centres the whole group). |
 | 2026-10-09 | Emulator screen recording (`adb shell screenrecord`) crashed the host-GPU emulator when started before the app; starting it once the app runs, at 540 × 1170, works. | Note for later recordings. |
 | 2026-10-09 | Engine: landmark `ear` (beside the head) takes its height from the eyes and its depth from the head bone, not from the skin (the side of the face and hair are too uneven to measure). CALL's wrist uses it, so it lands beside the jaw on both characters (Nour's pose unchanged; Sara's hand no longer covers her face). | Found when checking the contact signs on Sara. Sara's hair is not simulated: her arm passes through it in CALL. |
+| 2026-10-10 | Splash: wrapped in a transparent `Material` (its texts had no Material / DefaultTextStyle and showed Flutter's debug style: yellow double underline). Golden renders the real app root and route; a test fails if any splash text has the debug fallback style (checked to fail without the fix). | Review round 2, item 1. |
+| 2026-10-10 | Splash layout: a `MultiChildLayoutDelegate` centres the group and places the mark between the screen centre and its slot from the real size at every layout (a first attempt measured after the frame and kept a 0 × 0 window size, sending the mark to a corner). The background gradient's ellipse is skipped at 0 × 0 (it divided by zero). The 2.1 s and the animations start after the splash's first frame with a real size (on a cold debug start Android lays the window out at 0 × 0 behind its own splash, and the timer had already run out). | Found on the emulator; regression tests for both. |
+| 2026-10-10 | Android 12+ splash exit: the default (fade) is kept. An instant `setOnExitAnimationListener { remove() }` removed the system splash before Flutter had drawn and showed black frames. | Emulator. |
+| 2026-10-10 | Emulator note: on the host GPU the starting window was sometimes black and the emulator crashed several times (GL context lost); on the software GPU (`-gpu swiftshader_indirect`) the launch is correct in both themes. Launch checks use a launcher-style start (`monkey … LAUNCHER`). | Not an app issue; the real check is the user's phone. |
+| 2026-10-10 | DOCTOR (avatar-only, `verified: false`): the bent fingertips tap the middle of the other palm, Lifeprint's recommended form taps the inside of the wrist (pulse). Listed for the user, not changed (sign rule 1). HELP, COFFEE, FAMILY match their references. | S5-8. |

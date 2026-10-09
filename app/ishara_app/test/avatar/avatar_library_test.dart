@@ -133,7 +133,8 @@ void main() {
       final shapes = _lib()['shapes'] as Map<String, dynamic>;
       final curl = proto['curl'] as Map<String, dynamic>;
       final reach = proto['reach'] as Map<String, dynamic>;
-      for (final k in curl.keys) {
+      // flato (HOME only): closed onto the thumb in the step 5 review
+      for (final k in curl.keys.where((k) => k != 'flato')) {
         expect(_at(shapes, [k, 'curl']), curl[k], reason: k);
         expect(_at(shapes, [k, 'reach']), reach[k], reason: k);
         expect(_at(shapes, [k, 'spread']), isNull, reason: k);
@@ -172,20 +173,16 @@ void main() {
       }
     });
 
-    test('contact signs differ only in contact depth (and HOME: elbow, '
-        'cheek height; YOU: level pointing)', () {
+    test('contact signs differ only in contact depth (YOU: level '
+        'pointing)', () {
       final signs = _lib()['signs'] as Map<String, dynamic>;
       final p = proto['signs'] as Map<String, dynamic>;
       for (final k in const ['hello', 'thanks', 'please', 'sorry', 'me']) {
         expect(core(signs[k]), core(p[k]), reason: k);
         expect(signs[k], isNot(p[k]), reason: '$k: contacts now touch');
       }
-      // HOME: E on every key; the cheek touch 2.5 cm lower (review: it
-      // landed at the eye once the elbow came down).
-      final home = core(p['home']);
-      _put(home, ['frames', 2, 'R', 'P', 2], -0.025);
-      expect(core(signs['home']), home);
-      expect(_at(signs, ['home', 'frames', 0, 'R', 'E']), isNotNull);
+      // HOME and CALL: fixed in the step 5 review (option b, contacts);
+      // pinned exactly, so any change to them is deliberate (see below).
       // YOU: points level at the other person (review), shorter push.
       final you = core(p['you']);
       for (final i in [0, 1]) {
@@ -193,6 +190,16 @@ void main() {
       }
       _put(you, ['frames', 1, 'R', 'P', 2], 0.32);
       expect(core(signs['you']), you);
+    });
+
+    test('review-fixed HOME, CALL and the flat-O are pinned exactly', () {
+      final lib = _lib();
+      // Step 5 review round 2: HOME = flat-O at the mouth corner, then the
+      // cheekbone, elbow low; CALL = Y hand beside the head, elbow down.
+      // Changing these needs a new front + side review (sign rule 2).
+      expect(_at(lib, ['signs', 'home']), jsonDecode(_homePinned));
+      expect(_at(lib, ['signs', 'call']), jsonDecode(_callPinned));
+      expect(_at(lib, ['shapes', 'flato']), jsonDecode(_flatoPinned));
     });
 
     test('decided changes: Q-A4 rename, Q-A3 held still, V-3 mouth', () {
@@ -377,3 +384,11 @@ void main() {
     });
   });
 }
+
+// Pinned review values (JSON, as in library.json).
+const _homePinned =
+    '''{"frames": [{"t": 0, "R": {"P": ["mouth", 0.03, 0, 0.003], "at": "tip", "H": [-0.3, 0.35, -0.85], "N": [-0.9, -0.3, 0.2], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.3, "R": {"P": ["mouth", 0.05, 0.02, 0.04], "at": "tip", "H": [-0.3, 0.35, -0.85], "N": [-0.9, -0.3, 0.2], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.6, "R": {"P": ["cheek", 0.06, -0.03, 0.003], "at": "tip", "H": [-0.4, 0.35, -0.85], "N": [-0.85, -0.3, 0.3], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.9}]}''';
+const _callPinned =
+    '''{"frames": [{"t": 0, "R": {"H": [-0.4, 0.25, 0.88], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.12, -0.11, 0.02]}}, {"t": 0.2, "R": {"H": [-0.4, 0.25, 0.88], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.132, -0.11, 0.02]}}, {"t": 0.4, "R": {"H": [-0.4, 0.25, 0.88], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.12, -0.11, 0.02]}}, {"t": 0.6, "R": {"H": [-0.4, 0.25, 0.88], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.132, -0.11, 0.02]}}, {"t": 0.85}]}''';
+const _flatoPinned =
+    '''{"curl": [58, 50, 48, 48, 48], "reach": 0.78, "spread": [0, -7, 0, 6, 12]}''';

@@ -29,7 +29,7 @@ STATUS: dict[str, tuple[str, str]] = {
     "bye": ("unchanged (was right)", "Open hand, palm out at shoulder height, fingers bend down and up twice, arm still."),
     "come": ("fixed", "Start now visible at chest height: index forward, palm up; one quick arc up toward the signer; no finger curl (V-2)."),
     "drink": ("fixed", "C hand travels in a short arc up to the chin, palm sideways, thumb toward the chin, then tilts; the hand stays below the lips, so the front view doesn't cover the mouth."),
-    "call": ("fixed — please check", "Option (b): elbow set by the keyframes (down, in front of the chest). Y hand beside the jaw and cheek: thumb toward the ear, pinky toward the mouth; small double movement (Lifeprint PHONE)."),
+    "call": ("fixed — please check", "Round 2: the Y hand sits beside the head (thumb at the ear, pinky toward the jaw and mouth corner), nothing covers the eye; the wrist is at the jaw, so the elbow is down and slightly out, well below the shoulder. Placed from the head ('ear' point), so it fits Sara too (her hair is not simulated: the arm passes through it, known issue)."),
     "hungry": ("fixed", "Deeper C, fingertips angled into the chest so the C reads from the front; moves down the chest once."),
     "water": ("fixed", "With the depth fix the W hand's fingertips touch the mouth twice (V-3)."),
     "iloveyou": ("unchanged (was right)", "Held still at its place (identical at every keyframe, Q-A3). The motion in the recording at 55-56 s is the lead-in from the ready pose and the return to it."),
@@ -39,13 +39,13 @@ STATUS: dict[str, tuple[str, str]] = {
     "thanks": ("fixed", "Depth fix: the fingertips touch the chin, then forward and down, palm up."),
     "please": ("fixed", "Depth fix: the flat B palm is on the chest while it circles."),
     "sorry": ("fixed", "Depth fix: the A fist is on the chest while it circles."),
-    "home": ("fixed", "Option (b): elbow low (was above the shoulder). Flat-O at the corner of the mouth, then the cheek (the cheek touch moved 2.5 cm lower so it isn't at the eye)."),
+    "home": ("fixed — please check the flat-O", "Round 2: flat-O at the corner of the mouth, then the cheekbone (not the temple), the hand tilted up into each touch so the elbow stays low. The flat-O is closed more onto the thumb; from straight in front it still looks a little loose."),
     "yes": ("unchanged (was right)", "Pixel-identical to the prototype. S fist nods at the wrist in front of the shoulder."),
     "no": ("unchanged (was right)", "Pixel-identical to the prototype. Index + middle together snap onto the thumb, twice."),
-    "help": ("needs your call", "Pixel-identical to the prototype (A hand on the flat palm, both lift). Avatar-only, verified: false; no reference in ASL-REFERENCES.md."),
-    "coffee": ("needs your call", "Pixel-identical to the prototype (S on S, top fist grinds). Avatar-only, verified: false; no reference in ASL-REFERENCES.md."),
-    "doctor": ("needs your call", "Pixel-identical to the prototype (bent fingertips tap the inside of the wrist). Avatar-only, verified: false; no reference in ASL-REFERENCES.md."),
-    "family": ("needs your call", "Pixel-identical to the prototype (two F hands circle out). Avatar-only, verified: false; no reference in ASL-REFERENCES.md."),
+    "help": ("unchanged (matches the reference)", "Checked against Lifeprint HELP: loose-thumb A hand resting on the flat palm, both lift together (front and side)."),
+    "coffee": ("unchanged (matches the reference)", "Checked against Lifeprint COFFEE: two S fists stacked, the bottom still, the top circles like a grinder (front and side)."),
+    "doctor": ("needs your call", "Checked against Lifeprint DOCTOR: the bent-B fingertips tap the middle of the other PALM, not the inside of the WRIST (the pulse) as the recommended version. Not changed (sign rule 1); fix = move the tap target about 5 cm toward the wrist."),
+    "family": ("unchanged (matches the reference)", "Checked against Lifeprint FAMILY: two F hands start together palms out, circle apart and meet again palms in (front and side)."),
 }
 
 
