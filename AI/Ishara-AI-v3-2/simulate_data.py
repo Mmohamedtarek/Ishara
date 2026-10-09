@@ -40,7 +40,7 @@ FORWARD = [0, 0.3, -0.95]      # السبابة لقدام
 ON_CHEST = [0, 0.2, 0.98]      # الكف على الصدر
 AT_FOREHEAD = [-0.3, 0.9, 0.2]  # الإيد جنب الجبهة ومايلة ناحية الراس (hello)
 OUT_FOREHEAD = [0.35, 0.9, 0.2] # الإيد بعدت عن الجبهة لبرّه
-AT_CHIN = [0.3, 0.9, 0.3]       # الصوابع لفوق عند الدقن والكف ناحية الشمال (water)
+AT_MOUTH = [0.3, 0.9, 0.3]      # الصوابع لفوق عند البق والكف ناحية الشمال (water، زي Lifeprint)
 SHOULDER = [0, 0.75, -0.65]     # قدام الكتف والصوابع لقدام (no)
 
 # كل إشارة: (الصوابع، الاتجاه في الأول، الاتجاه في الآخر، نوع الحركة)
@@ -59,9 +59,9 @@ SIGNS = {
     "yes":      (FIST, UP, UP, "nod"),
     "no":       (NO_OPEN, SHOULDER, SHOULDER, "snap"),
     "sorry":    (FIST, ON_CHEST, ON_CHEST, "circle"),
-    "water":    (W_HAND, AT_CHIN, AT_CHIN, "tap"),
+    "water":    (W_HAND, AT_MOUTH, AT_MOUTH, "tap"),
     "bye":      (OPEN, UP, UP, "flap"),
-    "come":     (INDEX, [0, 0.5, -0.85], [0, 0.5, -0.85], "beckon"),
+    "come":     (INDEX, [0, 0.45, -0.9], [0, 0.85, 0.5], "arc_in"),   # السبابة لقدام وتيجي ناحيتك مرة واحدة (Lifeprint)
     "drink":    (C_SHAPE, [0.6, 0.8, 0], [0.6, 0.4, 0.7], "tilt"),
     "call":     ([0, 1, 1, 1, 0], [0.8, 0.6, 0], [0.8, 0.6, 0], "still"),
     "iloveyou": ([0, 0, 1, 1, 0], UP, UP, "still"),
@@ -140,7 +140,10 @@ def motion(kind, amp, speed):
     elif kind == "down":        # hungry: الإيد تنزل على الصدر
         acc[:, 1] = -0.4 * amp * np.sin(2 * np.pi * x) * (x > 0) * (x < 1)
         gyro[:, 0] = 25 * amp * env
-    elif kind == "beckon":      # come: السبابة تتني وتتفرد
+    elif kind == "arc_in":      # come: حركة واحدة سريعة، السبابة مفرودة وبتلف ناحيتك
+        gyro[:, 0] = 170 * amp * env
+        acc[:, 2] = 0.45 * amp * np.sin(2 * np.pi * x) * (x > 0) * (x < 1)
+    elif kind == "beckon":      # إشارة "تعالى" بالسبابة (مش ASL، بتتعمل كحركة عادية)
         bend[:, 1] = 0.5 * (1 - np.cos(2 * np.pi * 1.5 * f * tau)) * (env > 0.05)
         gyro[:, 0] = 30 * amp * np.sin(2 * np.pi * 1.5 * f * tau) * env
     return acc, gyro, bend, x
@@ -223,7 +226,7 @@ def make_everyday(person, kind=None):
     elif kind == "talking":     # بيحرّك إيده وهو بيتكلم: أي شكل، أي حركة
         shape = np.tile(rng.uniform(0.05, 0.9, 5), (WINDOW, 1))
         pose = np.tile(rotate_small(unit(rng.normal(0, 1, 3)), 0), (WINDOW, 1))
-        mk = ["wave", "shake", "nod", "circle", "push", "tilt", "down", "salute"][rng.integers(8)]
+        mk = ["wave", "shake", "nod", "circle", "push", "tilt", "down", "salute", "beckon"][rng.integers(9)]
         a, g, _, _ = motion(mk, amp * rng.uniform(0.3, 0.9), speed)
         acc_dyn, gyro = acc_dyn + a, gyro + g
     elif kind == "carry":       # ماسك شنطة وماشي: قبضة والإيد بتتمرجح

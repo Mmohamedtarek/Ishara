@@ -165,7 +165,7 @@ Events come out in this order inside one step. Reset all state (and the window) 
 
 **Step numbers in the test files:** `step` in `test_vectors.json` and `mock/expected.json` is the **0-based index of the model run** (the first model run is step 0). The pseudo-code counter above starts at 1, so compare `step - 1` with the files. `sample` in `expected.json` is the number of samples received when that model run happened.
 
-`mock/expected.json`: play each mock file at 50 Hz through the full pipeline → the app must produce the same confirmed `words`, and the same `events`. The expected values are computed with the same `.tflite` files that are in the kit, and an independent implementation of this spec matched every file exactly.
+`mock/expected.json`: play each mock file at 50 Hz through the full pipeline → the app must produce the same confirmed `words`, and the same `events`. The expected values (and the `gaps` events) are computed in Python with the Keras models, which have the same weights as the `.tflite` files in the kit. An independent implementation of this spec that runs the kit's `.tflite` files matched every file and every event exactly.
 
 `mock/A/practice/` and `mock/B/practice/`: one file per sign, the way a learner signs in Learn (rest, the sign held or repeated for about 4 s, rest). Each one confirms its sign exactly once. Use them for the Learn practice check on the mock source.
 

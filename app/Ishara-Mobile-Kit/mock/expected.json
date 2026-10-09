@@ -5,26 +5,26 @@
    "words": [],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 8,
+     "sample": 180,
      "event": "tentative",
      "word": "one"
     },
     {
-     "step": 25,
-     "sample": 350,
+     "step": 27,
+     "sample": 370,
      "event": "cancel",
      "word": "one"
     },
     {
-     "step": 35,
-     "sample": 450,
+     "step": 36,
+     "sample": 460,
      "event": "tentative",
      "word": "one"
     },
     {
-     "step": 54,
-     "sample": 640,
+     "step": 55,
+     "sample": 650,
      "event": "cancel",
      "word": "one"
     },
@@ -40,7 +40,7 @@
    "words": [
     {
      "word": "two",
-     "sample": 200
+     "sample": 210
     },
     {
      "word": "two",
@@ -59,8 +59,8 @@
      "word": "two"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 11,
+     "sample": 210,
      "event": "confirm",
      "word": "two"
     },
@@ -98,7 +98,7 @@
     },
     {
      "word": "three",
-     "sample": 480
+     "sample": 470
     },
     {
      "word": "three",
@@ -125,14 +125,14 @@
      "word": "three"
     },
     {
-     "step": 38,
-     "sample": 480,
+     "step": 37,
+     "sample": 470,
      "event": "confirm",
      "word": "three"
     },
     {
-     "step": 59,
-     "sample": 690,
+     "step": 61,
+     "sample": 710,
      "event": "tentative",
      "word": "three"
     },
@@ -152,17 +152,17 @@
     },
     {
      "word": "four",
-     "sample": 470
+     "sample": 490
     },
     {
      "word": "four",
-     "sample": 750
+     "sample": 760
     }
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "four"
     },
@@ -173,26 +173,26 @@
      "word": "four"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 35,
+     "sample": 450,
      "event": "tentative",
      "word": "four"
     },
     {
-     "step": 37,
-     "sample": 470,
+     "step": 39,
+     "sample": 490,
      "event": "confirm",
      "word": "four"
     },
     {
-     "step": 62,
-     "sample": 720,
+     "step": 60,
+     "sample": 700,
      "event": "tentative",
      "word": "four"
     },
     {
-     "step": 65,
-     "sample": 750,
+     "step": 66,
+     "sample": 760,
      "event": "confirm",
      "word": "four"
     }
@@ -202,11 +202,11 @@
    "words": [
     {
      "word": "five",
-     "sample": 210
+     "sample": 200
     },
     {
      "word": "five",
-     "sample": 470
+     "sample": 480
     },
     {
      "word": "five",
@@ -221,20 +221,20 @@
      "word": "five"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "five"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 35,
+     "sample": 450,
      "event": "tentative",
      "word": "five"
     },
     {
-     "step": 37,
-     "sample": 470,
+     "step": 38,
+     "sample": 480,
      "event": "confirm",
      "word": "five"
     },
@@ -256,15 +256,21 @@
    "words": [],
    "events": [
     {
-     "step": 35,
-     "sample": 450,
+     "step": 34,
+     "sample": 440,
      "event": "tentative",
      "word": "me"
     },
     {
-     "step": 54,
-     "sample": 640,
+     "step": 53,
+     "sample": 630,
      "event": "cancel",
+     "word": "me"
+    },
+    {
+     "step": 62,
+     "sample": 720,
+     "event": "tentative",
      "word": "me"
     }
    ]
@@ -273,15 +279,15 @@
    "words": [
     {
      "word": "you",
-     "sample": 210
+     "sample": 200
     },
     {
      "word": "you",
-     "sample": 480
+     "sample": 460
     },
     {
      "word": "you",
-     "sample": 730
+     "sample": 740
     }
    ],
    "events": [
@@ -292,32 +298,32 @@
      "word": "you"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "you"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 33,
+     "sample": 430,
      "event": "tentative",
      "word": "you"
     },
     {
-     "step": 38,
-     "sample": 480,
+     "step": 36,
+     "sample": 460,
      "event": "confirm",
      "word": "you"
     },
     {
-     "step": 59,
-     "sample": 690,
+     "step": 61,
+     "sample": 710,
      "event": "tentative",
      "word": "you"
     },
     {
-     "step": 63,
-     "sample": 730,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "you"
     }
@@ -327,7 +333,7 @@
    "words": [
     {
      "word": "hello",
-     "sample": 220
+     "sample": 190
     },
     {
      "word": "hello",
@@ -335,19 +341,19 @@
     },
     {
      "word": "hello",
-     "sample": 750
+     "sample": 740
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 5,
+     "sample": 150,
      "event": "tentative",
      "word": "hello"
     },
     {
-     "step": 12,
-     "sample": 220,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "hello"
     },
@@ -364,14 +370,14 @@
      "word": "hello"
     },
     {
-     "step": 62,
-     "sample": 720,
+     "step": 61,
+     "sample": 710,
      "event": "tentative",
      "word": "hello"
     },
     {
-     "step": 65,
-     "sample": 750,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "hello"
     }
@@ -389,13 +395,13 @@
     },
     {
      "word": "thanks",
-     "sample": 750
+     "sample": 730
     }
    ],
    "events": [
     {
-     "step": 7,
-     "sample": 170,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "thanks"
     },
@@ -418,14 +424,14 @@
      "word": "thanks"
     },
     {
-     "step": 61,
-     "sample": 710,
+     "step": 60,
+     "sample": 700,
      "event": "tentative",
      "word": "thanks"
     },
     {
-     "step": 65,
-     "sample": 750,
+     "step": 63,
+     "sample": 730,
      "event": "confirm",
      "word": "thanks"
     }
@@ -435,15 +441,15 @@
    "words": [
     {
      "word": "please",
-     "sample": 190
+     "sample": 200
     },
     {
      "word": "please",
-     "sample": 470
+     "sample": 460
     },
     {
      "word": "please",
-     "sample": 730
+     "sample": 740
     }
    ],
    "events": [
@@ -454,32 +460,32 @@
      "word": "please"
     },
     {
-     "step": 9,
-     "sample": 190,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "please"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 33,
+     "sample": 430,
      "event": "tentative",
      "word": "please"
     },
     {
-     "step": 37,
-     "sample": 470,
+     "step": 36,
+     "sample": 460,
      "event": "confirm",
      "word": "please"
     },
     {
-     "step": 60,
-     "sample": 700,
+     "step": 61,
+     "sample": 710,
      "event": "tentative",
      "word": "please"
     },
     {
-     "step": 63,
-     "sample": 730,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "please"
     }
@@ -489,11 +495,11 @@
    "words": [
     {
      "word": "yes",
-     "sample": 210
+     "sample": 200
     },
     {
      "word": "yes",
-     "sample": 470
+     "sample": 480
     },
     {
      "word": "yes",
@@ -502,32 +508,32 @@
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "yes"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "yes"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 35,
+     "sample": 450,
      "event": "tentative",
      "word": "yes"
     },
     {
-     "step": 37,
-     "sample": 470,
+     "step": 38,
+     "sample": 480,
      "event": "confirm",
      "word": "yes"
     },
     {
-     "step": 61,
-     "sample": 710,
+     "step": 62,
+     "sample": 720,
      "event": "tentative",
      "word": "yes"
     },
@@ -543,7 +549,7 @@
    "words": [
     {
      "word": "no",
-     "sample": 200
+     "sample": 190
     },
     {
      "word": "no",
@@ -562,8 +568,8 @@
      "word": "no"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "no"
     },
@@ -622,8 +628,8 @@
      "word": "sorry"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 35,
+     "sample": 450,
      "event": "tentative",
      "word": "sorry"
     },
@@ -676,8 +682,8 @@
      "word": "water"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 35,
+     "sample": 450,
      "event": "tentative",
      "word": "water"
     },
@@ -705,68 +711,14 @@
    "words": [
     {
      "word": "bye",
-     "sample": 210
-    },
-    {
-     "word": "bye",
-     "sample": 480
-    },
-    {
-     "word": "bye",
-     "sample": 750
-    }
-   ],
-   "events": [
-    {
-     "step": 7,
-     "sample": 170,
-     "event": "tentative",
-     "word": "bye"
-    },
-    {
-     "step": 11,
-     "sample": 210,
-     "event": "confirm",
-     "word": "bye"
-    },
-    {
-     "step": 35,
-     "sample": 450,
-     "event": "tentative",
-     "word": "bye"
-    },
-    {
-     "step": 38,
-     "sample": 480,
-     "event": "confirm",
-     "word": "bye"
-    },
-    {
-     "step": 61,
-     "sample": 710,
-     "event": "tentative",
-     "word": "bye"
-    },
-    {
-     "step": 65,
-     "sample": 750,
-     "event": "confirm",
-     "word": "bye"
-    }
-   ]
-  },
-  "A/come.csv": {
-   "words": [
-    {
-     "word": "come",
      "sample": 200
     },
     {
-     "word": "come",
+     "word": "bye",
      "sample": 470
     },
     {
-     "word": "come",
+     "word": "bye",
      "sample": 740
     }
    ],
@@ -775,36 +727,71 @@
      "step": 7,
      "sample": 170,
      "event": "tentative",
-     "word": "come"
+     "word": "bye"
     },
     {
      "step": 10,
      "sample": 200,
      "event": "confirm",
-     "word": "come"
+     "word": "bye"
     },
     {
      "step": 34,
      "sample": 440,
      "event": "tentative",
-     "word": "come"
+     "word": "bye"
     },
     {
      "step": 37,
      "sample": 470,
      "event": "confirm",
-     "word": "come"
+     "word": "bye"
     },
     {
      "step": 61,
      "sample": 710,
      "event": "tentative",
-     "word": "come"
+     "word": "bye"
     },
     {
      "step": 64,
      "sample": 740,
      "event": "confirm",
+     "word": "bye"
+    }
+   ]
+  },
+  "A/come.csv": {
+   "words": [],
+   "events": [
+    {
+     "step": 7,
+     "sample": 170,
+     "event": "tentative",
+     "word": "come"
+    },
+    {
+     "step": 26,
+     "sample": 360,
+     "event": "cancel",
+     "word": "come"
+    },
+    {
+     "step": 35,
+     "sample": 450,
+     "event": "tentative",
+     "word": "come"
+    },
+    {
+     "step": 54,
+     "sample": 640,
+     "event": "cancel",
+     "word": "come"
+    },
+    {
+     "step": 60,
+     "sample": 700,
+     "event": "tentative",
      "word": "come"
     }
    ]
@@ -813,32 +800,20 @@
    "words": [],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 37,
+     "sample": 470,
      "event": "tentative",
      "word": "drink"
     },
     {
-     "step": 27,
-     "sample": 370,
+     "step": 56,
+     "sample": 660,
      "event": "cancel",
      "word": "drink"
     },
     {
-     "step": 36,
-     "sample": 460,
-     "event": "tentative",
-     "word": "drink"
-    },
-    {
-     "step": 55,
-     "sample": 650,
-     "event": "cancel",
-     "word": "drink"
-    },
-    {
-     "step": 64,
-     "sample": 740,
+     "step": 65,
+     "sample": 750,
      "event": "tentative",
      "word": "drink"
     }
@@ -852,11 +827,11 @@
     },
     {
      "word": "call",
-     "sample": 480
+     "sample": 460
     },
     {
      "word": "call",
-     "sample": 750
+     "sample": 740
     }
    ],
    "events": [
@@ -873,14 +848,14 @@
      "word": "call"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 32,
+     "sample": 420,
      "event": "tentative",
      "word": "call"
     },
     {
-     "step": 38,
-     "sample": 480,
+     "step": 36,
+     "sample": 460,
      "event": "confirm",
      "word": "call"
     },
@@ -891,8 +866,8 @@
      "word": "call"
     },
     {
-     "step": 65,
-     "sample": 750,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "call"
     }
@@ -902,51 +877,51 @@
    "words": [
     {
      "word": "iloveyou",
-     "sample": 220
+     "sample": 200
     },
     {
      "word": "iloveyou",
-     "sample": 470
+     "sample": 480
     },
     {
      "word": "iloveyou",
-     "sample": 750
+     "sample": 740
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "iloveyou"
     },
     {
-     "step": 12,
-     "sample": 220,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "iloveyou"
     },
     {
-     "step": 33,
-     "sample": 430,
+     "step": 34,
+     "sample": 440,
      "event": "tentative",
      "word": "iloveyou"
     },
     {
-     "step": 37,
-     "sample": 470,
+     "step": 38,
+     "sample": 480,
      "event": "confirm",
      "word": "iloveyou"
     },
     {
-     "step": 61,
-     "sample": 710,
+     "step": 60,
+     "sample": 700,
      "event": "tentative",
      "word": "iloveyou"
     },
     {
-     "step": 65,
-     "sample": 750,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "iloveyou"
     }
@@ -955,18 +930,6 @@
   "A/hungry.csv": {
    "words": [],
    "events": [
-    {
-     "step": 8,
-     "sample": 180,
-     "event": "tentative",
-     "word": "hungry"
-    },
-    {
-     "step": 27,
-     "sample": 370,
-     "event": "cancel",
-     "word": "hungry"
-    },
     {
      "step": 35,
      "sample": 450,
@@ -977,12 +940,6 @@
      "step": 54,
      "sample": 640,
      "event": "cancel",
-     "word": "hungry"
-    },
-    {
-     "step": 63,
-     "sample": 730,
-     "event": "tentative",
      "word": "hungry"
     }
    ]
@@ -999,7 +956,7 @@
    "words": [
     {
      "word": "me",
-     "sample": 290
+     "sample": 200
     },
     {
      "word": "hungry",
@@ -1007,11 +964,11 @@
     },
     {
      "word": "me",
-     "sample": 650
+     "sample": 640
     },
     {
      "word": "water",
-     "sample": 650
+     "sample": 640
     },
     {
      "word": "water",
@@ -1027,11 +984,11 @@
     },
     {
      "word": "come",
-     "sample": 1320
+     "sample": 1350
     },
     {
      "word": "call",
-     "sample": 1640
+     "sample": 1650
     },
     {
      "word": "me",
@@ -1043,19 +1000,19 @@
     },
     {
      "word": "thanks",
-     "sample": 2060
+     "sample": 2080
     },
     {
      "word": "sorry",
-     "sample": 2440
+     "sample": 2430
     },
     {
      "word": "bye",
-     "sample": 2440
+     "sample": 2430
     },
     {
      "word": "iloveyou",
-     "sample": 2720
+     "sample": 2710
     }
    ],
    "events": [
@@ -1066,8 +1023,8 @@
      "word": "me"
     },
     {
-     "step": 19,
-     "sample": 290,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "me"
     },
@@ -1078,26 +1035,26 @@
      "word": "hungry"
     },
     {
-     "step": 44,
-     "sample": 540,
+     "step": 45,
+     "sample": 550,
      "event": "tentative",
      "word": "me"
     },
     {
-     "step": 55,
-     "sample": 650,
+     "step": 54,
+     "sample": 640,
      "event": "confirm",
      "word": "me"
     },
     {
-     "step": 55,
-     "sample": 650,
+     "step": 54,
+     "sample": 640,
      "event": "word",
      "word": "water"
     },
     {
-     "step": 80,
-     "sample": 900,
+     "step": 79,
+     "sample": 890,
      "event": "tentative",
      "word": "water"
     },
@@ -1114,8 +1071,8 @@
      "word": "please"
     },
     {
-     "step": 114,
-     "sample": 1240,
+     "step": 115,
+     "sample": 1250,
      "event": "tentative",
      "word": "you"
     },
@@ -1126,8 +1083,8 @@
      "word": "you"
     },
     {
-     "step": 122,
-     "sample": 1320,
+     "step": 125,
+     "sample": 1350,
      "event": "word",
      "word": "come"
     },
@@ -1138,8 +1095,8 @@
      "word": "call"
     },
     {
-     "step": 154,
-     "sample": 1640,
+     "step": 155,
+     "sample": 1650,
      "event": "confirm",
      "word": "call"
     },
@@ -1162,26 +1119,26 @@
      "word": "hello"
     },
     {
-     "step": 196,
-     "sample": 2060,
+     "step": 198,
+     "sample": 2080,
      "event": "word",
      "word": "thanks"
     },
     {
-     "step": 225,
-     "sample": 2350,
+     "step": 224,
+     "sample": 2340,
      "event": "tentative",
      "word": "sorry"
     },
     {
-     "step": 234,
-     "sample": 2440,
+     "step": 233,
+     "sample": 2430,
      "event": "confirm",
      "word": "sorry"
     },
     {
-     "step": 234,
-     "sample": 2440,
+     "step": 233,
+     "sample": 2430,
      "event": "word",
      "word": "bye"
     },
@@ -1192,8 +1149,8 @@
      "word": "iloveyou"
     },
     {
-     "step": 262,
-     "sample": 2720,
+     "step": 261,
+     "sample": 2710,
      "event": "confirm",
      "word": "iloveyou"
     }
@@ -1207,19 +1164,19 @@
    "words": [
     {
      "word": "one",
-     "sample": 230
+     "sample": 260
     }
    ],
    "events": [
     {
-     "step": 9,
-     "sample": 190,
+     "step": 8,
+     "sample": 180,
      "event": "tentative",
      "word": "one"
     },
     {
-     "step": 13,
-     "sample": 230,
+     "step": 16,
+     "sample": 260,
      "event": "confirm",
      "word": "one"
     }
@@ -1234,8 +1191,8 @@
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "two"
     },
@@ -1256,8 +1213,8 @@
    ],
    "events": [
     {
-     "step": 7,
-     "sample": 170,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "three"
     },
@@ -1273,7 +1230,7 @@
    "words": [
     {
      "word": "four",
-     "sample": 210
+     "sample": 200
     }
    ],
    "events": [
@@ -1284,8 +1241,8 @@
      "word": "four"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "four"
     }
@@ -1295,7 +1252,7 @@
    "words": [
     {
      "word": "five",
-     "sample": 200
+     "sample": 210
     }
    ],
    "events": [
@@ -1306,8 +1263,8 @@
      "word": "five"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 11,
+     "sample": 210,
      "event": "confirm",
      "word": "five"
     }
@@ -1317,7 +1274,7 @@
    "words": [
     {
      "word": "me",
-     "sample": 220
+     "sample": 240
     }
    ],
    "events": [
@@ -1328,8 +1285,8 @@
      "word": "me"
     },
     {
-     "step": 12,
-     "sample": 220,
+     "step": 14,
+     "sample": 240,
      "event": "confirm",
      "word": "me"
     }
@@ -1339,19 +1296,19 @@
    "words": [
     {
      "word": "you",
-     "sample": 190
+     "sample": 200
     }
    ],
    "events": [
     {
-     "step": 5,
-     "sample": 150,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "you"
     },
     {
-     "step": 9,
-     "sample": 190,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "you"
     }
@@ -1366,8 +1323,8 @@
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 8,
+     "sample": 180,
      "event": "tentative",
      "word": "hello"
     },
@@ -1383,7 +1340,7 @@
    "words": [
     {
      "word": "thanks",
-     "sample": 210
+     "sample": 200
     }
    ],
    "events": [
@@ -1394,8 +1351,8 @@
      "word": "thanks"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "thanks"
     }
@@ -1410,8 +1367,8 @@
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "please"
     },
@@ -1427,7 +1384,7 @@
    "words": [
     {
      "word": "yes",
-     "sample": 220
+     "sample": 210
     }
    ],
    "events": [
@@ -1438,8 +1395,8 @@
      "word": "yes"
     },
     {
-     "step": 12,
-     "sample": 220,
+     "step": 11,
+     "sample": 210,
      "event": "confirm",
      "word": "yes"
     }
@@ -1449,19 +1406,19 @@
    "words": [
     {
      "word": "no",
-     "sample": 190
+     "sample": 200
     }
    ],
    "events": [
     {
-     "step": 5,
-     "sample": 150,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "no"
     },
     {
-     "step": 9,
-     "sample": 190,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "no"
     }
@@ -1471,19 +1428,19 @@
    "words": [
     {
      "word": "sorry",
-     "sample": 200
+     "sample": 210
     }
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 8,
+     "sample": 180,
      "event": "tentative",
      "word": "sorry"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 11,
+     "sample": 210,
      "event": "confirm",
      "word": "sorry"
     }
@@ -1493,19 +1450,19 @@
    "words": [
     {
      "word": "water",
-     "sample": 290
+     "sample": 220
     }
    ],
    "events": [
     {
-     "step": 9,
-     "sample": 190,
+     "step": 8,
+     "sample": 180,
      "event": "tentative",
      "word": "water"
     },
     {
-     "step": 19,
-     "sample": 290,
+     "step": 12,
+     "sample": 220,
      "event": "confirm",
      "word": "water"
     }
@@ -1520,8 +1477,8 @@
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "bye"
     },
@@ -1537,19 +1494,19 @@
    "words": [
     {
      "word": "come",
-     "sample": 210
+     "sample": 220
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 9,
+     "sample": 190,
      "event": "tentative",
      "word": "come"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 12,
+     "sample": 220,
      "event": "confirm",
      "word": "come"
     }
@@ -1559,19 +1516,19 @@
    "words": [
     {
      "word": "drink",
-     "sample": 210
+     "sample": 250
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 11,
+     "sample": 210,
      "event": "tentative",
      "word": "drink"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 15,
+     "sample": 250,
      "event": "confirm",
      "word": "drink"
     }
@@ -1603,7 +1560,7 @@
    "words": [
     {
      "word": "iloveyou",
-     "sample": 200
+     "sample": 220
     }
    ],
    "events": [
@@ -1614,8 +1571,8 @@
      "word": "iloveyou"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 12,
+     "sample": 220,
      "event": "confirm",
      "word": "iloveyou"
     }
@@ -1625,19 +1582,19 @@
    "words": [
     {
      "word": "hungry",
-     "sample": 220
+     "sample": 260
     }
    ],
    "events": [
     {
-     "step": 9,
-     "sample": 190,
+     "step": 12,
+     "sample": 220,
      "event": "tentative",
      "word": "hungry"
     },
     {
-     "step": 12,
-     "sample": 220,
+     "step": 16,
+     "sample": 260,
      "event": "confirm",
      "word": "hungry"
     }
@@ -1657,6 +1614,18 @@
      "sample": 360,
      "event": "cancel",
      "word": "you"
+    },
+    {
+     "step": 34,
+     "sample": 440,
+     "event": "tentative",
+     "word": "you"
+    },
+    {
+     "step": 53,
+     "sample": 630,
+     "event": "cancel",
+     "word": "you"
     }
    ]
   },
@@ -1664,7 +1633,7 @@
    "words": [
     {
      "word": "two",
-     "sample": 200
+     "sample": 190
     },
     {
      "word": "two",
@@ -1683,8 +1652,8 @@
      "word": "two"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "two"
     },
@@ -1701,8 +1670,8 @@
      "word": "two"
     },
     {
-     "step": 61,
-     "sample": 710,
+     "step": 60,
+     "sample": 700,
      "event": "tentative",
      "word": "two"
     },
@@ -1722,7 +1691,7 @@
     },
     {
      "word": "three",
-     "sample": 470
+     "sample": 480
     },
     {
      "word": "three",
@@ -1731,8 +1700,8 @@
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "three"
     },
@@ -1743,14 +1712,14 @@
      "word": "three"
     },
     {
-     "step": 33,
-     "sample": 430,
+     "step": 34,
+     "sample": 440,
      "event": "tentative",
      "word": "three"
     },
     {
-     "step": 37,
-     "sample": 470,
+     "step": 38,
+     "sample": 480,
      "event": "confirm",
      "word": "three"
     },
@@ -1785,8 +1754,8 @@
    ],
    "events": [
     {
-     "step": 7,
-     "sample": 170,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "four"
     },
@@ -1826,27 +1795,27 @@
    "words": [
     {
      "word": "five",
-     "sample": 200
+     "sample": 210
     },
     {
      "word": "five",
-     "sample": 470
+     "sample": 480
     },
     {
      "word": "five",
-     "sample": 760
+     "sample": 750
     }
    ],
    "events": [
     {
-     "step": 7,
-     "sample": 170,
+     "step": 8,
+     "sample": 180,
      "event": "tentative",
      "word": "five"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 11,
+     "sample": 210,
      "event": "confirm",
      "word": "five"
     },
@@ -1857,8 +1826,8 @@
      "word": "five"
     },
     {
-     "step": 37,
-     "sample": 470,
+     "step": 38,
+     "sample": 480,
      "event": "confirm",
      "word": "five"
     },
@@ -1869,8 +1838,8 @@
      "word": "five"
     },
     {
-     "step": 66,
-     "sample": 760,
+     "step": 65,
+     "sample": 750,
      "event": "confirm",
      "word": "five"
     }
@@ -1880,34 +1849,10 @@
    "words": [],
    "events": [
     {
-     "step": 9,
-     "sample": 190,
+     "step": 63,
+     "sample": 730,
      "event": "tentative",
      "word": "me"
-    },
-    {
-     "step": 28,
-     "sample": 380,
-     "event": "cancel",
-     "word": "me"
-    },
-    {
-     "step": 36,
-     "sample": 460,
-     "event": "tentative",
-     "word": "me"
-    },
-    {
-     "step": 55,
-     "sample": 650,
-     "event": "cancel",
-     "word": "me"
-    },
-    {
-     "step": 61,
-     "sample": 710,
-     "event": "tentative",
-     "word": "one"
     }
    ]
   },
@@ -1928,8 +1873,8 @@
    ],
    "events": [
     {
-     "step": 7,
-     "sample": 170,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "you"
     },
@@ -1973,11 +1918,11 @@
     },
     {
      "word": "hello",
-     "sample": 460
+     "sample": 470
     },
     {
      "word": "hello",
-     "sample": 740
+     "sample": 750
     }
    ],
    "events": [
@@ -1994,14 +1939,14 @@
      "word": "hello"
     },
     {
-     "step": 33,
-     "sample": 430,
+     "step": 34,
+     "sample": 440,
      "event": "tentative",
      "word": "hello"
     },
     {
-     "step": 36,
-     "sample": 460,
+     "step": 37,
+     "sample": 470,
      "event": "confirm",
      "word": "hello"
     },
@@ -2012,8 +1957,8 @@
      "word": "hello"
     },
     {
-     "step": 64,
-     "sample": 740,
+     "step": 65,
+     "sample": 750,
      "event": "confirm",
      "word": "hello"
     }
@@ -2023,7 +1968,7 @@
    "words": [
     {
      "word": "thanks",
-     "sample": 200
+     "sample": 210
     },
     {
      "word": "thanks",
@@ -2031,25 +1976,25 @@
     },
     {
      "word": "thanks",
-     "sample": 740
+     "sample": 730
     }
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "thanks"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 11,
+     "sample": 210,
      "event": "confirm",
      "word": "thanks"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 33,
+     "sample": 430,
      "event": "tentative",
      "word": "thanks"
     },
@@ -2060,14 +2005,14 @@
      "word": "thanks"
     },
     {
-     "step": 61,
-     "sample": 710,
+     "step": 60,
+     "sample": 700,
      "event": "tentative",
      "word": "thanks"
     },
     {
-     "step": 64,
-     "sample": 740,
+     "step": 63,
+     "sample": 730,
      "event": "confirm",
      "word": "thanks"
     }
@@ -2077,7 +2022,7 @@
    "words": [
     {
      "word": "please",
-     "sample": 200
+     "sample": 190
     },
     {
      "word": "please",
@@ -2085,19 +2030,19 @@
     },
     {
      "word": "please",
-     "sample": 730
+     "sample": 740
     }
    ],
    "events": [
     {
-     "step": 7,
-     "sample": 170,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "please"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "please"
     },
@@ -2120,8 +2065,8 @@
      "word": "please"
     },
     {
-     "step": 63,
-     "sample": 730,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "please"
     }
@@ -2131,39 +2076,39 @@
    "words": [
     {
      "word": "yes",
-     "sample": 220
+     "sample": 190
     },
     {
      "word": "yes",
-     "sample": 480
+     "sample": 460
     },
     {
      "word": "yes",
-     "sample": 750
+     "sample": 740
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "yes"
     },
     {
-     "step": 12,
-     "sample": 220,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "yes"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 33,
+     "sample": 430,
      "event": "tentative",
      "word": "yes"
     },
     {
-     "step": 38,
-     "sample": 480,
+     "step": 36,
+     "sample": 460,
      "event": "confirm",
      "word": "yes"
     },
@@ -2174,8 +2119,8 @@
      "word": "yes"
     },
     {
-     "step": 65,
-     "sample": 750,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "yes"
     }
@@ -2189,7 +2134,7 @@
     },
     {
      "word": "no",
-     "sample": 470
+     "sample": 450
     },
     {
      "word": "no",
@@ -2198,8 +2143,8 @@
    ],
    "events": [
     {
-     "step": 5,
-     "sample": 150,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "no"
     },
@@ -2210,20 +2155,20 @@
      "word": "no"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 33,
+     "sample": 430,
      "event": "tentative",
      "word": "no"
     },
     {
-     "step": 37,
-     "sample": 470,
+     "step": 35,
+     "sample": 450,
      "event": "confirm",
      "word": "no"
     },
     {
-     "step": 59,
-     "sample": 690,
+     "step": 60,
+     "sample": 700,
      "event": "tentative",
      "word": "no"
     },
@@ -2239,7 +2184,7 @@
    "words": [
     {
      "word": "sorry",
-     "sample": 210
+     "sample": 190
     },
     {
      "word": "sorry",
@@ -2247,19 +2192,19 @@
     },
     {
      "word": "sorry",
-     "sample": 750
+     "sample": 740
     }
    ],
    "events": [
     {
-     "step": 7,
-     "sample": 170,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "sorry"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "sorry"
     },
@@ -2282,8 +2227,8 @@
      "word": "sorry"
     },
     {
-     "step": 65,
-     "sample": 750,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "sorry"
     }
@@ -2301,13 +2246,13 @@
     },
     {
      "word": "water",
-     "sample": 730
+     "sample": 740
     }
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "water"
     },
@@ -2330,14 +2275,14 @@
      "word": "water"
     },
     {
-     "step": 60,
-     "sample": 700,
+     "step": 61,
+     "sample": 710,
      "event": "tentative",
      "word": "water"
     },
     {
-     "step": 63,
-     "sample": 730,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "water"
     }
@@ -2351,11 +2296,11 @@
     },
     {
      "word": "bye",
-     "sample": 470
+     "sample": 450
     },
     {
      "word": "bye",
-     "sample": 730
+     "sample": 740
     }
    ],
    "events": [
@@ -2372,26 +2317,26 @@
      "word": "bye"
     },
     {
-     "step": 34,
-     "sample": 440,
+     "step": 32,
+     "sample": 420,
      "event": "tentative",
      "word": "bye"
     },
     {
-     "step": 37,
-     "sample": 470,
+     "step": 35,
+     "sample": 450,
      "event": "confirm",
      "word": "bye"
     },
     {
-     "step": 60,
-     "sample": 700,
+     "step": 61,
+     "sample": 710,
      "event": "tentative",
      "word": "bye"
     },
     {
-     "step": 63,
-     "sample": 730,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "bye"
     }
@@ -2401,11 +2346,11 @@
    "words": [
     {
      "word": "come",
-     "sample": 190
+     "sample": 200
     },
     {
      "word": "come",
-     "sample": 460
+     "sample": 480
     },
     {
      "word": "come",
@@ -2414,26 +2359,26 @@
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "come"
     },
     {
-     "step": 9,
-     "sample": 190,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "come"
     },
     {
-     "step": 33,
-     "sample": 430,
+     "step": 34,
+     "sample": 440,
      "event": "tentative",
      "word": "come"
     },
     {
-     "step": 36,
-     "sample": 460,
+     "step": 38,
+     "sample": 480,
      "event": "confirm",
      "word": "come"
     },
@@ -2452,31 +2397,18 @@
    ]
   },
   "B/drink.csv": {
-   "words": [
-    {
-     "word": "drink",
-     "sample": 210
-    },
-    {
-     "word": "drink",
-     "sample": 490
-    },
-    {
-     "word": "drink",
-     "sample": 690
-    }
-   ],
+   "words": [],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 9,
+     "sample": 190,
      "event": "tentative",
      "word": "drink"
     },
     {
-     "step": 11,
-     "sample": 210,
-     "event": "confirm",
+     "step": 28,
+     "sample": 380,
+     "event": "cancel",
      "word": "drink"
     },
     {
@@ -2486,15 +2418,15 @@
      "word": "drink"
     },
     {
-     "step": 39,
-     "sample": 490,
-     "event": "confirm",
+     "step": 55,
+     "sample": 650,
+     "event": "cancel",
      "word": "drink"
     },
     {
-     "step": 59,
-     "sample": 690,
-     "event": "word",
+     "step": 63,
+     "sample": 730,
+     "event": "tentative",
      "word": "drink"
     }
    ]
@@ -2503,11 +2435,11 @@
    "words": [
     {
      "word": "call",
-     "sample": 200
+     "sample": 210
     },
     {
      "word": "call",
-     "sample": 470
+     "sample": 460
     },
     {
      "word": "call",
@@ -2522,8 +2454,8 @@
      "word": "call"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 11,
+     "sample": 210,
      "event": "confirm",
      "word": "call"
     },
@@ -2534,14 +2466,14 @@
      "word": "call"
     },
     {
-     "step": 37,
-     "sample": 470,
+     "step": 36,
+     "sample": 460,
      "event": "confirm",
      "word": "call"
     },
     {
-     "step": 61,
-     "sample": 710,
+     "step": 60,
+     "sample": 700,
      "event": "tentative",
      "word": "call"
     },
@@ -2557,51 +2489,51 @@
    "words": [
     {
      "word": "iloveyou",
-     "sample": 210
+     "sample": 190
     },
     {
      "word": "iloveyou",
-     "sample": 490
+     "sample": 460
     },
     {
      "word": "iloveyou",
-     "sample": 750
+     "sample": 740
     }
    ],
    "events": [
     {
-     "step": 7,
-     "sample": 170,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "iloveyou"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "iloveyou"
     },
     {
-     "step": 35,
-     "sample": 450,
+     "step": 33,
+     "sample": 430,
      "event": "tentative",
      "word": "iloveyou"
     },
     {
-     "step": 39,
-     "sample": 490,
+     "step": 36,
+     "sample": 460,
      "event": "confirm",
      "word": "iloveyou"
     },
     {
-     "step": 61,
-     "sample": 710,
+     "step": 60,
+     "sample": 700,
      "event": "tentative",
      "word": "iloveyou"
     },
     {
-     "step": 65,
-     "sample": 750,
+     "step": 64,
+     "sample": 740,
      "event": "confirm",
      "word": "iloveyou"
     }
@@ -2612,14 +2544,6 @@
     {
      "word": "hungry",
      "sample": 220
-    },
-    {
-     "word": "hungry",
-     "sample": 480
-    },
-    {
-     "word": "hungry",
-     "sample": 760
     }
    ],
    "events": [
@@ -2632,30 +2556,6 @@
     {
      "step": 12,
      "sample": 220,
-     "event": "confirm",
-     "word": "hungry"
-    },
-    {
-     "step": 35,
-     "sample": 450,
-     "event": "tentative",
-     "word": "hungry"
-    },
-    {
-     "step": 38,
-     "sample": 480,
-     "event": "confirm",
-     "word": "hungry"
-    },
-    {
-     "step": 63,
-     "sample": 730,
-     "event": "tentative",
-     "word": "hungry"
-    },
-    {
-     "step": 66,
-     "sample": 760,
      "event": "confirm",
      "word": "hungry"
     }
@@ -2681,11 +2581,11 @@
     },
     {
      "word": "me",
-     "sample": 630
+     "sample": 640
     },
     {
      "word": "water",
-     "sample": 630
+     "sample": 640
     },
     {
      "word": "water",
@@ -2697,11 +2597,11 @@
     },
     {
      "word": "you",
-     "sample": 1290
+     "sample": 1280
     },
     {
      "word": "come",
-     "sample": 1330
+     "sample": 1320
     },
     {
      "word": "call",
@@ -2713,29 +2613,29 @@
     },
     {
      "word": "hello",
-     "sample": 2010
+     "sample": 1990
     },
     {
      "word": "thanks",
-     "sample": 2080
+     "sample": 2070
     },
     {
      "word": "sorry",
-     "sample": 2440
+     "sample": 2360
     },
     {
      "word": "bye",
-     "sample": 2440
+     "sample": 2430
     },
     {
      "word": "iloveyou",
-     "sample": 2720
+     "sample": 2730
     }
    ],
    "events": [
     {
-     "step": 10,
-     "sample": 200,
+     "step": 12,
+     "sample": 220,
      "event": "tentative",
      "word": "me"
     },
@@ -2752,20 +2652,20 @@
      "word": "hungry"
     },
     {
-     "step": 44,
-     "sample": 540,
+     "step": 43,
+     "sample": 530,
      "event": "tentative",
      "word": "me"
     },
     {
-     "step": 53,
-     "sample": 630,
+     "step": 54,
+     "sample": 640,
      "event": "confirm",
      "word": "me"
     },
     {
-     "step": 53,
-     "sample": 630,
+     "step": 54,
+     "sample": 640,
      "event": "word",
      "word": "water"
     },
@@ -2788,26 +2688,26 @@
      "word": "please"
     },
     {
-     "step": 114,
-     "sample": 1240,
+     "step": 115,
+     "sample": 1250,
      "event": "tentative",
      "word": "you"
     },
     {
-     "step": 119,
-     "sample": 1290,
+     "step": 118,
+     "sample": 1280,
      "event": "confirm",
      "word": "you"
     },
     {
-     "step": 123,
-     "sample": 1330,
+     "step": 122,
+     "sample": 1320,
      "event": "word",
      "word": "come"
     },
     {
-     "step": 151,
-     "sample": 1610,
+     "step": 150,
+     "sample": 1600,
      "event": "tentative",
      "word": "call"
     },
@@ -2824,20 +2724,20 @@
      "word": "me"
     },
     {
-     "step": 188,
-     "sample": 1980,
+     "step": 186,
+     "sample": 1960,
      "event": "tentative",
      "word": "hello"
     },
     {
-     "step": 191,
-     "sample": 2010,
+     "step": 189,
+     "sample": 1990,
      "event": "confirm",
      "word": "hello"
     },
     {
-     "step": 198,
-     "sample": 2080,
+     "step": 197,
+     "sample": 2070,
      "event": "word",
      "word": "thanks"
     },
@@ -2848,14 +2748,14 @@
      "word": "sorry"
     },
     {
-     "step": 234,
-     "sample": 2440,
+     "step": 226,
+     "sample": 2360,
      "event": "confirm",
      "word": "sorry"
     },
     {
-     "step": 234,
-     "sample": 2440,
+     "step": 233,
+     "sample": 2430,
      "event": "word",
      "word": "bye"
     },
@@ -2866,8 +2766,8 @@
      "word": "iloveyou"
     },
     {
-     "step": 262,
-     "sample": 2720,
+     "step": 263,
+     "sample": 2730,
      "event": "confirm",
      "word": "iloveyou"
     }
@@ -2881,19 +2781,19 @@
    "words": [
     {
      "word": "one",
-     "sample": 220
+     "sample": 230
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 9,
+     "sample": 190,
      "event": "tentative",
      "word": "one"
     },
     {
-     "step": 12,
-     "sample": 220,
+     "step": 13,
+     "sample": 230,
      "event": "confirm",
      "word": "one"
     }
@@ -2908,8 +2808,8 @@
    ],
    "events": [
     {
-     "step": 7,
-     "sample": 170,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "two"
     },
@@ -2925,19 +2825,19 @@
    "words": [
     {
      "word": "three",
-     "sample": 190
+     "sample": 220
     }
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "three"
     },
     {
-     "step": 9,
-     "sample": 190,
+     "step": 12,
+     "sample": 220,
      "event": "confirm",
      "word": "three"
     }
@@ -2947,19 +2847,19 @@
    "words": [
     {
      "word": "four",
-     "sample": 210
+     "sample": 200
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "four"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "four"
     }
@@ -2969,19 +2869,19 @@
    "words": [
     {
      "word": "five",
-     "sample": 220
+     "sample": 230
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 9,
+     "sample": 190,
      "event": "tentative",
      "word": "five"
     },
     {
-     "step": 12,
-     "sample": 220,
+     "step": 13,
+     "sample": 230,
      "event": "confirm",
      "word": "five"
     }
@@ -2991,19 +2891,19 @@
    "words": [
     {
      "word": "me",
-     "sample": 230
+     "sample": 270
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 13,
+     "sample": 230,
      "event": "tentative",
      "word": "me"
     },
     {
-     "step": 13,
-     "sample": 230,
+     "step": 17,
+     "sample": 270,
      "event": "confirm",
      "word": "me"
     }
@@ -3035,19 +2935,19 @@
    "words": [
     {
      "word": "hello",
-     "sample": 200
+     "sample": 210
     }
    ],
    "events": [
     {
-     "step": 6,
-     "sample": 160,
+     "step": 7,
+     "sample": 170,
      "event": "tentative",
      "word": "hello"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 11,
+     "sample": 210,
      "event": "confirm",
      "word": "hello"
     }
@@ -3057,19 +2957,19 @@
    "words": [
     {
      "word": "thanks",
-     "sample": 310
+     "sample": 190
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "thanks"
     },
     {
-     "step": 21,
-     "sample": 310,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "thanks"
     }
@@ -3079,7 +2979,7 @@
    "words": [
     {
      "word": "please",
-     "sample": 200
+     "sample": 190
     }
    ],
    "events": [
@@ -3090,8 +2990,8 @@
      "word": "please"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "please"
     }
@@ -3101,7 +3001,7 @@
    "words": [
     {
      "word": "yes",
-     "sample": 210
+     "sample": 200
     }
    ],
    "events": [
@@ -3112,8 +3012,8 @@
      "word": "yes"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "yes"
     }
@@ -3123,19 +3023,19 @@
    "words": [
     {
      "word": "no",
-     "sample": 180
+     "sample": 190
     }
    ],
    "events": [
     {
-     "step": 5,
-     "sample": 150,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "no"
     },
     {
-     "step": 8,
-     "sample": 180,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "no"
     }
@@ -3167,19 +3067,19 @@
    "words": [
     {
      "word": "water",
-     "sample": 270
+     "sample": 190
     }
    ],
    "events": [
     {
-     "step": 8,
-     "sample": 180,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "water"
     },
     {
-     "step": 17,
-     "sample": 270,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "water"
     }
@@ -3211,7 +3111,7 @@
    "words": [
     {
      "word": "come",
-     "sample": 200
+     "sample": 210
     }
    ],
    "events": [
@@ -3222,8 +3122,8 @@
      "word": "come"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 11,
+     "sample": 210,
      "event": "confirm",
      "word": "come"
     }
@@ -3233,7 +3133,7 @@
    "words": [
     {
      "word": "drink",
-     "sample": 220
+     "sample": 280
     }
    ],
    "events": [
@@ -3244,8 +3144,8 @@
      "word": "drink"
     },
     {
-     "step": 12,
-     "sample": 220,
+     "step": 18,
+     "sample": 280,
      "event": "confirm",
      "word": "drink"
     }
@@ -3255,7 +3155,7 @@
    "words": [
     {
      "word": "call",
-     "sample": 210
+     "sample": 200
     }
    ],
    "events": [
@@ -3266,8 +3166,8 @@
      "word": "call"
     },
     {
-     "step": 11,
-     "sample": 210,
+     "step": 10,
+     "sample": 200,
      "event": "confirm",
      "word": "call"
     }
@@ -3277,19 +3177,19 @@
    "words": [
     {
      "word": "iloveyou",
-     "sample": 200
+     "sample": 190
     }
    ],
    "events": [
     {
-     "step": 7,
-     "sample": 170,
+     "step": 6,
+     "sample": 160,
      "event": "tentative",
      "word": "iloveyou"
     },
     {
-     "step": 10,
-     "sample": 200,
+     "step": 9,
+     "sample": 190,
      "event": "confirm",
      "word": "iloveyou"
     }
@@ -3299,7 +3199,7 @@
    "words": [
     {
      "word": "hungry",
-     "sample": 230
+     "sample": 220
     }
    ],
    "events": [
@@ -3310,8 +3210,8 @@
      "word": "hungry"
     },
     {
-     "step": 13,
-     "sample": 230,
+     "step": 12,
+     "sample": 220,
      "event": "confirm",
      "word": "hungry"
     }
