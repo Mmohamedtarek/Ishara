@@ -259,3 +259,18 @@
 **Tests:** 389 passing, `lib/core` 94.8 %, analyze 0 issues.
 
 **Review (round 2):** `/code-review` found 8 issues, all fixed: (1–3) HOME, CALL and the flat-O shape are now pinned exactly in the tests (a mutation of HOME's cheek touch fails); (4) the splash no longer forces frames while the window is 0 × 0: the layout delegate reports the first real size and the clock starts once, after that frame; (5) reduce-motion is read in `didChangeDependencies` only; (6) the HOME test name matched an old check → renamed; (7) one mark widget, placed by the delegate in both modes; (8) the mark's move runs on its own 300 ms controller, so layout follows it only while it moves.
+
+### Step 5 review, round 3 (2026-10-10)
+
+| Item | Status | Evidence |
+|---|---|---|
+| 1 Splash | ✓ approved (round 2) | — |
+| 2 CALL: thumb at the earlobe, pinky toward the mouth corner, elbow kept | ✓ for your eye | `tools/out/round3/call_{nour,sara}.png`; elbow 41 mm below the shoulder before and after (Nour) |
+| 3 HOME: closed flat-O; first touch at the mouth corner | ✓ Nour; Sara slightly open (RB-1 known issue) | `tools/out/round3/home_{nour,sara}.png`; fingertip-to-thumb-pad 11–21 mm (Nour, joint centres) |
+| 4 DOCTOR: tap the inside of the other wrist | ✓ for your eye | `tools/out/round3/doctor_{nour,sara}.png`; tip 15 mm from the wrist joint (Nour) |
+| 5 Sara hair → RB-1 | ✓ | DECISIONS.md, RB-1 known issues |
+
+**Engine:** optional per-shape `split` (validated in `AvatarLibrary`, test added); debug-only `_dbg.bake(R, L)` and shape tables for measuring.
+**Tests:** HOME, CALL, DOCTOR and the flat-O pinned exactly; DOCTOR moved out of the byte-for-byte prototype list. **Guard:** 33 prototype frames still match (worst 0.055 / 255); DOCTOR frames exempt as a decided change.
+
+**Review (round 3):** `/code-review` found 9 issues. Fixed: the prototype-shapes test now also rejects a `split`; validator tests for every `split` branch; `split` documented as fingers-only; `_dbg.bake` guarded; simpler split check; a dated DECISIONS row supersedes "DOCTOR not changed"; port-check docstring. Reported, not built: DOCTOR's wrist tap is fixed coordinates tuned on Nour (Sara: 34 mm, at the heel of the palm); a contact target relative to the other hand would fix it for every character (proposal for the user).

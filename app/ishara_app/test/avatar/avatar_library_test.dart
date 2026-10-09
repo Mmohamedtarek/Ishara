@@ -138,6 +138,7 @@ void main() {
         expect(_at(shapes, [k, 'curl']), curl[k], reason: k);
         expect(_at(shapes, [k, 'reach']), reach[k], reason: k);
         expect(_at(shapes, [k, 'spread']), isNull, reason: k);
+        expect(_at(shapes, [k, 'split']), isNull, reason: k);
       }
     });
 
@@ -158,17 +159,10 @@ void main() {
       return c;
     }
 
-    test('6 prototype signs are byte-for-byte the prototype frames', () {
+    test('5 prototype signs are byte-for-byte the prototype frames', () {
       final signs = _lib()['signs'] as Map<String, dynamic>;
       final p = proto['signs'] as Map<String, dynamic>;
-      for (final k in const [
-        'yes',
-        'no',
-        'help',
-        'coffee',
-        'doctor',
-        'family',
-      ]) {
+      for (final k in const ['yes', 'no', 'help', 'coffee', 'family']) {
         expect(signs[k], p[k], reason: k);
       }
     });
@@ -192,15 +186,21 @@ void main() {
       expect(core(signs['you']), you);
     });
 
-    test('review-fixed HOME, CALL and the flat-O are pinned exactly', () {
-      final lib = _lib();
-      // Step 5 review round 2: HOME = flat-O at the mouth corner, then the
-      // cheekbone, elbow low; CALL = Y hand beside the head, elbow down.
-      // Changing these needs a new front + side review (sign rule 2).
-      expect(_at(lib, ['signs', 'home']), jsonDecode(_homePinned));
-      expect(_at(lib, ['signs', 'call']), jsonDecode(_callPinned));
-      expect(_at(lib, ['shapes', 'flato']), jsonDecode(_flatoPinned));
-    });
+    test(
+      'review-fixed HOME, CALL, DOCTOR and the flat-O are pinned exactly',
+      () {
+        final lib = _lib();
+        // Step 5 review round 3: HOME = flat-O (all tips on the thumb) at the
+        // mouth corner, then the cheekbone, elbow low; CALL = Y hand, thumb at
+        // the earlobe, pinky toward the mouth corner, elbow down; DOCTOR taps
+        // the inside of the other wrist (Lifeprint). Changing these needs a new
+        // front + side review (sign rule 2).
+        expect(_at(lib, ['signs', 'home']), jsonDecode(_homePinned));
+        expect(_at(lib, ['signs', 'call']), jsonDecode(_callPinned));
+        expect(_at(lib, ['signs', 'doctor']), jsonDecode(_doctorPinned));
+        expect(_at(lib, ['shapes', 'flato']), jsonDecode(_flatoPinned));
+      },
+    );
 
     test('decided changes: Q-A4 rename, Q-A3 held still, V-3 mouth', () {
       final signs = _lib()['signs'] as Map<String, dynamic>;
@@ -287,6 +287,12 @@ void main() {
         'previewPairs must be a list': (j) => j['previewPairs'] = 'five',
         'greeting must name a sign': (j) => j['greeting'] = 'wave',
         'tip must be one of': (j) => _put(j, ['shapes', 'w', 'tip'], 'toe'),
+        'split must be 3 shares adding up to 1': (j) =>
+            _put(j, ['shapes', 'w', 'split'], [.5, .5, .5]),
+        'split must be 3 shares': (j) =>
+            _put(j, ['shapes', 'w', 'split'], [.5, .5]),
+        'split must be 3': (j) =>
+            _put(j, ['shapes', 'w', 'split'], [1.5, -.5, 0]),
         'E (elbow direction)': (j) => _put(j, [...h0, 'R', 'E'], [0, 0, 0]),
         'unknown {Q}': (j) => _put(j, [...h0, 'R', 'Q'], 1),
         'must name two signs': (j) => j['previewPairs'] = [
@@ -387,8 +393,10 @@ void main() {
 
 // Pinned review values (JSON, as in library.json).
 const _homePinned =
-    '''{"frames": [{"t": 0, "R": {"P": ["mouth", 0.03, 0, 0.003], "at": "tip", "H": [-0.3, 0.35, -0.85], "N": [-0.9, -0.3, 0.2], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.3, "R": {"P": ["mouth", 0.05, 0.02, 0.04], "at": "tip", "H": [-0.3, 0.35, -0.85], "N": [-0.9, -0.3, 0.2], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.6, "R": {"P": ["cheek", 0.06, -0.03, 0.003], "at": "tip", "H": [-0.4, 0.35, -0.85], "N": [-0.85, -0.3, 0.3], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.9}]}''';
+    '''{"frames": [{"t": 0, "R": {"P": ["mouth", 0.022, 0, 0.003], "at": "tip", "H": [-0.3, 0.35, -0.85], "N": [-0.9, -0.3, 0.2], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.3, "R": {"P": ["mouth", 0.045, 0.02, 0.04], "at": "tip", "H": [-0.3, 0.35, -0.85], "N": [-0.9, -0.3, 0.2], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.6, "R": {"P": ["cheek", 0.06, -0.03, 0.003], "at": "tip", "H": [-0.4, 0.35, -0.85], "N": [-0.85, -0.3, 0.3], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.9}]}''';
 const _callPinned =
-    '''{"frames": [{"t": 0, "R": {"H": [-0.4, 0.25, 0.88], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.12, -0.11, 0.02]}}, {"t": 0.2, "R": {"H": [-0.4, 0.25, 0.88], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.132, -0.11, 0.02]}}, {"t": 0.4, "R": {"H": [-0.4, 0.25, 0.88], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.12, -0.11, 0.02]}}, {"t": 0.6, "R": {"H": [-0.4, 0.25, 0.88], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.132, -0.11, 0.02]}}, {"t": 0.85}]}''';
+    '''{"frames": [{"t": 0, "R": {"H": [-0.295, 0.7, 0.648], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.12, -0.11, 0.02]}}, {"t": 0.2, "R": {"H": [-0.295, 0.7, 0.648], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.132, -0.11, 0.02]}}, {"t": 0.4, "R": {"H": [-0.295, 0.7, 0.648], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.12, -0.11, 0.02]}}, {"t": 0.6, "R": {"H": [-0.295, 0.7, 0.648], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.132, -0.11, 0.02]}}, {"t": 0.85}]}''';
+const _doctorPinned =
+    '''{"frames": [{"t": 0, "R": {"P": [-0.11, 1.178, 0.335], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}, "L": {"P": [-0.08, 1.06, 0.25], "H": [0.45, 0, 0.9], "N": [0, 1, 0], "c": "open"}}, {"t": 0.2, "R": {"P": [-0.11, 1.113, 0.315], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}}, {"t": 0.4, "R": {"P": [-0.11, 1.168, 0.335], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}}, {"t": 0.6, "R": {"P": [-0.11, 1.113, 0.315], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}}, {"t": 0.85}]}''';
 const _flatoPinned =
-    '''{"curl": [58, 50, 48, 48, 48], "reach": 0.78, "spread": [0, -7, 0, 6, 12]}''';
+    '''{"curl": [100, 58, 52, 49, 52], "reach": 0.78, "spread": [-16, 14, 0, 0, -15], "split": [0.675, 0.195, 0.13]}''';

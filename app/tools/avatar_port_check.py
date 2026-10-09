@@ -2,7 +2,8 @@
 """Checks that the ported avatar engine renders like the prototype.
 
 Renders every sign the port did not change (all prototype signs except
-WATER, V-3, and I LOVE YOU, Q-A3/Q-A4) frozen at each keyframe, front view,
+WATER, V-3, and I LOVE YOU, Q-A3/Q-A4; the frames the step 5 review changed
+are reported but allowed, see FIXED_SIGNS) frozen at each keyframe, front view,
 in both the prototype (design/prototype.html, which loads three.js from its
 CDN, so this needs the network) and the app's engine page, at the same size,
 and compares the pixels.
@@ -29,7 +30,7 @@ CHANGED = {"water", "love"}   # V-3; Q-A3 + Q-A4 (iloveyou)
 # (landmark point, at tip / palm: now measured and touching) or by an elbow
 # key (E) may differ, plus YOU (asked to point level). Every other frame,
 # including the other frames of those signs, must render like the prototype.
-FIXED_SIGNS = {"you"}
+FIXED_SIGNS = {"you", "doctor"}   # DOCTOR: taps the wrist (review round 3)
 
 
 def allowed_frames() -> set[tuple[str, float]]:

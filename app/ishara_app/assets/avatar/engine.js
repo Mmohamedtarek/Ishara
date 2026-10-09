@@ -59,7 +59,7 @@
   // Ishara app: the shapes (CURL), their contact reach (REACH) and finger
   // spread (SPREAD, degrees per finger, + = toward the thumb side; Q-A6) come
   // from the language pack's library.json.
-  var CURL = {}, REACH = {}, SPREAD = {}, TIPF = {};
+  var CURL = {}, REACH = {}, SPREAD = {}, TIPF = {}, SPLIT = {};
   var FINGERS = ['Thumb','Index','Middle','Ring','Pinky'];
   var FMAX = [80, 250, 255, 255, 250];
   var FSPLIT = [[.3,.4,.3], [.36,.4,.24]];
@@ -83,6 +83,7 @@
       var s = lib.shapes[k];
       CURL[k] = s.curl; REACH[k] = s.reach; if (s.spread) SPREAD[k] = s.spread;
       TIPF[k] = s.tip || 'middle';
+      if (s.split) SPLIT[k] = s.split;   // Ishara app: [knuckle, middle, tip] share of the fingers' curl
     });
     Object.keys(lib.signs).forEach(function(k){ if (k !== 'rest') SIGNS[k] = lib.signs[k]; });
   }
@@ -246,9 +247,9 @@
         rollAbout(H, dh, a);
         [S + 'ForeArm1', S + 'ForeArm2'].forEach(function(nm){ if (B[nm]) rollAbout(B[nm], df, a * (C.twistShare[nm] || .5)); });
       }
-      curlHand(C, S, CURL[sp.c] || CURL.relax, SPREAD[sp.c]);
+      curlHand(C, S, CURL[sp.c] || CURL.relax, SPREAD[sp.c], SPLIT[sp.c]);
     }
-    function curlHand(C, S, curl, spread){
+    function curlHand(C, S, curl, spread, fsplit){
       var B = C.bones, H = B[S + 'Hand'], M1 = B[S + 'HandMiddle1'], I1 = B[S + 'HandIndex1'], P1 = B[S + 'HandPinky1'];
       if (!H || !M1 || !I1 || !P1) return;
       var N = palmNormal(C, S), L = dirTo(P1, I1);
@@ -272,7 +273,10 @@
         if (axis.lengthSq() < 1e-6) return;
         axis.normalize();
         var c0 = C.curl0 ? C.curl0[fi] : 0;
-        var total = ((curl[fi] - c0) / 100) * FMAX[fi] * DEG, split = FSPLIT[fi === 0 ? 0 : 1];
+        // Ishara app: a shape may bend the four fingers mostly at the
+        // knuckles (flat-O): `split` replaces their default share per joint
+        // (the thumb keeps its own)
+        var total = ((curl[fi] - c0) / 100) * FMAX[fi] * DEG, split = fi === 0 ? FSPLIT[0] : (fsplit || FSPLIT[1]);
         for (var j = 1; j <= 3; j++){ var b = B[S + 'Hand' + f + j]; if (b) rollAbout(b, axis, total * split[j - 1]); }
       });
     }
@@ -643,7 +647,7 @@
         activePose = c.label; speedK = 1; poseT = (+c.t || 0) + LEAD; talking = false; frozen = c.frozen !== false;
       },
       whenReady: function(fn){ if (ready) fn(); else readyResolvers.push(fn); },
-      _dbg: { T: T, SIGNS: SIGNS, CURL: CURL, camera: camera, scene: scene, renderer: renderer, avatar: function(){ return A; }, resize: resize,
+      _dbg: { T: T, SIGNS: SIGNS, CURL: CURL, SPREAD: SPREAD, SPLIT: SPLIT, REACH: REACH, camera: camera, scene: scene, renderer: renderer, avatar: function(){ return A; }, resize: resize,
         // contact check: for every landmark contact key, the distance (mm)
         // between the target and the real tip / palm after baking
         contacts: function(){
@@ -665,6 +669,9 @@
           resetBind(A);
           return out;
         },
+        // pose the current character directly (tools only; the next frame
+        // overwrites it): for measuring a shape without rebaking the signs
+        bake: function(R, L){ if (!A || !R) return; bakeFrame(A, R, L || READY_L, [0,0]); A.root.updateMatrixWorld(true); },
         lm: function(){ return A && { lm: A.lm, handLen: A.handLen, len: A.len, chinZ: A.front(0, A.lm.chin), mouthZ: A.front(0, A.lm.mouth), chestZ: A.front(0, A.lm.chest) }; } }
     };
     window.__avatarEngine = engine;

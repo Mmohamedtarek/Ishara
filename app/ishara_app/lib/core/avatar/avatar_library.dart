@@ -160,6 +160,16 @@ class AvatarLibrary {
             (spread as List).cast<num>().any((d) => d.abs() > 30))) {
       _fail('shape $name: spread must be 5 angles within ±30°');
     }
+    // the four fingers' curl per joint (knuckle, middle, tip); not the thumb
+    final split = v['split'];
+    if (split != null) {
+      final s = _nums(split, 3) ? (split as List).cast<num>() : null;
+      if (s == null ||
+          s.any((x) => x < 0) ||
+          (s.fold<num>(0, (a, b) => a + b) - 1).abs() > .01) {
+        _fail('shape $name: split must be 3 shares adding up to 1');
+      }
+    }
     final tip = v['tip'];
     if (tip != null && !fingers.contains(tip)) {
       _fail('shape $name: tip must be one of $fingers');

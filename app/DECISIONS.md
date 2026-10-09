@@ -6,6 +6,7 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | ID | Blocker |
 |---|---|
 | **RB-1** (Q-A1) | The Nour / Sara avatar models are "sample models, for non-commercial use". Fine for development and the graduation demo. **They must be replaced before any store release.** Avatar files stay swappable: the character list is data, and nothing in the code depends on the model files. |
+| RB-1 known issues (sample models, 2026-10-10) | Accepted by the user until the characters are replaced: (1) Sara's arm passes through her hair in CALL; the engine has no per-character hand position adjustment. (2) Sara's flat-O (HOME) stays slightly open (fingertips about 2 cm above the thumb): her thumb bones can't reach the fingertips with the shared shape; a per-character shape override was tried and didn't close it, so it was removed. Nour, the default, is correct. |
 
 ## Machine and workflow
 | ID | Decision |
@@ -94,6 +95,13 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | S5-7 | CALL: the hand beside the head (thumb at the ear, pinky toward the jaw / mouth corner, eye uncovered), elbow down and slightly out, below the shoulder. HOME: flat-O at the mouth corner, then the cheekbone, elbow low. Sara's hair clipping in CALL: no per-character hand adjustment in the engine → known issue, not blocking. |
 | S5-8 | HELP, COFFEE, DOCTOR, FAMILY references added (docs/ASL-REFERENCES.md); check and report. New signs stay `avatar: false`. |
 
+## Step 5 review, round 3 (2026-10-10)
+| ID | Decision |
+|---|---|
+| S5-9 | CALL: thumb tip at the earlobe, pinky toward the mouth corner, elbow unchanged. Done by turning the hand 30° in its palm plane (raises the thumb 1.4 cm); raising the wrist would also raise the elbow (41 → 15 mm below the shoulder), so the wrist stays. |
+| S5-10 | HOME: flat-O with all fingertips on the thumb from every angle; first touch at the corner of the mouth (2.2 cm from the centre), second at the cheekbone (unchanged). The engine gains an optional per-shape `split` (share of the four fingers' curl at knuckle / middle / tip joint; not the thumb) so a flat-O bends at the knuckles with straight fingers; values fitted by measuring fingertip-to-thumb-pad distance on both characters. |
+| S5-11 | DOCTOR: the bent fingertips tap the inside of the other wrist (Lifeprint), not the palm. On Nour the tap lands 15 mm from the wrist joint on the palm side; the pulse point itself (1-2 cm up the forearm) is under the sleeve cuff. |
+
 ## Backend
 | ID | Decision |
 |---|---|
@@ -176,3 +184,5 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | 2026-10-10 | Android 12+ splash exit: the default (fade) is kept. An instant `setOnExitAnimationListener { remove() }` removed the system splash before Flutter had drawn and showed black frames. | Emulator. |
 | 2026-10-10 | Emulator note: on the host GPU the starting window was sometimes black and the emulator crashed several times (GL context lost); on the software GPU (`-gpu swiftshader_indirect`) the launch is correct in both themes. Launch checks use a launcher-style start (`monkey … LAUNCHER`). | Not an app issue; the real check is the user's phone. |
 | 2026-10-10 | DOCTOR (avatar-only, `verified: false`): the bent fingertips tap the middle of the other palm, Lifeprint's recommended form taps the inside of the wrist (pulse). Listed for the user, not changed (sign rule 1). HELP, COFFEE, FAMILY match their references. | S5-8. |
+| 2026-10-10 | Supersedes the DOCTOR row above: on the user's instruction (review round 3) DOCTOR now taps the inside of the other wrist (S5-11). The tap uses the prototype's fixed coordinates, tuned on Nour (15 mm from the wrist joint); on Sara it lands 34 mm away, at the heel of the palm. A contact target relative to the other hand would hold on every character; proposed to the user, not built. | Review round 3; /code-review. |
+| 2026-10-10 | Engine: optional per-shape `split` = the four fingers' share of their curl at knuckle / middle / tip joint (the thumb keeps the prototype's). Used only by flato. Validated (3 non-negative shares adding up to 1); prototype shapes must not have one (test). | S5-10. |
