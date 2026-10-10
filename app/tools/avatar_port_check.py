@@ -28,9 +28,11 @@ REPO = HERE.parent.parent
 CHANGED = {"water", "love"}   # V-3; Q-A3 + Q-A4 (iloveyou)
 # Step 5 review (user, S5-1 / S5-2): only frames posed by a body contact
 # (landmark point, at tip / palm: now measured and touching) or by an elbow
-# key (E) may differ, plus YOU (asked to point level). Every other frame,
-# including the other frames of those signs, must render like the prototype.
-FIXED_SIGNS = {"you", "doctor"}   # DOCTOR: taps the wrist (review round 3)
+# key (E) may differ, plus YOU (asked to point level). Review round 4:
+# contacts on the other hand (DOCTOR, HELP, COFFEE; at tip / edge) count as
+# body contacts. Every other frame, including the other frames of those
+# signs, must render like the prototype.
+FIXED_SIGNS = {"you"}
 
 
 def allowed_frames() -> set[tuple[str, float]]:
@@ -44,7 +46,7 @@ def allowed_frames() -> set[tuple[str, float]]:
                 if f.get(h):
                     keys[h] = f[h]
             touched = any(
-                k and ("E" in k or (isinstance(k["P"][0], str) and k.get("at") in ("tip", "palm")))
+                k and ("E" in k or (isinstance(k["P"][0], str) and k.get("at") in ("tip", "palm", "edge")))
                 for k in keys.values()
             )
             if touched or label in FIXED_SIGNS:

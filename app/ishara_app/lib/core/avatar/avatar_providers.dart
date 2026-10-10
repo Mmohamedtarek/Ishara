@@ -55,6 +55,7 @@ class AvatarRuntime {
 Future<AvatarRuntime> avatarRuntime(Ref ref) async {
   final factory = ref.watch(avatarSurfaceFactoryProvider);
   final library = await ref.watch(avatarLibraryProvider.future);
+  final cast = await ref.watch(avatarCastProvider.future);
   final pack = ref.watch(activePackProvider);
   final AvatarSurface surface;
   final AvatarController controller;
@@ -65,6 +66,7 @@ Future<AvatarRuntime> avatarRuntime(Ref ref) async {
       library: library,
       libraryUrl: '',
       castUrl: '',
+      cast: cast,
     );
   } else {
     final server = await ref.watch(avatarAssetServerProvider.future);
@@ -74,6 +76,7 @@ Future<AvatarRuntime> avatarRuntime(Ref ref) async {
       library: library,
       libraryUrl: server.pageRelative(pack.avatarLibraryAsset),
       castUrl: server.pageRelative(avatarCastAsset),
+      cast: cast,
     );
   }
   ref.onDispose(() async {

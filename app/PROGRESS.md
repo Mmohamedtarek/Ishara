@@ -274,3 +274,17 @@
 **Tests:** HOME, CALL, DOCTOR and the flat-O pinned exactly; DOCTOR moved out of the byte-for-byte prototype list. **Guard:** 33 prototype frames still match (worst 0.055 / 255); DOCTOR frames exempt as a decided change.
 
 **Review (round 3):** `/code-review` found 9 issues. Fixed: the prototype-shapes test now also rejects a `split`; validator tests for every `split` branch; `split` documented as fingers-only; `_dbg.bake` guarded; simpler split check; a dated DECISIONS row supersedes "DOCTOR not changed"; port-check docstring. Reported, not built: DOCTOR's wrist tap is fixed coordinates tuned on Nour (Sara: 34 mm, at the heel of the palm); a contact target relative to the other hand would fix it for every character (proposal for the user).
+
+### Step 5 review, round 4 (2026-10-10)
+
+| Item | Status | Evidence |
+|---|---|---|
+| CALL, HOME, DOCTOR on Nour | ✓ approved by the user | — |
+| Contacts on the other hand (engine + validator) | ✓ | `_dbg.contacts()`: 0 mm on every DOCTOR, HELP, COFFEE contact, Nour and Sara |
+| DOCTOR / HELP / COFFEE before → after | ✓ for your eye | `tools/out/round4/before/*.png`, `tools/out/round4/after/*.png`; Sara check `tools/out/round4/sara/` |
+| Guard: only these signs changed | ✓ | port check: 19 prototype frames still match (worst 0.002 / 255); HELP / COFFEE / DOCTOR contact frames exempt |
+| Sara hidden behind one flag | ✓ | `cast.json` `hidden`; tests: Nour only + no picker, stored "sara" → Nour, flag off brings her back, bad flags refused; engine: `tools/avatar_cast_check.py` (asked for Sara → Nour shown, no error, her model never downloaded) |
+
+**Not built yet:** the Setup / Settings / Avatar studio pickers (skeleton screens); they must list `AvatarCast.characters` and show a choice only when `showPicker` (S5-13).
+
+**Review (round 4):** `/code-review` found 10 issues; 9 fixed: the aim rule now checks the keys in effect (a carried key), the aimed-at hand may not touch the body, `edge` only with a closed hand at a contact point, hidden characters fully checked, the controller resolves ids through the cast (test: stored "sara" → Nour at start and in setCharacter), base hands pinned to the prototype, unused `hiddenIds` dropped, hand points read once per frame, S5-12 says the user asked for HELP / COFFEE. Kept: the extra arm solve per other-hand frame (about 16 frames, at character load). Re-checked after the fixes: contacts 0 mm, `avatar_cast_check` OK, port check 19 frames worst 0.000.

@@ -27,6 +27,11 @@ class AvatarCharacter {
 }
 
 /// The character list, in picker order.
+///
+/// A character marked `"hidden": true` in cast.json stays in the files but
+/// not in the app: it is not in [characters], and a stored or synced choice
+/// of it falls back to the default ([byId]). RB-1: Sara is hidden in v1
+/// (user decision); removing the flag brings her back.
 @immutable
 class AvatarCast {
   const new _(this.characters, this.defaultId);
@@ -45,6 +50,9 @@ class AvatarCast {
     final list = <AvatarCharacter>[];
     for (final MapEntry(:key, :value) in chars.entries) {
       if (value is! Map<String, Object?>) fail('character $key');
+      final hide = value['hidden'] ?? false;
+      if (hide is! bool) fail('character $key: hidden must be true or false');
+      // checked even when hidden, so removing the flag can't break the app
       String text(String k) => switch (value[k]) {
         final String s when s.trim().isNotEmpty => s,
         _ => fail('character $key: "$k" must be text'),
@@ -54,24 +62,29 @@ class AvatarCast {
       if (!src.startsWith('characters/') || !src.endsWith('.glb')) {
         fail('character $key: src must be characters/<name>.glb');
       }
-      list.add(
-        AvatarCharacter(
-          id: key,
-          nameEn: text('en'),
-          nameAr: text('ar'),
-          feminine: value['fem'] == true,
-        ),
+      final character = AvatarCharacter(
+        id: key,
+        nameEn: text('en'),
+        nameAr: text('ar'),
+        feminine: value['fem'] == true,
       );
+      if (!hide) list.add(character);
     }
+    if (list.isEmpty) fail('every character is hidden');
     final def = root['default'];
     if (def is! String || !list.any((c) => c.id == def)) {
-      fail('default must name a character');
+      fail('default must name a character that is not hidden');
     }
     return AvatarCast._(List.unmodifiable(list), def);
   }
 
+  /// The characters the app offers (hidden ones left out).
   final List<AvatarCharacter> characters;
   final String defaultId;
+
+  /// Setup, Settings and the Avatar studio show a character choice only
+  /// when there is one to make; with one character they show it alone.
+  bool get showPicker => characters.length > 1;
 
   AvatarCharacter byId(String? id) => characters.firstWhere(
     (c) => c.id == id,

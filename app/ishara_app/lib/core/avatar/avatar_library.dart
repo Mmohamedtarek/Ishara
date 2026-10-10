@@ -99,14 +99,20 @@ class AvatarLibrary {
 
   /// Landmarks a point may be measured from (engine `measure`).
   /// `ear` is beside the head, its depth from the head bone (not the skin).
-  static const landmarks = {
+  static const Set<String> landmarks = {
     'chin',
     'mouth',
     'cheek',
     'forehead',
     'chest',
     'ear',
+    ...otherHand,
   };
+
+  /// Points on the other hand, read from its posed bones (engine
+  /// `handPoints`): the inside of the wrist, the middle of the palm, the top
+  /// of a fist.
+  static const otherHand = {'otherWrist', 'otherPalm', 'otherFist'};
 
   final SignLanguage language;
   final Set<String> shapes;
@@ -184,6 +190,10 @@ class AvatarLibrary {
       _fail('sign $label has no frames');
     }
     var prev = -1.0;
+    // the keys in effect: a frame without R or L keeps the last one (engine
+    // bakeSign)
+    Object? curR;
+    Object? curL;
     for (final (i, f) in frames.indexed) {
       if (f is! Map<String, Object?>) _fail('sign $label frame $i');
       final t = f['t'];
@@ -199,6 +209,17 @@ class AvatarLibrary {
           _checkKey('$label frame $i $hand', f[hand], shapes);
         }
       }
+      curR = f['R'] ?? curR;
+      curL = f['L'] ?? curL;
+      // the engine poses the aimed-at hand first: it must not be aiming
+      // itself, nor touching the body (it would move after being read)
+      if (_aims(curR) && (_aims(curL) || _touchesBody(curL)) ||
+          _aims(curL) && _touchesBody(curR)) {
+        _fail(
+          'sign $label frame $i: only one hand may aim at the other, and '
+          'that one must not touch the body',
+        );
+      }
       final head = f['head'];
       if (head != null && !_nums(head, 2)) {
         _fail('sign $label frame $i: head must be [turn, nod]');
@@ -207,6 +228,22 @@ class AvatarLibrary {
       if (extra.isNotEmpty) _fail('sign $label frame $i: unknown $extra');
     }
     return prev;
+  }
+
+  static Object? _landmark(Object? k) =>
+      k is Map<String, Object?> && k['P'] is List<Object?>
+      ? (k['P']! as List<Object?>).first
+      : null;
+
+  static bool _aims(Object? k) => otherHand.contains(_landmark(k));
+
+  /// A measured contact on the face or chest (engine `isContact`).
+  static bool _touchesBody(Object? k) {
+    final l = _landmark(k);
+    return l is String &&
+        l != 'ear' &&
+        !otherHand.contains(l) &&
+        const {'tip', 'palm', 'edge'}.contains((k! as Map)['at']);
   }
 
   static void _checkKey(String where, Object? k, Set<String> shapes) {
@@ -227,10 +264,18 @@ class AvatarLibrary {
       }
     }
     final at = k['at'];
-    if (at != null && !const {'wrist', 'tip', 'palm'}.contains(at)) {
-      _fail('$where: at must be wrist, tip or palm');
+    // edge = the pinky-side edge of a closed hand
+    if (at != null && !const {'wrist', 'tip', 'palm', 'edge'}.contains(at)) {
+      _fail('$where: at must be wrist, tip, palm or edge');
     }
     if (!shapes.contains(k['c'])) _fail('$where: unknown shape ${k['c']}');
+    // the engine measures an edge only on a closed hand at a contact point
+    if (at == 'edge' &&
+        (!landmarkPoint ||
+            p.first == 'ear' ||
+            !const {'s', 'a'}.contains(k['c']))) {
+      _fail('$where: edge needs a closed hand (s, a) at a contact point');
+    }
     final e = k['E'];
     if (e != null &&
         (!_nums(e, 3) || (e as List).cast<num>().every((x) => x == 0))) {

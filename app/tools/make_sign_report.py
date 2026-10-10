@@ -42,9 +42,9 @@ STATUS: dict[str, tuple[str, str]] = {
     "home": ("fixed — please check the flat-O", "Round 2: flat-O at the corner of the mouth, then the cheekbone (not the temple), the hand tilted up into each touch so the elbow stays low. The flat-O is closed more onto the thumb; from straight in front it still looks a little loose."),
     "yes": ("unchanged (was right)", "Pixel-identical to the prototype. S fist nods at the wrist in front of the shoulder."),
     "no": ("unchanged (was right)", "Pixel-identical to the prototype. Index + middle together snap onto the thumb, twice."),
-    "help": ("unchanged (matches the reference)", "Checked against Lifeprint HELP: loose-thumb A hand resting on the flat palm, both lift together (front and side)."),
-    "coffee": ("unchanged (matches the reference)", "Checked against Lifeprint COFFEE: two S fists stacked, the bottom still, the top circles like a grinder (front and side)."),
-    "doctor": ("needs your call", "Checked against Lifeprint DOCTOR: the bent-B fingertips tap the middle of the other PALM, not the inside of the WRIST (the pulse) as the recommended version. Not changed (sign rule 1); fix = move the tap target about 5 cm toward the wrist."),
+    "help": ("changed — please check", "Round 4: the A hand's pinky edge rests on the left palm (measured contact on the other hand, any character); both lift together, as Lifeprint HELP."),
+    "coffee": ("changed — please check", "Round 4: the right S fist's pinky edge circles on top of the left S fist (measured contact on the other hand, any character), as Lifeprint COFFEE."),
+    "doctor": ("approved (round 3); now measured", "Round 4: the bent fingertips tap the inside of the left wrist through a measured contact on the other hand, so it holds on any character (Lifeprint DOCTOR)."),
     "family": ("unchanged (matches the reference)", "Checked against Lifeprint FAMILY: two F hands start together palms out, circle apart and meet again palms in (front and side)."),
 }
 

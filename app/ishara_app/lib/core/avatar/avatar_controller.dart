@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:ishara_app/core/avatar/avatar_cast.dart';
 import 'package:ishara_app/core/avatar/avatar_events.dart';
 import 'package:ishara_app/core/avatar/avatar_library.dart';
 import 'package:ishara_app/core/logging/log.dart';
@@ -41,9 +42,11 @@ class AvatarController {
     required this._library,
     required this.libraryUrl,
     required this.castUrl,
-    this._character,
+    String? character,
+    this._cast,
     this._reduceMotion = false,
   }) : _page = page {
+    _character = character == null ? null : _resolve(character);
     _sub = page.messages.listen(_onMessage);
   }
 
@@ -68,6 +71,12 @@ class AvatarController {
   final String castUrl;
 
   String? _character;
+
+  /// When given, ids go through it: a hidden character (RB-1) becomes the
+  /// default, so [character] never names one.
+  final AvatarCast? _cast;
+
+  String _resolve(String id) => _cast?.byId(id).id ?? id;
   bool _reduceMotion;
   bool _pageUp = false;
   bool _disposed = false;
@@ -138,8 +147,8 @@ class AvatarController {
   /// greeting at 0.8x if the avatar is idle (prototype); that sign has no
   /// id (its events carry id null).
   void setCharacter(String id, {bool greet = true}) {
-    _character = id;
-    _send({'cmd': 'setCharacter', 'character': id, 'greet': greet});
+    final shown = _character = _resolve(id);
+    _send({'cmd': 'setCharacter', 'character': shown, 'greet': greet});
   }
 
   /// Tints skin / outfit (prototype `customize`; Avatar studio v1 doesn't

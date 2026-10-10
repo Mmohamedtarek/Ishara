@@ -159,10 +159,10 @@ void main() {
       return c;
     }
 
-    test('5 prototype signs are byte-for-byte the prototype frames', () {
+    test('3 prototype signs are byte-for-byte the prototype frames', () {
       final signs = _lib()['signs'] as Map<String, dynamic>;
       final p = proto['signs'] as Map<String, dynamic>;
-      for (final k in const ['yes', 'no', 'help', 'coffee', 'family']) {
+      for (final k in const ['yes', 'no', 'family']) {
         expect(signs[k], p[k], reason: k);
       }
     });
@@ -186,21 +186,36 @@ void main() {
       expect(core(signs['you']), you);
     });
 
-    test(
-      'review-fixed HOME, CALL, DOCTOR and the flat-O are pinned exactly',
-      () {
-        final lib = _lib();
-        // Step 5 review round 3: HOME = flat-O (all tips on the thumb) at the
-        // mouth corner, then the cheekbone, elbow low; CALL = Y hand, thumb at
-        // the earlobe, pinky toward the mouth corner, elbow down; DOCTOR taps
-        // the inside of the other wrist (Lifeprint). Changing these needs a new
-        // front + side review (sign rule 2).
-        expect(_at(lib, ['signs', 'home']), jsonDecode(_homePinned));
-        expect(_at(lib, ['signs', 'call']), jsonDecode(_callPinned));
-        expect(_at(lib, ['signs', 'doctor']), jsonDecode(_doctorPinned));
-        expect(_at(lib, ['shapes', 'flato']), jsonDecode(_flatoPinned));
-      },
-    );
+    test('review-fixed HOME, CALL, DOCTOR, HELP, COFFEE and the flat-O are '
+        'pinned exactly', () {
+      final lib = _lib();
+      // Step 5 review round 3: HOME = flat-O (all tips on the thumb) at the
+      // mouth corner, then the cheekbone, elbow low; CALL = Y hand, thumb at
+      // the earlobe, pinky toward the mouth corner, elbow down; DOCTOR taps
+      // the inside of the other wrist (Lifeprint). Changing these needs a new
+      // front + side review (sign rule 2).
+      expect(_at(lib, ['signs', 'home']), jsonDecode(_homePinned));
+      expect(_at(lib, ['signs', 'call']), jsonDecode(_callPinned));
+      expect(_at(lib, ['signs', 'doctor']), jsonDecode(_doctorPinned));
+      // Review round 4: contacts on the other hand (DOCTOR: inside of
+      // the wrist; HELP: A hand on the palm; COFFEE: fist on fist)
+      expect(_at(lib, ['signs', 'help']), jsonDecode(_helpPinned));
+      expect(_at(lib, ['signs', 'coffee']), jsonDecode(_coffeePinned));
+      // their base (left) hands are the prototype's, unchanged
+      for (final k in const ['doctor', 'help', 'coffee']) {
+        final mine = _at(lib, ['signs', k, 'frames'])! as List<dynamic>;
+        final theirs = _at(proto, ['signs', k, 'frames'])! as List<dynamic>;
+        expect(mine.length, theirs.length, reason: k);
+        for (final (i, f) in mine.indexed) {
+          expect(
+            (f as Map<String, dynamic>)['L'],
+            (theirs[i] as Map<String, dynamic>)['L'],
+            reason: '$k frame $i',
+          );
+        }
+      }
+      expect(_at(lib, ['shapes', 'flato']), jsonDecode(_flatoPinned));
+    });
 
     test('decided changes: Q-A4 rename, Q-A3 held still, V-3 mouth', () {
       final signs = _lib()['signs'] as Map<String, dynamic>;
@@ -295,6 +310,45 @@ void main() {
             _put(j, ['shapes', 'w', 'split'], [1.5, -.5, 0]),
         'E (elbow direction)': (j) => _put(j, [...h0, 'R', 'E'], [0, 0, 0]),
         'unknown {Q}': (j) => _put(j, [...h0, 'R', 'Q'], 1),
+        'only one hand may aim at the other': (j) {
+          _put(j, [...h0, 'R', 'P'], ['otherPalm', 0, 0, 0]);
+          _put(
+            j,
+            [...h0, 'L'],
+            {
+              'P': ['otherWrist', 0, 0, 0],
+              'H': [0, 1, 0],
+              'N': [0, 0, 1],
+              'c': 'open',
+            },
+          );
+        },
+        // the aiming key carries into a later frame that sets only L
+        'frame 1: only one hand may aim': (j) {
+          _put(j, [...h0, 'R', 'P'], ['otherPalm', 0, 0, 0]);
+          _put(j, ['signs', 'hello', 'frames', 1, 'R'], null, remove: true);
+          _put(j, [
+            'signs',
+            'hello',
+            'frames',
+            1,
+            'L',
+          ], _leftKey(['otherWrist', 0, 0, 0]));
+        },
+        'that one must not touch the body': (j) {
+          _put(j, [...h0, 'R', 'P'], ['otherPalm', 0, 0, 0]);
+          _put(j, [...h0, 'L'], _leftKey(['chest', 0, 0, 0], at: 'palm'));
+        },
+        'edge needs a closed hand': (j) {
+          _put(j, [...h0, 'R', 'P'], ['otherPalm', 0, 0, 0]);
+          _put(j, [...h0, 'R', 'at'], 'edge');
+          _put(j, [...h0, 'R', 'c'], 'open');
+        },
+        'edge needs a closed hand (s, a) at a contact point': (j) {
+          _put(j, [...h0, 'R', 'P'], [0, 1.1, 0.3]);
+          _put(j, [...h0, 'R', 'at'], 'edge');
+          _put(j, [...h0, 'R', 'c'], 's');
+        },
         'must name two signs': (j) => j['previewPairs'] = [
           ['five', 'six'],
         ],
@@ -331,6 +385,25 @@ void main() {
           'at': 'palm',
         },
       );
+      // a fist's edge on top of the other (free) fist (COFFEE form)
+      _put(
+        j,
+        ['signs', 'hello', 'frames', 1, 'R'],
+        {
+          'P': ['otherFist', 0.02, 0, 0],
+          'H': [0, 0, 1],
+          'N': [-1, 0, 0],
+          'c': 's',
+          'at': 'edge',
+        },
+      );
+      _put(j, [
+        'signs',
+        'hello',
+        'frames',
+        1,
+        'L',
+      ], _leftKey([-0.01, 1.08, 0.25]));
       expect(_parse(j).has('hello'), isTrue);
     });
   });
@@ -341,15 +414,30 @@ void main() {
       () => cast = AvatarCast.parse(readText('assets/avatar/cast.json')),
     );
 
-    test('Nour (default) and Sara, from the prototype CAST', () {
-      expect(cast.characters.map((c) => c.id), ['nour', 'sara']);
+    test('v1 offers Nour only (RB-1: Sara hidden), with no picker', () {
+      expect(cast.characters.map((c) => c.id), ['nour']);
+      expect(cast.showPicker, isFalse);
       expect(cast.defaultId, 'nour');
-      expect(cast.byId('sara').feminine, isTrue);
       expect(cast.byId('nour').feminine, isFalse);
-      expect(cast.byId('sara').name(arabic: true), 'سارة');
       expect(cast.byId('nour').name(arabic: false), 'Nour');
       expect(cast.byId('nobody').id, 'nour');
       expect(cast.byId(null).id, 'nour');
+    });
+
+    test('a stored or synced "sara" falls back to Nour (masculine texts)', () {
+      final c = cast.byId('sara');
+      expect(c.id, 'nour');
+      expect(c.feminine, isFalse);
+    });
+
+    test('turning the flag off brings Sara back, as in the prototype', () {
+      final j = readJson('assets/avatar/cast.json');
+      _put(j, ['characters', 'sara', 'hidden'], null, remove: true);
+      final all = AvatarCast.parse(jsonEncode(j));
+      expect(all.characters.map((c) => c.id), ['nour', 'sara']);
+      expect(all.showPicker, isTrue);
+      expect(all.byId('sara').feminine, isTrue);
+      expect(all.byId('sara').name(arabic: true), 'سارة');
     });
 
     test('every character file exists', () {
@@ -384,6 +472,20 @@ void main() {
           'src',
         ),
         (with_((j) => j['default'] = 'omar'), 'default'),
+        (with_((j) => j['default'] = 'sara'), 'not hidden'),
+        (
+          with_((j) => _put(j, ['characters', 'sara', 'hidden'], 'yes')),
+          'hidden must be true or false',
+        ),
+        (
+          with_((j) => _put(j, ['characters', 'nour', 'hidden'], true)),
+          'every character is hidden',
+        ),
+        // a hidden character is still checked (removing the flag is safe)
+        (
+          with_((j) => _put(j, ['characters', 'sara', 'ar'], ' ')),
+          'character sara: "ar" must be text',
+        ),
       ]) {
         expect(() => AvatarCast.parse(bad), _parseFailure(why), reason: why);
       }
@@ -391,12 +493,25 @@ void main() {
   });
 }
 
+/// A left-hand key at [p] (validator cases).
+Map<String, dynamic> _leftKey(List<Object> p, {String? at}) => {
+  'P': p,
+  'H': [0, 1, 0],
+  'N': [0, 0, 1],
+  'c': 'open',
+  'at': ?at,
+};
+
 // Pinned review values (JSON, as in library.json).
 const _homePinned =
     '''{"frames": [{"t": 0, "R": {"P": ["mouth", 0.022, 0, 0.003], "at": "tip", "H": [-0.3, 0.35, -0.85], "N": [-0.9, -0.3, 0.2], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.3, "R": {"P": ["mouth", 0.045, 0.02, 0.04], "at": "tip", "H": [-0.3, 0.35, -0.85], "N": [-0.9, -0.3, 0.2], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.6, "R": {"P": ["cheek", 0.06, -0.03, 0.003], "at": "tip", "H": [-0.4, 0.35, -0.85], "N": [-0.85, -0.3, 0.3], "c": "flato", "E": [0.2, -1, 0.1]}}, {"t": 0.9}]}''';
 const _callPinned =
     '''{"frames": [{"t": 0, "R": {"H": [-0.295, 0.7, 0.648], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.12, -0.11, 0.02]}}, {"t": 0.2, "R": {"H": [-0.295, 0.7, 0.648], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.132, -0.11, 0.02]}}, {"t": 0.4, "R": {"H": [-0.295, 0.7, 0.648], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.12, -0.11, 0.02]}}, {"t": 0.6, "R": {"H": [-0.295, 0.7, 0.648], "N": [-0.88, 0, -0.4], "c": "y", "E": [0.25, -1, 0.1], "P": ["ear", 0.132, -0.11, 0.02]}}, {"t": 0.85}]}''';
 const _doctorPinned =
-    '''{"frames": [{"t": 0, "R": {"P": [-0.11, 1.178, 0.335], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}, "L": {"P": [-0.08, 1.06, 0.25], "H": [0.45, 0, 0.9], "N": [0, 1, 0], "c": "open"}}, {"t": 0.2, "R": {"P": [-0.11, 1.113, 0.315], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}}, {"t": 0.4, "R": {"P": [-0.11, 1.168, 0.335], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}}, {"t": 0.6, "R": {"P": [-0.11, 1.113, 0.315], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}}, {"t": 0.85}]}''';
+    '''{"frames": [{"t": 0, "R": {"P": ["otherWrist", 0, 0.06, 0], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}, "L": {"P": [-0.08, 1.06, 0.25], "H": [0.45, 0, 0.9], "N": [0, 1, 0], "c": "open"}}, {"t": 0.2, "R": {"P": ["otherWrist", 0, 0, 0], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}}, {"t": 0.4, "R": {"P": ["otherWrist", 0, 0.06, 0], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}}, {"t": 0.6, "R": {"P": ["otherWrist", 0, 0, 0], "at": "tip", "H": [-0.3, -0.55, 0.78], "N": [0, -1, 0], "c": "bent"}}, {"t": 0.85}]}''';
+const _helpPinned =
+    '''{"frames": [{"t": 0, "R": {"P": ["otherPalm", 0, 0, 0], "H": [0, 0, 1], "N": [-1, 0, 0], "c": "a", "at": "edge"}, "L": {"P": [-0.02, 1.05, 0.24], "H": [0.7, 0, 0.7], "N": [0, 1, 0], "c": "open"}}, {"t": 0.2, "R": {"P": ["otherPalm", 0, 0, 0], "H": [0, 0, 1], "N": [-1, 0, 0], "c": "a", "at": "edge"}, "L": {"P": [-0.02, 1.05, 0.24], "H": [0.7, 0, 0.7], "N": [0, 1, 0], "c": "open"}}, {"t": 0.75, "R": {"P": ["otherPalm", 0, 0, 0], "H": [0, 0, 1], "N": [-1, 0, 0], "c": "a", "at": "edge"}, "L": {"P": [-0.02, 1.17, 0.26], "H": [0.7, 0, 0.7], "N": [0, 1, 0], "c": "open"}}, {"t": 1}]}''';
+const _coffeePinned =
+    '''{"frames": [{"t": 0, "R": {"P": ["otherFist", 0.025, 0, 0.0], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.14, "R": {"P": ["otherFist", 0.0, 0, 0.025], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.28, "R": {"P": ["otherFist", -0.025, 0, 0.0], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.42000000000000004, "R": {"P": ["otherFist", -0.0, 0, -0.025], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.56, "R": {"P": ["otherFist", 0.025, 0, 0.0], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.7000000000000001, "R": {"P": ["otherFist", 0.0, 0, 0.025], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.8400000000000001, "R": {"P": ["otherFist", -0.025, 0, 0.0], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.9800000000000001, "R": {"P": ["otherFist", -0.0, 0, -0.025], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 1.12, "R": {"P": ["otherFist", 0.025, 0, 0.0], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 1.4}]}''';
 const _flatoPinned =
     '''{"curl": [100, 58, 52, 49, 52], "reach": 0.78, "spread": [-16, 14, 0, 0, -15], "split": [0.675, 0.195, 0.13]}''';

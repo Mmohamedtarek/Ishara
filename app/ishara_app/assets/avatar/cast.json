@@ -1,5 +1,5 @@
 {
-  "note": "The characters the avatar can use (RB-1: sample models for non-commercial use; replace before any store release; the credits line is the avCredit string). Values from the prototype's CAST; src = the .glb next to the engine page. en/ar/fem/tag are shown by the app.",
+  "note": "The characters the avatar can use (RB-1: sample models for non-commercial use; replace before any store release; the credits line is the avCredit string). Values from the prototype's CAST; src = the .glb next to the engine page. en/ar/fem/tag are shown by the app. hidden = true keeps a character out of the app (picker, studio, stored choices fall back to the default); its files and code stay (RB-1, user decision 2026-10-10: Sara hidden in v1).",
   "default": "nour",
   "characters": {
     "nour": {
@@ -46,7 +46,8 @@
         "cheek": 0.01,
         "forehead": -0.035,
         "chest": 0.09
-      }
+      },
+      "hidden": true
     }
   }
 }

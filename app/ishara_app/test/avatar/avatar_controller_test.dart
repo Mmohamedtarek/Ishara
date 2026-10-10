@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ishara_app/core/avatar/avatar_cast.dart';
 import 'package:ishara_app/core/avatar/avatar_controller.dart';
 import 'package:ishara_app/core/avatar/avatar_events.dart';
 import 'package:ishara_app/core/avatar/avatar_library.dart';
@@ -153,6 +154,31 @@ void main() {
     expect(() => c.play('rest'), throwsArgumentError);
     expect(() => c.preview(label: 'bananas'), throwsArgumentError);
     c.preview(view: 30); // camera only
+  });
+
+  test('with the cast, a hidden character (RB-1: Sara) becomes Nour', () async {
+    final page2 = FakePage();
+    final c2 = AvatarController(
+      page: page2,
+      library: library,
+      libraryUrl: '../packs/asl/avatar/library.json',
+      castUrl: '../avatar/cast.json',
+      character: 'sara', // e.g. a stored or synced profile
+      cast: AvatarCast.parse(readText('assets/avatar/cast.json')),
+    );
+    addTearDown(c2.dispose);
+    expect(c2.character, 'nour');
+    page2.post('loaded');
+    await pump();
+    expect(page2.sent.first['character'], 'nour');
+    c2.setCharacter('sara', greet: false);
+    await pump();
+    expect(c2.character, 'nour');
+    expect(page2.sent.last, {
+      'cmd': 'setCharacter',
+      'character': 'nour',
+      'greet': false,
+    });
   });
 
   test('setCharacter, reduce motion (sent only on change)', () async {

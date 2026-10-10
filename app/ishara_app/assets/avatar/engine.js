@@ -191,6 +191,9 @@
       var P = key.P, sx = side === 'Right' ? 1 : -1, x, y, z;
       if (P[0] === 'ear'){
         x = P[1]; y = C.lm.ear + P[2]; z = C.headZ + P[3];   // Ishara app: from the head bone
+      } else if (OTHER[P[0]]){
+        // Ishara app: a point on the other hand (side-local → signer frame)
+        var w = otherWant(C, side, key); x = w.x * sx; y = w.y; z = w.z;
       } else if (typeof P[0] === 'string'){
         x = P[1]; y = C.lm[P[0]] + P[2];
         z = C.front(-x, y) + P[3];                   // signer x → world x is mirrored
@@ -198,7 +201,7 @@
       var H = new V3(key.H[0], key.H[1], key.H[2]).normalize(), N = new V3(key.N[0], key.N[1], key.N[2]).normalize();
       var p = new V3(x, y, z), at = key.at || 'wrist';
       if (at === 'tip') p.addScaledVector(H, -C.handLen * (REACH[key.c] || 1));
-      else if (at === 'palm') p.addScaledVector(H, -C.handLen * (/^(s|a)$/.test(key.c) ? .35 : .45)).addScaledVector(N, -.022 * C.k);
+      else if (at === 'palm' || at === 'edge') p.addScaledVector(H, -C.handLen * (/^(s|a)$/.test(key.c) ? .35 : .45)).addScaledVector(N, -.022 * C.k);
       // signer frame → this arm's side-local frame (x = outward on that side)
       return { p: new V3(p.x * sx, p.y, p.z), H: [H.x * sx, H.y, H.z], N: [N.x * sx, N.y, N.z] };
     }
@@ -290,9 +293,33 @@
     // landmark with at 'tip' / 'palm', the real fingertip (the shape's `tip`
     // finger) or palm centre is measured after posing and the target moved
     // by the error, a few times. Other keys are posed exactly as before.
-    function isContact(key){ return typeof key.P[0] === 'string' && key.P[0] !== 'ear' && (key.at === 'tip' || key.at === 'palm'); }
+    function isContact(key){ return typeof key.P[0] === 'string' && key.P[0] !== 'ear' && (key.at === 'tip' || key.at === 'palm' || key.at === 'edge'); }
+
+    // ---------- Ishara app: contacts on the other hand ----------
+    // A key may aim at a point of the other hand (P = [otherWrist | otherPalm
+    // | otherFist, dx, dy, dz], offsets in the signer frame). The other arm
+    // is posed first and the points are read from its real bones, so the
+    // contact holds on any character's proportions.
+    var OTHER = { otherWrist: 1, otherPalm: 1, otherFist: 1 };
+    function usesOther(key){ return !!(key && typeof key.P[0] === 'string' && OTHER[key.P[0]]); }
+    function otherSide(S){ return S === 'Right' ? 'Left' : 'Right'; }
+    // world points on hand O: the inside of the wrist (palm-side skin over
+    // the joint), the middle of the palm's surface, the top of a fist (its
+    // index / thumb side)
+    function handPoints(C, O){
+      var B = C.bones, H = B[O + 'Hand'], M1 = B[O + 'HandMiddle1'], I1 = B[O + 'HandIndex1'], P1 = B[O + 'HandPinky1'];
+      if (!H || !M1 || !I1 || !P1) return null;
+      var h = wpos(H), mid = h.clone().add(wpos(M1)).multiplyScalar(.5), n = palmNormal(C, O), up = wpos(I1).sub(wpos(P1)).normalize();
+      return { otherWrist: h.clone().addScaledVector(n, .015 * C.k), otherPalm: mid.clone().addScaledVector(n, .012 * C.k), otherFist: mid.clone().addScaledVector(up, .03 * C.k) };
+    }
+    function otherWant(C, S, key){
+      var O = otherSide(S), pts = C.handPts && C.handPts[O], w = pts && pts[key.P[0]];
+      if (!w) w = C.bones[O + 'Hand'] ? wpos(C.bones[O + 'Hand']) : new V3(0, C.lm.chest, C.front(0, C.lm.chest));
+      return toLocal(C, S, w).add(new V3(key.P[1] * (S === 'Right' ? 1 : -1), key.P[2], key.P[3]));
+    }
     function toLocal(C, S, w){ return new V3(w.x * C.outSign[S], w.y, w.z); }
     function contactWant(C, S, key){
+      if (OTHER[key.P[0]]) return otherWant(C, S, key);
       var x = key.P[1], y = C.lm[key.P[0]] + key.P[2];
       return new V3(x * (S === 'Right' ? 1 : -1), y, C.front(-x, y) + key.P[3]);
     }
@@ -310,12 +337,29 @@
       }
       var H = B[S + 'Hand'], M1 = B[S + 'HandMiddle1'];
       if (!H || !M1 || !B[S + 'HandIndex1'] || !B[S + 'HandPinky1']) return null;
+      if (key.at === 'edge'){
+        // Ishara app: the pinky-side edge of a closed hand (A / S on a palm,
+        // fist on fist)
+        var down = wpos(B[S + 'HandPinky1']).sub(wpos(B[S + 'HandIndex1'])).normalize();
+        return toLocal(C, S, wpos(H).add(wpos(M1)).multiplyScalar(.5).addScaledVector(down, .045 * C.k));
+      }
       var fist = /^(s|a)$/.test(key.c);
       var c = wpos(H).add(wpos(M1)).multiplyScalar(.5).addScaledVector(palmNormal(C, S), (fist ? .03 : .012) * C.k);
       return toLocal(C, S, c);
     }
     function bakeFrame(C, R, L, head){
       var offR = isContact(R) ? new V3() : null, offL = isContact(L) ? new V3() : null;
+      // Ishara app: a key aiming at the other hand needs that hand posed
+      // first; the library allows only one hand to aim at the other, and
+      // that one doesn't touch the body, so it doesn't move in the loop
+      var aimR = usesOther(R), aimL = usesOther(L);
+      C.handPts = null;
+      if (aimR || aimL){
+        resetBind(C);
+        var O = aimR ? 'Left' : 'Right';
+        poseArm(C, O, solveArm(C, O, aimR ? L : R, null));
+        C.handPts = {}; C.handPts[O] = handPoints(C, O);
+      }
       for (var it = 0; it < 5; it++){
         resetBind(C);
         poseArm(C, 'Right', solveArm(C, 'Right', R, offR));
@@ -703,7 +747,11 @@
       fetch(c.cast).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + c.cast); return r.json(); }),
       fetch(c.library).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + c.library); return r.json(); })
     ]).then(function(d){
-      CAST = d[0].characters; DEF = d[0].default || Object.keys(CAST)[0];
+      // Ishara app: a hidden character (cast.json `hidden`) is not offered,
+      // loaded or prefetched; asking for it shows the default (RB-1)
+      CAST = {};
+      Object.keys(d[0].characters).forEach(function(k){ if (!d[0].characters[k].hidden) CAST[k] = d[0].characters[k]; });
+      DEF = CAST[d[0].default] ? d[0].default : Object.keys(CAST)[0];
       useLibrary(d[1]);
       loadAll();
     }).catch(function(e){ fail('data', e); });
