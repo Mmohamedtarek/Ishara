@@ -87,8 +87,8 @@ void main() {
     bundle = await loadKitBundle();
     final lib = MockLibrary(readAsset);
     for (final f in [
-      MockLibrary.restFile(MockPerson.a),
-      MockLibrary.restFile(MockPerson.b),
+      ...MockLibrary.baseFiles(MockPerson.a),
+      ...MockLibrary.baseFiles(MockPerson.b),
       MockLibrary.practiceFile(MockPerson.a, 'hello'),
     ]) {
       _recs[f] = await lib.load(f);

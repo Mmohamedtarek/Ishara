@@ -56,8 +56,10 @@ flutter:
     - assets/packs/asl/kit/model/
     - assets/packs/asl/kit/mock/
     - assets/packs/asl/kit/mock/A/
+    - assets/packs/asl/kit/mock/A/calibration/
     - assets/packs/asl/kit/mock/A/practice/
     - assets/packs/asl/kit/mock/B/
+    - assets/packs/asl/kit/mock/B/calibration/
     - assets/packs/asl/kit/mock/B/practice/
     - assets/packs/asl/kit/test/
     # ASL avatar sign library (keyframes, hand shapes)

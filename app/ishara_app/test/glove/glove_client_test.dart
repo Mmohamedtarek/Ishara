@@ -477,7 +477,7 @@ void main() {
       final lib = MockLibrary(readAsset);
       recs = {
         for (final p in MockPerson.values)
-          MockLibrary.restFile(p): await lib.load(MockLibrary.restFile(p)),
+          for (final f in MockLibrary.baseFiles(p)) f: await lib.load(f),
       };
     });
 

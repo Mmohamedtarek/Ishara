@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:ishara_app/core/glove/glove_events.dart';
 import 'package:ishara_app/core/glove/mock/recording.dart';
 import 'package:ishara_app/core/packs/sign_language.dart';
 import 'package:ishara_app/core/recognition/model_bundle.dart';
@@ -47,6 +48,19 @@ class MockLibrary {
 
   /// Hand at rest (used between clips, so the glove keeps streaming).
   static String restFile(MockPerson p) => '${p.dir}/rest.csv';
+
+  /// What every feed of person [p] loads up front: rest and the three
+  /// calibration recordings.
+  static List<String> baseFiles(MockPerson p) => [
+    restFile(p),
+    for (final step in CalStep.values) calibrationFile(p, step),
+  ];
+
+  /// What the sensors read during a calibration step (kit v3.2.3:
+  /// `calibration/open.csv`, `fist.csv`, `turn.csv`). Their first line is
+  /// the person's `#CAL`.
+  static String calibrationFile(MockPerson p, CalStep step) =>
+      '${p.dir}/calibration/${step.wire.toLowerCase()}.csv';
 }
 
 /// A piece of mock glove data to play.
@@ -71,9 +85,10 @@ class MockFeedState {
   final int queued;
 }
 
-/// Produces raw samples in real time order: the queued clips, and the
-/// person's rest recording (looped) whenever nothing is queued. It only
-/// produces raw sensor values; words come from the real recognizer.
+/// Produces raw samples in real time order: during a calibration step that
+/// step's recording (looped); otherwise the queued clips, and the person's
+/// rest recording (looped) whenever nothing is queued. It only produces raw
+/// sensor values; words come from the real recognizer.
 class MockFeed {
   new(this.library, {this._person = MockPerson.a});
 
@@ -83,6 +98,9 @@ class MockFeed {
   final List<_Queued> _queue = [];
   _Queued? _current;
   int _restPos = 0;
+  Map<CalStep, Recording> _calibrationFiles = const {};
+  Recording? _calibration;
+  int _calibrationPos = 0;
   final _stateCtl = StreamController<MockFeedState>.broadcast(sync: true);
 
   MockPerson get person => _person;
@@ -93,9 +111,12 @@ class MockFeed {
     // Load first, then switch: the glove keeps streaming meanwhile and must
     // always have a rest recording to play.
     final rest = await library.load(MockLibrary.restFile(p));
+    final calibration = await _loadCalibration(p);
     _person = p;
     _rest = rest;
+    _calibrationFiles = calibration;
     _restPos = 0;
+    stopCalibrationStep();
     await clear();
   }
 
@@ -107,13 +128,41 @@ class MockFeed {
   /// Loads what the feed needs before streaming starts.
   Future<void> prepare() async {
     _rest ??= await library.load(MockLibrary.restFile(_person));
+    if (_calibrationFiles.isEmpty) {
+      _calibrationFiles = await _loadCalibration(_person);
+    }
   }
 
-  /// Calibration JSON of the current person (from their recordings).
+  Future<Map<CalStep, Recording>> _loadCalibration(MockPerson p) async => {
+    for (final step in CalStep.values)
+      step: await library.load(MockLibrary.calibrationFile(p, step)),
+  };
+
+  /// Calibration JSON of the current person: the `#CAL` line of their
+  /// calibration recordings (kit README: the reply to `CAL SAVE` / `GETCAL`).
   Future<String> calibrationJson() async {
     await prepare();
-    return _rest!.calibrationJson!;
+    final json = _calibrationFiles[CalStep.open]!.calibrationJson;
+    if (json == null) {
+      throw StateError(
+        '${MockLibrary.calibrationFile(_person, CalStep.open)} has no #CAL',
+      );
+    }
+    return json;
   }
+
+  /// A calibration step runs: play its recording from the start, looped,
+  /// instead of anything else (never rest: it isn't still). After
+  /// [prepare].
+  void startCalibrationStep(CalStep step) {
+    final rec = _calibrationFiles[step];
+    if (rec == null) throw StateError('call prepare() first');
+    _calibration = rec;
+    _calibrationPos = 0;
+  }
+
+  /// The step ended (done, failed, cancelled, link lost).
+  void stopCalibrationStep() => _calibration = null;
 
   /// Adds clips after the ones already queued.
   Future<void> play(List<MockClip> clips) async {
@@ -135,6 +184,14 @@ class MockFeed {
     final rest = _rest;
     if (rest == null) throw StateError('call prepare() first');
     final out = <Int16List>[];
+    final cal = _calibration;
+    if (cal != null) {
+      while (out.length < n) {
+        out.add(Int16List.fromList(cal.sample(_calibrationPos)));
+        _calibrationPos = (_calibrationPos + 1) % cal.length;
+      }
+      return out;
+    }
     while (out.length < n) {
       final cur = _current;
       if (cur == null) {

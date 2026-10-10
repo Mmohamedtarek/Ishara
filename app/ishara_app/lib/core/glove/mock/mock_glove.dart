@@ -231,6 +231,7 @@ class _MockLink implements GloveLink {
         final running = _running;
         _stepTimer?.cancel();
         _running = null;
+        glove.feed.stopCalibrationStep();
         _done.clear();
         if (running != null) _line('#CALSTEP ${running.wire} FAIL CANCELLED');
         _line('#OK CAL');
@@ -256,8 +257,10 @@ class _MockLink implements GloveLink {
       return;
     }
     _running = step;
+    glove.feed.startCalibrationStep(step);
     _stepTimer = Timer(Duration(seconds: step == CalStep.turn ? 3 : 2), () {
       _running = null;
+      glove.feed.stopCalibrationStep();
       final reason = glove.failNextStep.remove(step);
       if (reason != null) {
         _line('#CALSTEP ${step.wire} FAIL $reason');
@@ -332,6 +335,7 @@ class _MockLink implements GloveLink {
     _stopStream();
     _stepTimer?.cancel();
     _running = null;
+    glove.feed.stopCalibrationStep();
     _done.clear(); // unsaved steps are dropped on disconnect (BLE §7)
     glove._closed(this);
     _closed.complete();

@@ -195,8 +195,8 @@ void main() {
       final lib = MockLibrary(readAsset);
       recs = {
         for (final f in [
-          MockLibrary.restFile(MockPerson.a),
-          MockLibrary.restFile(MockPerson.b),
+          ...MockLibrary.baseFiles(MockPerson.a),
+          ...MockLibrary.baseFiles(MockPerson.b),
           MockLibrary.practiceFile(MockPerson.a, 'yes'),
         ])
           f: await lib.load(f),

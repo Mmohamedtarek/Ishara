@@ -26,7 +26,10 @@ final _recordings = <String, Recording>{};
 
 Future<void> _preload(List<String> files) async {
   final lib = MockLibrary(readAsset);
-  for (final f in files) {
+  for (final f in [
+    for (final p in MockPerson.values) ...MockLibrary.baseFiles(p),
+    ...files,
+  ]) {
     _recordings[f] ??= await lib.load(f);
   }
 }

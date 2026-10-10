@@ -175,6 +175,7 @@ class CalibrationController extends _$CalibrationController {
     }
     final step = state.step;
     if (step == CalStep.open) hand.resetReferences();
+    hand.restartStillWindow();
     final cap = _capture = StepCapture(hand);
     state = state.copyWith(
       phase: StepPhase.capturing,

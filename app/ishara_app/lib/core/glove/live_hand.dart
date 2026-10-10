@@ -9,7 +9,8 @@ import 'package:ishara_app/core/recognition/calibration.dart';
 /// Display only: recognition never uses these numbers (it normalizes with
 /// the glove's `#CAL`, AI-SPEC §3). Each rule mirrors the firmware, so the
 /// screen agrees with what the glove will decide:
-/// - still: every gyro axis's standard deviation over the last 2 s is at most
+/// - still: every gyro axis's standard deviation over the last 2 s (during a
+///   step: over that step's samples, as the glove judges them) is at most
 ///   3 °/s (`CAL_STILL_GYRO_STD_DPS`; `MOVED` otherwise);
 /// - roll: the firmware's complementary filter (`ROLL_FILTER_ALPHA` 0.98 on
 ///   the gyro X axis, accel roll `atan2(ay, az)`), relative to the neutral
@@ -53,6 +54,10 @@ class LiveHand {
     _open = null;
     _fist = null;
   }
+
+  /// A calibration step starts: the still check covers only its samples
+  /// from now on (the firmware judges each step's capture on its own).
+  void restartStillWindow() => _gyro.clear();
 
   void add(GloveSample s) {
     final v = s.values;
