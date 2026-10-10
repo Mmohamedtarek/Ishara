@@ -176,6 +176,20 @@ class AvatarLibrary {
         _fail('shape $name: split must be 3 shares adding up to 1');
       }
     }
+    // the thumb's full bend in degrees (engine default 80)
+    final thumbMax = v['thumbMax'];
+    if (thumbMax != null &&
+        (thumbMax is! num || thumbMax <= 0 || thumbMax > 180)) {
+      _fail('shape $name: thumbMax must be a number of degrees in (0, 180]');
+    }
+    // where the thumb bends to: [palm normal, toward the pinky] weights
+    final thumbDir = v['thumbDir'];
+    if (thumbDir != null &&
+        (!_nums(thumbDir, 2) ||
+            (thumbDir as List).cast<num>().any((x) => x < 0 || x > 4) ||
+            thumbDir.cast<num>().every((x) => x == 0))) {
+      _fail('shape $name: thumbDir must be 2 weights in [0, 4], not both 0');
+    }
     final tip = v['tip'];
     if (tip != null && !fingers.contains(tip)) {
       _fail('shape $name: tip must be one of $fingers');

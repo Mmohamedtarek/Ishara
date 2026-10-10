@@ -288,3 +288,14 @@
 **Not built yet:** the Setup / Settings / Avatar studio pickers (skeleton screens); they must list `AvatarCast.characters` and show a choice only when `showPicker` (S5-13).
 
 **Review (round 4):** `/code-review` found 10 issues; 9 fixed: the aim rule now checks the keys in effect (a carried key), the aimed-at hand may not touch the body, `edge` only with a closed hand at a contact point, hidden characters fully checked, the controller resolves ids through the cast (test: stored "sara" → Nour at start and in setCharacter), base hands pinned to the prototype, unused `hiddenIds` dropped, hand points read once per frame, S5-12 says the user asked for HELP / COFFEE. Kept: the extra arm solve per other-hand frame (about 16 frames, at character load). Re-checked after the fixes: contacts 0 mm, `avatar_cast_check` OK, port check 19 frames worst 0.000.
+
+### Step 5 review, round 5 (2026-10-10)
+
+| Item | Status | Evidence |
+|---|---|---|
+| HELP, DOCTOR, Sara hidden | ✓ approved by the user | — |
+| S hand: thumb across the fingers (COFFEE, YES) | ✓ for your eye | `tools/out/round5/after/{coffee,yes}_nour.png` (front, side, 3/4); before: `tools/out/round5/{coffee,yes}_nour_before.png`; candidates: `tools/out/round5/cands/cmp2.png` |
+| Only YES / COFFEE changed | ✓ | port check: 14 prototype frames match (SORRY included), worst 0.072 / 255; COFFEE contacts 0 mm |
+| Kit v3.2.2 synced | ✓ | 96 files; kit checksum test; 88/88 mock files = expected.json; practice files confirm each sign once (both people) |
+
+**Checks (round 5):** `flutter analyze` 0 issues; 393 tests passing; `lib/core` coverage 94.8 %; contacts 0 mm (COFFEE, HELP, DOCTOR, HOME, HELLO, PLEASE); port check 14 frames worst 0.066 / 255. **Review:** `/code-review` found 7 issues, all fixed: the thumb rest-curl calibration stays measured against 80° when a shape sets `thumbMax`; a misplaced engine comment; `thumbDir` weights bounded [0, 4] and `thumbMax` ≤ 180° (tests); the default thumb direction is a named constant read once per hand; S5-14 records that the user asked for the shape fix; the port-check note says YES's keyframes stay pinned byte-for-byte; these counts.

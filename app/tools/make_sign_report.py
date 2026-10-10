@@ -40,10 +40,10 @@ STATUS: dict[str, tuple[str, str]] = {
     "please": ("fixed", "Depth fix: the flat B palm is on the chest while it circles."),
     "sorry": ("fixed", "Depth fix: the A fist is on the chest while it circles."),
     "home": ("fixed — please check the flat-O", "Round 2: flat-O at the corner of the mouth, then the cheekbone (not the temple), the hand tilted up into each touch so the elbow stays low. The flat-O is closed more onto the thumb; from straight in front it still looks a little loose."),
-    "yes": ("unchanged (was right)", "Pixel-identical to the prototype. S fist nods at the wrist in front of the shoulder."),
+    "yes": ("changed — please check", "Round 5: the S hand's thumb now wraps across the front of the curled fingers (Lifeprint YES); the nod is unchanged."),
     "no": ("unchanged (was right)", "Pixel-identical to the prototype. Index + middle together snap onto the thumb, twice."),
     "help": ("changed — please check", "Round 4: the A hand's pinky edge rests on the left palm (measured contact on the other hand, any character); both lift together, as Lifeprint HELP."),
-    "coffee": ("changed — please check", "Round 4: the right S fist's pinky edge circles on top of the left S fist (measured contact on the other hand, any character), as Lifeprint COFFEE."),
+    "coffee": ("changed — please check", "Round 5: S fists with the thumb wrapped across the front of the fingers (Lifeprint COFFEE); the right fist's pinky edge circles on top of the left fist (measured contact on the other hand)."),
     "doctor": ("approved (round 3); now measured", "Round 4: the bent fingertips tap the inside of the left wrist through a measured contact on the other hand, so it holds on any character (Lifeprint DOCTOR)."),
     "family": ("unchanged (matches the reference)", "Checked against Lifeprint FAMILY: two F hands start together palms out, circle apart and meet again palms in (front and side)."),
 }

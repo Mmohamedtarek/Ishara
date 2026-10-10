@@ -133,12 +133,15 @@ void main() {
       final shapes = _lib()['shapes'] as Map<String, dynamic>;
       final curl = proto['curl'] as Map<String, dynamic>;
       final reach = proto['reach'] as Map<String, dynamic>;
-      // flato (HOME only): closed onto the thumb in the step 5 review
-      for (final k in curl.keys.where((k) => k != 'flato')) {
+      // flato (HOME only): closed onto the thumb in the step 5 review;
+      // s (YES, COFFEE): the thumb wraps across the fingers (review round 5)
+      for (final k in curl.keys.where((k) => k != 'flato' && k != 's')) {
         expect(_at(shapes, [k, 'curl']), curl[k], reason: k);
         expect(_at(shapes, [k, 'reach']), reach[k], reason: k);
         expect(_at(shapes, [k, 'spread']), isNull, reason: k);
         expect(_at(shapes, [k, 'split']), isNull, reason: k);
+        expect(_at(shapes, [k, 'thumbMax']), isNull, reason: k);
+        expect(_at(shapes, [k, 'thumbDir']), isNull, reason: k);
       }
     });
 
@@ -215,6 +218,7 @@ void main() {
         }
       }
       expect(_at(lib, ['shapes', 'flato']), jsonDecode(_flatoPinned));
+      expect(_at(lib, ['shapes', 's']), jsonDecode(_sPinned));
     });
 
     test('decided changes: Q-A4 rename, Q-A3 held still, V-3 mouth', () {
@@ -302,6 +306,12 @@ void main() {
         'previewPairs must be a list': (j) => j['previewPairs'] = 'five',
         'greeting must name a sign': (j) => j['greeting'] = 'wave',
         'tip must be one of': (j) => _put(j, ['shapes', 'w', 'tip'], 'toe'),
+        'thumbDir must be 2 weights in [0, 4], not both 0': (j) =>
+            _put(j, ['shapes', 'w', 'thumbDir'], [0, 0]),
+        'thumbDir must be 2 weights': (j) =>
+            _put(j, ['shapes', 'w', 'thumbDir'], [-2, 0.5]),
+        'thumbMax must be a number of degrees': (j) =>
+            _put(j, ['shapes', 'w', 'thumbMax'], 400),
         'split must be 3 shares adding up to 1': (j) =>
             _put(j, ['shapes', 'w', 'split'], [.5, .5, .5]),
         'split must be 3 shares': (j) =>
@@ -515,3 +525,5 @@ const _coffeePinned =
     '''{"frames": [{"t": 0, "R": {"P": ["otherFist", 0.025, 0, 0.0], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.14, "R": {"P": ["otherFist", 0.0, 0, 0.025], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.28, "R": {"P": ["otherFist", -0.025, 0, 0.0], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.42000000000000004, "R": {"P": ["otherFist", -0.0, 0, -0.025], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.56, "R": {"P": ["otherFist", 0.025, 0, 0.0], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.7000000000000001, "R": {"P": ["otherFist", 0.0, 0, 0.025], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.8400000000000001, "R": {"P": ["otherFist", -0.025, 0, 0.0], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 0.9800000000000001, "R": {"P": ["otherFist", -0.0, 0, -0.025], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 1.12, "R": {"P": ["otherFist", 0.025, 0, 0.0], "H": [-0.3, 0, 1], "N": [-1, 0, 0], "c": "s", "at": "edge"}, "L": {"P": [-0.01, 1.08, 0.25], "H": [0.3, 0, 1], "N": [1, 0, 0], "c": "s"}}, {"t": 1.4}]}''';
 const _flatoPinned =
     '''{"curl": [100, 58, 52, 49, 52], "reach": 0.78, "spread": [-16, 14, 0, 0, -15], "split": [0.675, 0.195, 0.13]}''';
+const _sPinned =
+    '''{"curl": [100, 92, 94, 92, 90], "reach": 0.55, "thumbMax": 150, "thumbDir": [2, 0.5]}''';
