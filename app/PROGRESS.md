@@ -311,3 +311,5 @@
 
 **Engine:** `thumbTo: "fingers"` (CCD; the base joint free, the outer joints on their hinge; solved once per character, hand and shape) replaces round 5's `thumbMax` / `thumbDir`. Validated: only `"fingers"`, only on a closed hand (index and middle curled ≥ 70).
 **Review:** `/code-review` found 9 issues, all fixed: a rig without a thumb end bone (the last joint is left out of the solve), hinge-only outer joints, the palm side from `palmNormal`, the cached solve, `thumbTo` only on closed hands, COFFEE back to "please check", the 10 signs "approved" in the report, these notes, a test for the pending-approval marker.
+
+**Step 5 approved by the user (2026-10-10):** YES and COFFEE (the S thumb lies flat across the fingers from every angle). Step 5 is done.
