@@ -3,4 +3,5 @@ pandas
 scikit-learn
 joblib
 pyserial
-tensorflow    # للـ CNN بس، ومحتاج Python 3.12 أو أقدم
+tensorflow    # CNN training and the .tflite models; needs Python 3.12 or older
+pytest        # tests/ (python -m pytest tests -q)

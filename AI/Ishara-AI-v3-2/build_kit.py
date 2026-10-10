@@ -4,6 +4,7 @@ build_kit.py — بيجهز Ishara-Mobile-Kit لفريق الموبايل من �
   model/   ishara_cnn.tflite + ishara_cnn_2.tflite + ishara_cnn_3.tflite (ensemble) + labels.txt + decider.json
   mock/    جلافز وهمية بنفس سطر الـ USB serial: ملف لكل فئة لشخصين (A و B)، جمل، وحركة عادية
            + practice/: كل إشارة ممسوكة (أو متكررة) زي المتعلم في الـ Learn، المفروض تطلّع الكلمة مرة واحدة
+           + calibration/: open.csv و fist.csv و turn.csv للمعايرة (بنفس قواعد الفيرموير)
            + expected.json (الكلمات اللي التطبيق لازم يطلّعها من كل ملف) + ble_frames.txt
   test/    test_vectors.json: normalize، الموديل، والـ Decider، والفجوات في BLE (gaps): أرقام التطبيق لازم تطابقها
 
@@ -144,9 +145,59 @@ def main():
                        "count of samples read) when each is confirmed; 'events' = every Decider event (word / tentative / "
                        "confirm / cancel) at its model step. Same as the Python reference.",
                "files": expected}, open(os.path.join(OUT, "mock", "expected.json"), "w"), indent=1)
+    calibration_mocks()
     bad = [r for r in report if not r[2]]
     print(f"mock: {len(report)} ملف، {len(bad)} مش مطابق للمطلوب: {bad}")
     print("محاولات:", sum(r[1] for r in report) - len(report), "إعادة")
+
+
+CAL_STILL_GYRO_STD_DPS = 3.0     # firmware config.h: a still hand is below this, per gyro axis
+CAL_MIN_ROLL_RANGE_DEG = 30.0    # firmware config.h: TURN must cover at least this much roll
+
+
+def calibration_mocks(out=None):
+    """
+    mock/<person>/calibration/{open,fist,turn}.csv: what the glove's sensors read during the three
+    calibration steps, consistent with that person's #CAL line (the first line of every file):
+      open / fist: 2.4 s, hand still (gyro noise ~0.8 deg/s), fingers at the #CAL open / fist values
+      turn:        3.4 s, palm turned left and right (+-42 deg roll about the forearm), then still
+    Roll follows the firmware: roll = atan2(ay, az), roll rate on gyro X. Gyro values include the
+    person's raw gyro bias, so after subtracting gyro_bias_raw a still hand reads ~0.
+    """
+    out = out or OUT
+    for name, seed in PERSONS.items():
+        sim.rng = np.random.default_rng(seed)          # the same person and #CAL as the other mock files
+        person = sim.make_person()
+        cal, cal_line = glove_cal_line(person)
+        rng = np.random.default_rng(seed + 9000)       # separate noise, so no other file changes
+        o, f, bias = (np.asarray(cal[k], float) for k in ("open", "fist", "gyro_bias_raw"))
+        g1 = sim.ACC_SCALE if hasattr(sim, "ACC_SCALE") else 8192.0
+        gs = sim.GYRO_SCALE if hasattr(sim, "GYRO_SCALE") else 65.5
+
+        def rows(flex, roll_deg, rate_dps):
+            n = len(roll_deg)
+            r = np.radians(roll_deg)
+            acc = np.stack([np.zeros(n), np.sin(r), np.cos(r)], 1) * g1 + rng.normal(0, 30, (n, 3))
+            gyro = np.tile(bias, (n, 1)) + rng.normal(0, 0.8 * gs, (n, 3))
+            gyro[:, 0] += np.asarray(rate_dps) * gs
+            fl = np.asarray(flex, float) + rng.normal(0, 8, (n, 5))
+            return np.hstack([np.clip(fl, 0, 4095), np.clip(acc, -32768, 32767), np.clip(gyro, -32768, 32767)])
+
+        folder = os.path.join(out, "mock", name, "calibration")
+        os.makedirs(folder, exist_ok=True)
+        still = np.zeros(120)
+        files = {"open": rows(np.tile(o, (120, 1)), still, still),
+                 "fist": rows(np.tile(f, (120, 1)), still, still)}
+        t = np.arange(150) / 50.0
+        roll = 42.0 * np.sin(2 * np.pi * t / 3.0)
+        rate = 42.0 * (2 * np.pi / 3.0) * np.cos(2 * np.pi * t / 3.0)
+        roll, rate = np.concatenate([roll, np.zeros(20)]), np.concatenate([rate, np.zeros(20)])
+        relaxed = o + 0.15 * (f - o)
+        files["turn"] = rows(np.tile(relaxed, (len(roll), 1)), roll, rate)
+        for step, raw in files.items():
+            with open(os.path.join(folder, f"{step}.csv"), "w") as fh:
+                fh.write("\n".join([cal_line] + to_lines(raw)) + "\n")
+    print("calibration mocks: open / fist / turn for", ", ".join(PERSONS))
 
 
 def gap_case(predictor, cfg, raw, cal):
