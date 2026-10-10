@@ -1,9 +1,10 @@
-# Ishara Mobile Kit (v3.2.2)
+# Ishara Mobile Kit (v3.2.3)
 
 The kit holds everything the mobile app needs to recognize signs today. The app doesn't have to wait for the glove, and needs no rewrite when the glove is ready.
 
 ## What's new
 
+- **v3.2.3:** new `mock/A/calibration/` and `mock/B/calibration/` folders with `open.csv`, `fist.csv` and `turn.csv`: what the glove's sensors read during each calibration step, for the same person as the other mock files. The mock glove plays them during `CAL OPEN` / `CAL FIST` / `CAL TURN`. Models, labels, config, spec and every other file are unchanged.
 - **v3.2.2:** new models trained on Sign Vocabulary **v2.2**:
   - COME is one quick arc of the index toward you (Lifeprint);
   - WATER taps the mouth.
@@ -28,6 +29,7 @@ The kit holds everything the mobile app needs to recognize signs today. The app 
 | `model/labels.txt` | The order of the 22 output classes | **AI team only** (changes with the model) |
 | `model/decider.json` | Decider settings | **AI team only** |
 | `mock/A/`, `mock/B/` | A simulated glove for two people. Each folder holds: <br>• one file per sign (20), plus `rest` and `other`; <br>• `sentences.csv` (continuous sentences); <br>• `everyday.csv` (5 minutes of everyday movement); <br>• `practice/` (each sign held, as in a Learn practice) | — |
+| `mock/<person>/calibration/` | `open.csv` and `fist.csv` (2.4 s, hand still) and `turn.csv` (3.4 s, palm turned about ±42° left and right, then still). The first line is the same `#CAL` as that person's other files. They pass the firmware's rules: gyro std below 3 °/s per axis while still, ≥ 300 counts between open and fist on every finger, ≥ 30° of roll (roll = atan2(ay, az), rate on gyro X) | — |
 | `mock/expected.json` | The confirmed words the app **must** produce from each file, and every event in order | — |
 | `mock/ble_frames.txt` | Real BLE frames (hex) with their decoded values, to test the frame parser | — |
 | `test/test_vectors.json` | Numbers your code must reproduce: normalize, each model, their average, the Decider events, and the BLE gap rule | — |
@@ -85,5 +87,6 @@ Test results (new people, 60 hours of continuous wear, no button):
   - `sentences.csv` has one or two mistakes.
   - The app must produce **exactly** what `expected.json` says, not the "right" words.
 - **Learn practice:** use the files in `practice/`; each confirms its sign once.
+- **Calibration on the mock:** during `CAL OPEN`, `CAL FIST` and `CAL TURN`, play `calibration/open.csv`, `fist.csv` and `turn.csv` (loop a file if a step lasts longer). At `CAL SAVE` / `GETCAL`, reply with the file's first line (`#CAL …`). Don't play `rest.csv` during calibration: its gyro isn't still, so a real glove would answer `MOVED`.
 - **Optional UI idea:** the user can tap a faded word to confirm it.
 - **The BLE frame format is final.** If the firmware isn't ready, build the parser from `ble_frames.txt`.

@@ -117,3 +117,31 @@ def test_simulator_makes_valid_takes(label):
     assert take.shape == (common.WINDOW, 11)
     assert take[:, :5].min() >= 0 and take[:, :5].max() <= 4095
     assert np.abs(take[:, 5:]).max() <= 32767
+
+
+def _calib_file(person, step):
+    path = os.path.join(KIT, "mock", person, "calibration", f"{step}.csv")
+    with open(path) as f:
+        lines = f.read().splitlines()
+    cal = json.loads(lines[0][len("#CAL "):])
+    raw = np.array([[float(v) for v in ln.split(",")[1:]] for ln in lines[1:]])
+    return cal, raw
+
+
+@pytest.mark.parametrize("person", ["A", "B"])
+def test_calibration_mocks_follow_the_firmware_rules(person):
+    """The mock glove plays these files during OPEN / FIST / TURN (firmware config.h rules)."""
+    with open(os.path.join(KIT, "mock", person, "hello.csv")) as f:
+        first_line = f.readline().strip()
+    for step in ("open", "fist"):
+        cal, raw = _calib_file(person, step)
+        assert "#CAL " + json.dumps(cal, separators=(",", ":")) == first_line   # same person, same #CAL
+        gyro_dps = (raw[:, 8:11] - np.asarray(cal["gyro_bias_raw"])) / 65.5
+        assert gyro_dps.std(axis=0).max() < 3.0                                  # CAL_STILL_GYRO_STD_DPS
+        assert np.allclose(raw[:, :5].mean(axis=0), cal[step], atol=20)          # fingers at the #CAL values
+    cal, _ = _calib_file(person, "open")
+    assert np.all(np.abs(np.asarray(cal["fist"]) - np.asarray(cal["open"])) >= 300)   # CAL_MIN_FLEX_RANGE
+    _, raw = _calib_file(person, "turn")
+    roll = np.degrees(np.arctan2(raw[:, 6], raw[:, 7]))                          # firmware: atan2(ay, az)
+    assert roll.max() - roll.min() >= 30.0                                       # CAL_MIN_ROLL_RANGE_DEG
+    assert cal["roll_min"] - 5 <= roll.min() and roll.max() <= cal["roll_max"] + 5
