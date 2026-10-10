@@ -73,9 +73,10 @@ APPROVED_NEW = {
     "ok": ("OK", "تمام", "user prompt, Sign language section"),
 }
 
-# New or changed texts written for a step's screens: DRAFTS for the user's
-# approval (Q-D2). key: (en, ar, why, placeholders). Approved ones move to
-# APPROVED_NEW. Egyptian colloquial Arabic.
+# New or changed texts written for step 6's screens (EN + Egyptian
+# colloquial Arabic), key: (en, ar, why, placeholders). Approved by the user
+# in the step 6 review (2026-10-10), with their Arabic corrections. New
+# drafts for later steps go in a separate dict until approved.
 DRAFTS = {
     # --- shared
     "back": ("Back", "رجوع", "step 6: the back button's label (prototype aria-label, not in I18N)", None),
@@ -111,15 +112,15 @@ DRAFTS = {
     "notFound": ("No glove found", "ملقيناش الجوانتي", "step 6: the scan ended without a glove", None),
     "notFoundSub": ("Check the tips below, then scan again.", "شوف النصايح اللي تحت، وبعدين ابحث تاني.", "step 6: not found", None),
     "permTitle": ("Bluetooth permission needed", "محتاجين إذن البلوتوث", "step 6: permission refused", None),
-    "permBody": ("Allow Ishara to use Bluetooth to find and connect to your glove.", "اسمح لإشارة يستخدم البلوتوث عشان يلاقي الجوانتي ويتوصّل بيه.", "step 6: permission refused once", None),
-    "permBodySettings": ("Turn on the Bluetooth permission for Ishara in your phone's settings.", "شغّل إذن البلوتوث لإشارة من إعدادات الموبايل.", "step 6: permission refused for good", None),
-    "permLocationBody": ("On this Android version, finding Bluetooth devices needs the location permission. Ishara doesn't use your location.", "في إصدار الأندرويد ده، البحث عن أجهزة البلوتوث محتاج إذن الموقع. إشارة مش بيستخدم موقعك.", "step 6: Android 11 and older", None),
+    "permBody": ("Allow Ishara to use Bluetooth to find and connect to your glove.", "اسمح للتطبيق يستخدم البلوتوث عشان يلاقي الجوانتي ويتوصّل بيه.", "step 6: permission refused once", None),
+    "permBodySettings": ("Turn on the Bluetooth permission for Ishara in your phone's settings.", "شغّل إذن البلوتوث لتطبيق إشارة من إعدادات الموبايل.", "step 6: permission refused for good", None),
+    "permLocationBody": ("On this Android version, finding Bluetooth devices needs the location permission. Ishara doesn't use your location.", "في إصدار الأندرويد ده، البحث عن أجهزة البلوتوث محتاج إذن الموقع. التطبيق مش بيستخدم موقعك.", "step 6: Android 11 and older", None),
     "allow": ("Allow", "اسمح", "step 6: ask for the permission again", None),
     "openSettings": ("Open settings", "افتح الإعدادات", "step 6: permission refused for good", None),
     "btOffTitle": ("Bluetooth is off", "البلوتوث مقفول", "step 6", None),
     "btOffBody": ("Turn on Bluetooth, then tap Scan again.", "شغّل البلوتوث، وبعدين دوس «ابحث تاني».", "step 6", None),
     "locOffTitle": ("Location is off", "الموقع مقفول", "step 6: Android 11 and older", None),
-    "locOffBody": ("On this Android version, Bluetooth scanning needs Location turned on. Ishara doesn't use your location.", "في إصدار الأندرويد ده، البحث بالبلوتوث محتاج الموقع يبقى شغال. إشارة مش بيستخدم موقعك.", "step 6: Android 11 and older", None),
+    "locOffBody": ("On this Android version, Bluetooth scanning needs Location turned on. Ishara doesn't use your location.", "في إصدار الأندرويد ده، البحث بالبلوتوث محتاج الموقع يبقى شغال. التطبيق مش بيستخدم موقعك.", "step 6: Android 11 and older", None),
     "btUnsupported": ("This phone doesn't support Bluetooth Low Energy, so it can't connect to the glove.", "الموبايل ده مش بيدعم بلوتوث Low Energy، فمش هيقدر يتوصّل بالجوانتي.", "step 6", None),
     "btNotReady": ("Bluetooth isn't ready yet. Try again in a moment.", "البلوتوث لسه مش جاهز. جرّب تاني بعد شوية.", "step 6", None),
     "connFailTitle": ("Couldn't connect to the glove", "مقدرناش نتوصّل بالجوانتي", "step 6: check 1 failed", None),
@@ -142,7 +143,7 @@ DRAFTS = {
     "failCancelledTitle": ("The capture stopped", "التسجيل وقف", "BLE-CONTRACT §7: CANCELLED", None),
     "failCancelledBody": ("Tap Start capture to try again.", "دوس «ابدأ التسجيل» عشان تجرّب تاني.", "CANCELLED", None),
     "weakTitle": ("Weak finger sensor", "حساس صباع ضعيف", "BLE-CONTRACT §6: #FLEX WEAK", None),
-    "weakBody": ("{fingers}: the reading barely changed between Open and Fist. Make sure the glove fits snugly and calibrate again. If it keeps happening, the glove needs a check.", "{fingers}: القراءة اتغيرت قليل جداً بين «مفتوحة» و«قبضة». اتأكد إن الجوانتي لابسه مظبوط وعاير تاني. لو المشكلة فضلت، الجوانتي محتاج فحص.", "#FLEX WEAK", {"fingers": "String"}),
+    "weakBody": ("{fingers}: the reading barely changed between Open and Fist. Make sure the glove fits snugly and calibrate again. If it keeps happening, the glove needs a check.", "{fingers}: القراءة تقريبًا متغيرتش بين «مفتوحة» و«قبضة». اتأكد إنك لابس الجوانتي مظبوط وعاير تاني. لو المشكلة فضلت، الجوانتي محتاج فحص.", "#FLEX WEAK", {"fingers": "String"}),
     "busyTitle": ("The glove is busy", "الجوانتي مشغول", "#ERR CAL BUSY", None),
     "busyBody": ("Wait a moment and try again.", "استنى شوية وجرّب تاني.", "#ERR CAL BUSY", None),
     "saveFailTitle": ("The glove couldn't save the calibration", "الجوانتي مقدرش يحفظ المعايرة", "#ERR CAL NVS / other #ERR CAL", None),
@@ -253,7 +254,7 @@ def main() -> int:
             print(f"error: draft key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
-        meta = {"description": f"DRAFT, awaiting the user's approval (Q-D2): {why}"}
+        meta = {"description": f"approved new text (step 6 review, 2026-10-10): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta
@@ -262,7 +263,7 @@ def main() -> int:
     for name, data in (("app_en.arb", out_en), ("app_ar.arb", out_ar)):
         (OUT / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     kept = sum(1 for k in out_en if not k.startswith("@"))
-    print(f"{kept} strings written ({len(DRAFTS)} drafts), {len(EXCLUDED)} excluded:")
+    print(f"{kept} strings written ({len(DRAFTS)} step 6 texts), {len(EXCLUDED)} excluded:")
     for k, why in sorted(EXCLUDED.items()):
         print(f"  {k:14} {why}")
     return 0

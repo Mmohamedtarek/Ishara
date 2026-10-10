@@ -340,6 +340,7 @@ class IsharaButton extends StatelessWidget {
     this.kind = IsharaButtonKind.primary,
     this.small = false,
     this.arrow = false,
+    this.trailingIcon,
     this.leading,
     this.progress,
     this.busy = false,
@@ -355,6 +356,10 @@ class IsharaButton extends StatelessWidget {
 
   /// The trailing arrow icon (mirrored in RTL).
   final bool arrow;
+
+  /// Another trailing prototype icon (e.g. `check` for "Captured ✓": the
+  /// bundled fonts have no ✓ glyph).
+  final String? trailingIcon;
   final Widget? leading;
 
   /// `.counting .ring`: fill from the start, 0…1.
@@ -452,9 +457,9 @@ class IsharaButton extends StatelessWidget {
             dimension: 18,
             child: CircularProgressIndicator(strokeWidth: 2.4, color: fg),
           ),
-        ] else if (arrow) ...[
+        ] else if (arrow || trailingIcon != null) ...[
           const SizedBox(width: 9),
-          IsharaIcon('arrow', color: fg),
+          IsharaIcon(trailingIcon ?? 'arrow', color: fg),
         ],
       ],
     );

@@ -176,4 +176,22 @@ void main() {
     expect(s().phase, StepPhase.failed);
     expect(s().failure, isA<GloveDisconnectedFailure>());
   });
+
+  test("step 6 review: after Save the bars use the glove's #CAL", () async {
+    await connected();
+    // the phone's captures: open 1500, fist 2500 on every finger
+    final open = ctl().capture();
+    glove.sample(flex: const [1500, 1500, 1500, 1500, 1500]);
+    await open;
+    final fist = ctl().capture();
+    glove.sample(flex: const [2500, 2500, 2500, 2500, 2500]);
+    await fist;
+    glove.sample(flex: const [2500, 2500, 2500, 2500, 2500]);
+    expect(ctl().hand.fingers, List.filled(5, 1)); // the phone's references
+    await ctl().capture(); // TURN, then CAL SAVE
+    expect(s().phase, StepPhase.saved);
+    // the glove's #CAL: open 1000, fist 3000 -> 2500 is 75 %
+    glove.sample(flex: const [2500, 2500, 2500, 2500, 2500]);
+    expect(ctl().hand.fingers, List.filled(5, .75));
+  });
 }

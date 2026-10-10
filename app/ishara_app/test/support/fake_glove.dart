@@ -52,6 +52,9 @@ class FakeGloveSource implements GloveSource {
   Duration connectTime = Duration.zero;
   Duration stepTime = Duration.zero;
 
+  /// Per-step time (wins over [stepTime]), e.g. the glove's 2 s / 2 s / 3 s.
+  final Map<CalStep, Duration> stepTimes = {};
+
   final commands = <String>[];
   final _status = StreamController<GloveStatus>.broadcast(sync: true);
   final _samples = StreamController<List<GloveSample>>.broadcast(sync: true);
@@ -168,7 +171,8 @@ class FakeGloveSource implements GloveSource {
   @override
   Future<CalStepResult> calibrate(CalStep step) async {
     commands.add('CAL ${step.wire}');
-    if (stepTime > Duration.zero) await Future<void>.delayed(stepTime);
+    final time = stepTimes[step] ?? stepTime;
+    if (time > Duration.zero) await Future<void>.delayed(time);
     if (!_s.isConnected) throw const GloveDisconnectedFailure();
     return stepResults.remove(step) ?? CalStepResult(step, ok: true);
   }

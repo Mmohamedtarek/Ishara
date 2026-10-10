@@ -5,6 +5,7 @@ import 'package:ishara_app/core/glove/glove_failures.dart';
 import 'package:ishara_app/core/glove/glove_permissions.dart';
 import 'package:ishara_app/core/glove/glove_providers.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
+import 'package:ishara_app/core/settings/developer_mode.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/features/pair/presentation/pair_screen.dart';
@@ -65,7 +66,9 @@ void main() {
     final g = await pumpPair(t);
     expect(find.text('Found your glove'), findsOneWidget);
     expect(find.text('Ishara-3FA2'), findsOneWidget);
-    expect(find.text('Strong signal · -55 dBm'), findsOneWidget);
+    // users: bars and a word, no dBm (step 6 review)
+    expect(find.text('Strong signal'), findsOneWidget);
+    expect(find.textContaining('dBm'), findsNothing);
     final cta = find.byKey(const ValueKey('pair-cta'));
     expect(
       find.descendant(of: cta, matching: find.text('Tap Connect above')),
@@ -143,4 +146,39 @@ void main() {
     expect(find.text('Found your glove'), findsOneWidget);
     expect(g.commands, ['scan']);
   });
+
+  testWidgets('developer mode shows the RSSI in dBm', (t) async {
+    final g = FakeGloveSource();
+    addTearDown(g.dispose);
+    t.view
+      ..physicalSize = const Size(390, 844) * 3
+      ..devicePixelRatio = 3;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [
+          gloveSourceProvider.overrideWithValue(g),
+          glovePermissionsProvider.overrideWithValue(FakeGlovePermissions()),
+          keyValueStoreProvider.overrideWithValue(MemoryKeyValueStore()),
+          developerModeProvider.overrideWith(_DevOn.new),
+        ],
+        child: MaterialApp(
+          theme: IsharaTheme.build(
+            brightness: Brightness.dark,
+            isArabic: false,
+          ),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: const PairScreen(),
+        ),
+      ),
+    );
+    await run(t);
+    expect(find.text('Strong signal · -55 dBm'), findsOneWidget);
+  });
+}
+
+class _DevOn extends DeveloperMode {
+  @override
+  bool build() => true;
 }

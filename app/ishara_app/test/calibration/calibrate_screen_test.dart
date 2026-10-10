@@ -53,7 +53,7 @@ void main() {
     expect(find.text('Hold still… 2'), findsOneWidget);
     await t.pump(const Duration(milliseconds: 1500)); // 2.1 s: done
     await t.pump();
-    expect(find.text('Captured ✓'), findsOneWidget);
+    expect(find.text('Captured'), findsOneWidget);
     await t.pump(const Duration(milliseconds: 800));
     expect(find.text('Make a fist'), findsOneWidget);
   });

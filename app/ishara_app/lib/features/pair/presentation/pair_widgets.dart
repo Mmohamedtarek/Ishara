@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/core/glove/glove_events.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
+import 'package:ishara_app/core/settings/developer_mode.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/ishara_icon.dart';
 import 'package:ishara_app/core/ui/onboarding_ui.dart';
@@ -347,7 +349,7 @@ String? batteryText(AppLocalizations l, BatteryEvent? b) => switch (b) {
 
 /// `.dev`: a glove card (name, signal, battery and firmware once connected),
 /// its Connect button and, while connecting, the three checks.
-class GloveCard extends StatelessWidget {
+class GloveCard extends ConsumerWidget {
   const new({
     required this.glove,
     required this.state,
@@ -362,11 +364,15 @@ class GloveCard extends StatelessWidget {
   final VoidCallback? onConnect;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final c = context.colors;
     final t = context.text;
     final dark = _dark(context);
+    // Users see bars and a word (prototype); dBm only in developer mode.
+    final signal = ref.watch(developerModeProvider)
+        ? '${signalLabel(l, glove.rssi)} · ${l.rssiDbm(glove.rssi)}'
+        : signalLabel(l, glove.rssi);
     final battery = state.status.device?.id == glove.id
         ? state.status.battery
         : null;
@@ -406,9 +412,7 @@ class GloveCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Semantics(
-                      label:
-                          '${signalLabel(l, glove.rssi)}, '
-                          '${l.rssiDbm(glove.rssi)}',
+                      label: signal,
                       excludeSemantics: true,
                       child: Row(
                         children: [
@@ -416,8 +420,7 @@ class GloveCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
-                              '${signalLabel(l, glove.rssi)} · '
-                              '${l.rssiDbm(glove.rssi)}',
+                              signal,
                               style: t.rowSubtitle.copyWith(
                                 fontSize: 12.5,
                                 color: c.muted,

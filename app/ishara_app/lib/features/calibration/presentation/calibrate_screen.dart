@@ -257,7 +257,8 @@ class _CaptureButton extends StatelessWidget {
         return IsharaButton(
           key: const ValueKey('cal-cta'),
           kind: IsharaButtonKind.ok,
-          label: '${l.ctaCaptured} ✓',
+          label: l.ctaCaptured,
+          trailingIcon: 'check',
           onPressed: () {},
         );
       case StepPhase.saving:
