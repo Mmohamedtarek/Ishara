@@ -23,7 +23,7 @@ import live
 import simulate_data as sim
 from common import LABELS, SIGN_LABELS, WINDOW, normalize
 
-OUT = sys.argv[1] if len(sys.argv) > 1 else "../Ishara-Mobile-Kit"
+OUT = sys.argv[1] if len(sys.argv) > 1 else ("../../app/Ishara-Mobile-Kit" if os.path.isdir("../../app/Ishara-Mobile-Kit") else "../Ishara-Mobile-Kit")
 PERSONS = {"A": 777, "B": 778}       # أشخاص وهميين مش في التدريب ولا الاختبار
 REPEATS = 3                          # كل ملف: (راحة، الإشارة، راحة) 3 مرات
 

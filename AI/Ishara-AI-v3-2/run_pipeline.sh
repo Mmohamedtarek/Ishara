@@ -5,8 +5,10 @@
 # The Decider settings come from decider.json (config B). To search new settings: python eval_live.py --tune
 set -e
 PY=${PY:-python}
+# The kit: app/Ishara-Mobile-Kit in the repo (or set KIT=...)
+KIT=${KIT:-$( [ -d ../../app/Ishara-Mobile-Kit ] && echo ../../app/Ishara-Mobile-Kit || echo ../Ishara-Mobile-Kit )}
 $PY simulate_data.py
-rm -f ishara_cnn*.tflite ishara_cnn*.keras ishara_rf.joblib   # موديلات قديمة (ممكن تكون بكلمات تانية) متتخلطش بالجديدة
+rm -f ishara_cnn*.tflite ishara_cnn*.keras ishara_rf.joblib   # old models (maybe with other labels) must not mix with the new ones
 $PY train_rf.py | tail -9
 $PY train_cnn.py 2>&1 | grep -E "الدقة|KB|labels" || true
 $PY mine_negatives.py --round 1
@@ -19,4 +21,4 @@ $PY train_cnn.py --member 2 2>&1 | grep -E "KB" || true
 $PY train_cnn.py --member 3 2>&1 | grep -E "KB" || true
 $PY eval_live.py --hours 30
 $PY eval_live.py --sessions 20 --no-stress --hours 1
-$PY build_kit.py ../Ishara-Mobile-Kit
+$PY build_kit.py "$KIT"

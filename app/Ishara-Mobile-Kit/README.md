@@ -1,67 +1,89 @@
 # Ishara Mobile Kit (v3.2.2)
 
-**الجديد في v3.2.2:** موديلات جديدة متدرّبة على Sign Vocabulary **v2.2**: `come` بقت حركة واحدة سريعة بالسبابة ناحيتك (زي Lifeprint)، و`water` بتخبط على البق. ملفات `model/` و`mock/` و`test/` اتعملوا من جديد. **الـ SPEC زي ما هو (v3.2.1)**، والكلمات والإعدادات زي ما هي، فمحتاج بس `sync_kit.sh` والـ tests.
+The kit holds everything the mobile app needs to recognize signs today. The app doesn't have to wait for the glove, and needs no rewrite when the glove is ready.
 
-**الجديد في v3.2.1:** (1) قاعدة الفجوات في BLE بقت مكتوبة بالظبط في `AI-SPEC.md` قسم 4، ومعاها test جديد `gaps` في `test/test_vectors.json`. (2) فولدر `mock/A/practice/` و`mock/B/practice/`: ملف لكل إشارة من الـ 20، الإشارة ممسوكة زي المتعلم في الـ Learn، وكل ملف بيطلّع الكلمة مرة واحدة (ومنهم `one` و`me`). الموديلات والكلمات والإعدادات زي v3.2 بالظبط.
+## What's new
 
-**الجديد في v3.2:** الكلمات بقت على **ASL** (ملف Sign Vocabulary v2). `good` و`bad` اتشالوا واتبدلوا بـ `water` و`bye`، وحركات `hello` و`no` و`three` بقت بشكل ASL. الموديلات وملفات `mock/` و`test/` اتعملوا من جديد. **مفيش أي تغيير في طريقة الشغل**: نفس الـ normalize، ونفس الـ Decider، ونفس الأحداث. لو كودك بيقرا الكلمات من `labels.txt`، بدّل الملفات بس.
+- **v3.2.2:** new models trained on Sign Vocabulary **v2.2**:
+  - COME is one quick arc of the index toward you (Lifeprint);
+  - WATER taps the mouth.
 
-كل اللي فريق الموبايل محتاجه عشان يبني التطبيق **دلوقتي**، من غير ما يستنى الجلافز، ومن غير ما يعيد كتابة حاجة لما الجلافز تجهز.
+  `model/`, `mock/` and `test/` are rebuilt. **The spec is unchanged (v3.2.1)**, and so are the labels and the config. Run `sync_kit.sh` and the tests.
+- **v3.2.1:**
+  1. The BLE gap rule is now exact in `AI-SPEC.md` section 4, with a new `gaps` test in `test/test_vectors.json`.
+  2. New `mock/A/practice/` and `mock/B/practice/` folders: one file per sign, held the way a learner signs in Learn. Each file confirms its sign exactly once (including `one` and `me`).
+- **v3.2:** the signs follow **ASL** (Sign Vocabulary v2):
+  - `good` and `bad` are replaced by `water` and `bye`;
+  - HELLO, NO and THREE use their ASL forms.
 
-## الملفات
+  The models, `mock/` and `test/` are rebuilt. Nothing about how the app works changes: same normalize, same Decider, same events. If your code reads the labels from `labels.txt`, swap the files and you're done.
 
-| الملف | هو إيه | مين يغيّره |
+## Files
+
+| File | What it is | Who changes it |
 |---|---|---|
-| `BLE-CONTRACT.md` | العقد بين الجلافز والتطبيق: الـ UUIDs، وشكل الداتا، والأوامر، والمعايرة | **الفريقين مع بعض بس** |
-| `AI-SPEC.md` | الـ AI جوه التطبيق خطوة بخطوة: normalize، والنافذة، والـ 3 موديلات، والـ Decider وأحداثه (word / tentative / confirm / cancel) | **فريق الـ AI بس** |
-| `model/ishara_cnn.tflite`، `ishara_cnn_2.tflite`، `ishara_cnn_3.tflite` | 3 موديلات (ensemble)، والتطبيق بياخد متوسطهم (حوالي 490 KB كلهم) | **فريق الـ AI بس** |
-| `model/labels.txt` | ترتيب الـ 22 فئة اللي الموديل بيطلعها | **فريق الـ AI بس** (بيتغير مع الموديل) |
-| `model/decider.json` | إعدادات القرار | **فريق الـ AI بس** |
-| `mock/A/`، `mock/B/` | جلافز وهمية لشخصين: ملف لكل إشارة من الـ 20، و`rest`، و`other`، و`sentences.csv` (جمل متصلة)، و`everyday.csv` (5 دقايق حركة عادية)، و`practice/` (كل إشارة ممسوكة زي تمرين الـ Learn) | — |
-| `mock/expected.json` | الكلمات المتأكدة اللي التطبيق **لازم** يطلّعها من كل ملف، وكل الأحداث بالترتيب | — |
-| `mock/ble_frames.txt` | رسايل BLE حقيقية (hex) ومعاها الأرقام بعد فكّها، عشان يختبر الـ parser | — |
-| `test/test_vectors.json` | أرقام الـ normalize وكل موديل والمتوسط وأحداث الـ Decider اللي كوده لازم يطابقها | — |
-| `claude-code-prompt-ble-firmware.md` | الـ prompt اللي فريق الـ embedded هيعمل بيه الـ BLE في الجلافز على نفس العقد | فريق الـ embedded |
+| `BLE-CONTRACT.md` | The contract between the glove and the app: UUIDs, data format, commands, calibration | **Both teams together only** |
+| `AI-SPEC.md` | The recognizer in the app, step by step: normalize, window, the 3 models, the Decider and its events (word / tentative / confirm / cancel) | **AI team only** |
+| `model/ishara_cnn.tflite`, `ishara_cnn_2.tflite`, `ishara_cnn_3.tflite` | The 3-model ensemble; the app averages them (about 490 KB in total) | **AI team only** |
+| `model/labels.txt` | The order of the 22 output classes | **AI team only** (changes with the model) |
+| `model/decider.json` | Decider settings | **AI team only** |
+| `mock/A/`, `mock/B/` | A simulated glove for two people. Each folder holds: <br>• one file per sign (20), plus `rest` and `other`; <br>• `sentences.csv` (continuous sentences); <br>• `everyday.csv` (5 minutes of everyday movement); <br>• `practice/` (each sign held, as in a Learn practice) | — |
+| `mock/expected.json` | The confirmed words the app **must** produce from each file, and every event in order | — |
+| `mock/ble_frames.txt` | Real BLE frames (hex) with their decoded values, to test the frame parser | — |
+| `test/test_vectors.json` | Numbers your code must reproduce: normalize, each model, their average, the Decider events, and the BLE gap rule | — |
+| `claude-code-prompt-ble-firmware.md` | The prompt the embedded team used to build BLE in the glove on this contract | Embedded team |
 
-## القواعد اللي بتمنع التداخل
+## Rules that keep the teams from breaking each other's work
 
-1. **ممنوع تعديل منطق الـ AI.** الـ normalize والـ Decider يتنقلوا من `AI-SPEC.md` بالحرف. لو فيه حاجة مش واضحة، يسأل فريق الـ AI، ميخمّنش.
-2. **مصدر داتا واحد.** الـ app كله بيكلّم واجهة `GloveSource` واحدة، وتحتها `MockGlove` (بيقرا ملفات `mock/` بسرعة 50 قراءة في الثانية) و`BleGlove` (الجلافز الحقيقية). يوم ما الجلافز تجهز، التغيير سطر واحد.
-3. **ملفات `model/` بتتبدّل ككتلة واحدة.** لما الموديل يتحسن، فريق الـ AI بيبعت التلات ملفات مع بعض، وهو بيحطهم مكان القدام من غير ما يغيّر كود.
-4. **أي تغيير في `BLE-CONTRACT.md` أو `AI-SPEC.md`** بيتعمل بموافقة الفريقين ورقم نسخة جديد.
+1. **Don't change the AI logic.** Normalize and the Decider are copied from `AI-SPEC.md` exactly. If something is unclear, ask the AI team; don't guess.
+2. **One data source.** The whole app talks to one `GloveSource` interface. Underneath it are `MockGlove` (reads `mock/` at 50 samples per second) and `BleGlove` (the real glove). When the glove is ready, the change is one line.
+3. **`model/` is replaced as a unit.** When the model improves, the AI team sends all its files together. You drop them in place without changing code.
+4. **Any change to `BLE-CONTRACT.md` or `AI-SPEC.md`** needs both teams to agree, and a new version number.
 
-## إزاي يتأكد إن كوده صح
+## How to check your code is right
 
-1. **`test/test_vectors.json`:** الـ normalize يطابق لحد 0.0001، والموديل لحد 0.001، والـ Decider يطلّع نفس الكلمات في نفس الخطوات.
-2. **`mock/expected.json`:** يشغّل كل ملف mock في التطبيق ويقارن الكلمات.
-3. **`mock/ble_frames.txt`:** الـ parser بتاع BLE يفك كل رسالة لنفس الأرقام.
+1. **`test/test_vectors.json`:**
+   - normalize matches to 0.0001;
+   - each model matches to 0.001;
+   - the Decider produces the same events at the same steps;
+   - the `gaps` stream produces the same events.
+2. **`mock/expected.json`:** play every mock file through the app and compare the words and events.
+3. **`mock/ble_frames.txt`:** the BLE parser decodes every frame to the same numbers.
 
-فريق الـ AI اختبر الـ Kit ده (v3.2) بكود مستقل اتكتب من الـ SPEC بس: كل الأرقام طابقت، والأحداث كلها طابقت في نفس الخطوات، و88 من 88 ملف mock طلّعوا نفس الكلمات ونفس الأحداث بالظبط، وtest الفجوات طابق.
+The AI team checked this kit with an independent implementation written from the spec only:
+- all test vectors match;
+- every event matches at the same step;
+- 88 of 88 mock files give exactly the same words and events;
+- the gap test matches.
 
-**رقم الخطوة (`step`) في ملفات الاختبار بيبدأ من 0** (أول تشغيل للموديل = step 0). التفاصيل في `AI-SPEC.md` قسم 8.
+**Step numbers (`step`) in the test files start at 0** (the first model run is step 0). See `AI-SPEC.md` section 8.
 
-## الترجمة شغالة على طول (من غير أي زرار)
+## Translation is always on (no button)
 
-مفيش زرار "اتكلم". الـ Decider بيعرف لوحده الشخص بيعمل إشارات ولا حركة عادية. وعشان كده التطبيق بيستقبل **4 أحداث** (التفاصيل في `AI-SPEC.md` قسم 5):
+There is no "talk" button. The Decider works out by itself whether the person is signing or just moving their hand. The app gets **4 events** (details in `AI-SPEC.md` section 5):
 
-| الحدث | التطبيق يعمل إيه |
+| Event | What the app does |
 |---|---|
-| `word` | يعرض الكلمة ويقولها بصوت |
-| `tentative` | يعرض الكلمة **باهتة** ومعاها "…"، ومن غير صوت |
-| `confirm` | الكلمة الباهتة تبقى عادية، وتتقال بصوت دلوقتي |
-| `cancel` | الكلمة الباهتة تختفي (مكانتش إشارة) |
+| `word` | Show the word and speak it |
+| `tentative` | Show the word **faded**, with "…", and don't speak it |
+| `confirm` | The faded word becomes normal and is spoken now |
+| `cancel` | Remove the faded word (it wasn't a sign) |
 
-النتايج في الاختبار (أشخاص جداد، 60 ساعة لبس متواصل، من غير أي زرار):
+Test results (new people, 60 hours of continuous wear, no button):
 
 | | |
 |---|---|
-| كلمات بتطلع لوحدها | **0.0017 في الدقيقة** (كلمة كل 10 ساعات لبس تقريبًا) |
-| WER في المحادثات | حوالي 9–12% |
-| كلمة باهتة بتظهر وتختفي | أقل من مرة في الساعة |
+| Stray words | **0.0017 per minute** (about one every 10 hours of wear) |
+| WER in conversations | about 9–12% |
+| A faded word shown and removed | less than once an hour |
 
-## ملاحظات
+## Notes
 
-- **الداتا دي وهمية.** الموديل اتدرّب على داتا شبهها، فهو بيفهمها كويس. ده مناسب لبناء التطبيق، لكن الأرقام الحقيقية هتتعرف بعد ما الجلافز تتسجّل.
-- **بعض ملفات mock مش بتطلّع كل الكلمات المطلوبة**، وده مقصود: `one` و`me` و`come` و`drink` و`hungry` لما بييجوا **لوحدهم** (مش في جملة) بيحتاجوا يتمسكوا ثابتين حوالي نص ثانية عشان يتأكدوا، وفي الملفات دي ساعات الكلمة الباهتة بتظهر وتختفي. كمان `sentences.csv` فيه غلطة أو اتنين. المطلوب من التطبيق إنه يطلّع **نفس** اللي في `expected.json` بالظبط، مش الكلمات "الصح".
-- **اقتراح UI (اختياري):** المستخدم يقدر يدوس على الكلمة الباهتة عشان يأكدها بنفسه.
-- **شكل رسالة BLE نهائي.** لو الـ firmware لسه مخلّصش، يبني الـ parser من `ble_frames.txt`.
+- **This data is simulated.** The model was trained on similar data, so it understands it well. That's right for building the app; the real numbers come after the glove is recorded.
+- **Some mock files don't produce every expected sign, on purpose.**
+  - When `one`, `me`, `come`, `drink` and `hungry` are signed **on their own** (not in a sentence), they need to be held still for about half a second to be confirmed. In those files a tentative word sometimes appears and is cancelled.
+  - `sentences.csv` has one or two mistakes.
+  - The app must produce **exactly** what `expected.json` says, not the "right" words.
+- **Learn practice:** use the files in `practice/`; each confirms its sign once.
+- **Optional UI idea:** the user can tap a faded word to confirm it.
+- **The BLE frame format is final.** If the firmware isn't ready, build the parser from `ble_frames.txt`.
