@@ -1,8 +1,14 @@
 name: CI
 
-# Every push and pull request: format, analyze, all host tests (pipeline, kit checksums,
-# goldens, widgets) with the coverage gate, and an Android build. Nothing here needs a device.
-# Firebase rules and emulator tests are added with the backend step.
+# Every push and pull request tests the whole repo; nothing here needs a device.
+#   app       Flutter app: format, analyze, all host tests (pipeline, kit checksums, goldens,
+#             widgets) with the coverage gate
+#   android   debug APK (after app)
+#   ai        AI kit: pytest, and the independent kit verifier against app/Ishara-Mobile-Kit
+#   firmware  PlatformIO builds of every board, plus the Wokwi calibration test when the
+#             WOKWI_CLI_TOKEN secret exists
+# app, ai and firmware run in parallel. Firebase rules and emulator tests are added with the
+# backend step. What to do when a job fails: app/README.md, "CI".
 on:
   push:
   pull_request:
@@ -94,3 +100,86 @@ jobs:
 
       - name: Build debug APK (mock glove)
         run: flutter build apk --debug --dart-define=GLOVE=mock
+
+  ai:
+    name: AI (Python + kit)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: AI/Ishara-AI-v3-2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: AI/Ishara-AI-v3-2/requirements.txt
+
+      - name: Dependencies
+        run: pip install -r requirements.txt
+
+      # data/ and ishara_rf.joblib are not in git; the tests don't need them.
+      - name: Tests (pytest)
+        run: python -m pytest tests -q
+
+      # Exits 1 on any mismatch: every test vector, the BLE gap test and all mock files,
+      # recomputed from the models with TensorFlow, independently of the app.
+      - name: Verify the Mobile Kit (independent check)
+        run: python tests/verify_kit.py ../../app/Ishara-Mobile-Kit
+
+  firmware:
+    name: Firmware (ESP32-S3)
+    runs-on: ubuntu-24.04
+    env:
+      # Empty when the secret isn't set; the Wokwi steps check it.
+      WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
+    defaults:
+      run:
+        working-directory: firmware/ishara-firmware
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache PlatformIO and pip
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('firmware/ishara-firmware/platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build devkit, xiao and wokwi
+        run: pio run -e devkit -e xiao -e wokwi | tee build.log
+
+      - name: Flash and RAM use per build
+        run: |
+          {
+            echo '### Firmware size'
+            echo
+            echo '```'
+            grep -E '^Processing|^(RAM|Flash):' build.log
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Wokwi calibration test (skipped, no token)
+        if: env.WOKWI_CLI_TOKEN == ''
+        run: >-
+          echo "::notice title=Wokwi test skipped::The WOKWI_CLI_TOKEN secret is not set, so
+          test/calibration.test.yaml did not run. Add the secret (repo Settings, Secrets and
+          variables, Actions) to run it."
+
+      # Runs the wokwi build on Wokwi's simulator (the firmware is uploaded to their service).
+      - name: Wokwi calibration test (test/calibration.test.yaml)
+        if: env.WOKWI_CLI_TOKEN != ''
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/wokwi-cli" \
+            https://github.com/wokwi/wokwi-cli/releases/download/v0.27.1/wokwi-cli-linuxstatic-x64
+          chmod +x "$RUNNER_TEMP/wokwi-cli"
+          "$RUNNER_TEMP/wokwi-cli" --timeout 60000 --scenario test/calibration.test.yaml .
