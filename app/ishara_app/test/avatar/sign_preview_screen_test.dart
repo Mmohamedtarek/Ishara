@@ -9,8 +9,10 @@ import 'package:ishara_app/core/avatar/avatar_host.dart';
 import 'package:ishara_app/core/avatar/avatar_library.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/avatar/webview_avatar_page.dart';
+import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/packs/pack_providers.dart';
 import 'package:ishara_app/core/packs/sign_language.dart';
+import 'package:ishara_app/core/recognition/recognition_config.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/features/dev/presentation/sign_preview_screen.dart';
 
@@ -76,7 +78,8 @@ void main() {
     await t.pumpAndSettle();
     // first sign alphabetically until one is picked
     expect(find.textContaining('·  bye'), findsOneWidget);
-    expect(find.text('pending approval (avatar: false)'), findsOneWidget);
+    // bye was approved with the other new signs (2026-10-10)
+    expect(find.text('pending approval (avatar: false)'), findsNothing);
 
     await t.tap(find.byKey(const ValueKey('sign-water')));
     await t.pumpAndSettle();
@@ -164,7 +167,7 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 600));
     expect(find.text('Bye  ·  bye'), findsOneWidget);
-    expect(find.text('pending approval (avatar: false)'), findsOneWidget);
+    expect(find.text('pending approval (avatar: false)'), findsNothing);
     expect(
       t.widget<Slider>(find.byType(Slider)).value,
       closeTo(.6 * 1.5 - .32, .05),
@@ -217,5 +220,57 @@ void main() {
     await t.pumpWidget(const SizedBox());
     expect(t.takeException(), isNull);
     await t.runAsync(c.dispose);
+  });
+
+  testWidgets('a sign waiting for approval (avatar: false) is marked', (
+    t,
+  ) async {
+    // every sign is approved now: mark one as new again (sign rule 2)
+    final j = jsonDecode(
+      readText('assets/packs/asl/signs.json'),
+    ) as Map<String, dynamic>;
+    for (final s in j['signs'] as List<dynamic>) {
+      if ((s as Map<String, dynamic>)['label'] == 'bye') s['avatar'] = false;
+    }
+    final catalogue = SignCatalogue.parse(
+      jsonEncode(j),
+      labels: Labels.parse(readText('assets/packs/asl/kit/model/labels.txt')),
+    );
+    final surface = _Surface();
+    final c = AvatarController(
+      page: surface,
+      library: AvatarLibrary.parse(
+        readText('assets/packs/asl/avatar/library.json'),
+        language: SignLanguage.asl,
+      ),
+      libraryUrl: 'l',
+      castUrl: 'c',
+    );
+    final container = ProviderContainer(
+      overrides: [
+        avatarRuntimeProvider.overrideWith(
+          (ref) async => AvatarRuntime(c, surface),
+        ),
+        signCatalogueProvider.overrideWith((ref) async => catalogue),
+      ],
+    );
+    addTearDown(container.dispose);
+    await t.runAsync(() => container.read(signCatalogueProvider.future));
+    await t.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: IsharaTheme.build(
+            brightness: Brightness.dark,
+            isArabic: false,
+          ),
+          home: const SignPreviewScreen(),
+        ),
+      ),
+    );
+    surface.out.add(jsonEncode({'type': 'loaded'}));
+    await t.pumpAndSettle();
+    expect(find.textContaining('·  bye'), findsOneWidget);
+    expect(find.text('pending approval (avatar: false)'), findsOneWidget);
   });
 }

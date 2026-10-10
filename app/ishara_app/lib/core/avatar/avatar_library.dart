@@ -176,19 +176,16 @@ class AvatarLibrary {
         _fail('shape $name: split must be 3 shares adding up to 1');
       }
     }
-    // the thumb's full bend in degrees (engine default 80)
-    final thumbMax = v['thumbMax'];
-    if (thumbMax != null &&
-        (thumbMax is! num || thumbMax <= 0 || thumbMax > 180)) {
-      _fail('shape $name: thumbMax must be a number of degrees in (0, 180]');
+    // the thumb lies across the curled fingers (S), placed by the engine;
+    // the shape's own thumb curl is then unused. Only on a closed hand: the
+    // engine aims at the middle finger's middle segment.
+    final thumbTo = v['thumbTo'];
+    if (thumbTo != null && thumbTo != 'fingers') {
+      _fail('shape $name: thumbTo must be "fingers"');
     }
-    // where the thumb bends to: [palm normal, toward the pinky] weights
-    final thumbDir = v['thumbDir'];
-    if (thumbDir != null &&
-        (!_nums(thumbDir, 2) ||
-            (thumbDir as List).cast<num>().any((x) => x < 0 || x > 4) ||
-            thumbDir.cast<num>().every((x) => x == 0))) {
-      _fail('shape $name: thumbDir must be 2 weights in [0, 4], not both 0');
+    final c = (curl as List).cast<num>();
+    if (thumbTo != null && (c[1] < 70 || c[2] < 70)) {
+      _fail('shape $name: thumbTo needs curled index and middle fingers');
     }
     final tip = v['tip'];
     if (tip != null && !fingers.contains(tip)) {

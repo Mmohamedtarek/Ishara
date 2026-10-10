@@ -299,3 +299,15 @@
 | Kit v3.2.2 synced | ✓ | 96 files; kit checksum test; 88/88 mock files = expected.json; practice files confirm each sign once (both people) |
 
 **Checks (round 5):** `flutter analyze` 0 issues; 393 tests passing; `lib/core` coverage 94.8 %; contacts 0 mm (COFFEE, HELP, DOCTOR, HOME, HELLO, PLEASE); port check 14 frames worst 0.066 / 255. **Review:** `/code-review` found 7 issues, all fixed: the thumb rest-curl calibration stays measured against 80° when a shape sets `thumbMax`; a misplaced engine comment; `thumbDir` weights bounded [0, 4] and `thumbMax` ≤ 180° (tests); the default thumb direction is a named constant read once per hand; S5-14 records that the user asked for the shape fix; the port-check note says YES's keyframes stay pinned byte-for-byte; these counts.
+
+### Step 5 review, round 6 (2026-10-10)
+
+| Item | Status | Evidence |
+|---|---|---|
+| 10 new signs approved → `avatar: true` | ✓ | signs.json; catalogue tests: "hungry" / "جعانه" now play `hungry`; the no-sign rule is tested with a catalogue where one sign is `avatar: false`; the preview's "pending approval" marker is tested the same way |
+| COFFEE approved (round 5) | ✓, but its fists changed with the S thumb below → please recheck | — |
+| S thumb flat across the fingers (YES, COFFEE) | ✓ for your eye | `tools/out/round6/yes/yes_nour.png`, `tools/out/round6/coffee/coffee_nour.png` (front, side framed on the hands, 3/4); measured in the hand's frame: the thumb's IP joint 1 cm outside the index's middle segment, its tip 1 cm outside the middle finger's (round 5: near the wrist, 1.5 cm below the fist) |
+| Only YES / COFFEE changed | ✓ | port check 14 prototype frames (SORRY included), worst 0.046 / 255; contacts 0 mm |
+
+**Engine:** `thumbTo: "fingers"` (CCD; the base joint free, the outer joints on their hinge; solved once per character, hand and shape) replaces round 5's `thumbMax` / `thumbDir`. Validated: only `"fingers"`, only on a closed hand (index and middle curled ≥ 70).
+**Review:** `/code-review` found 9 issues, all fixed: a rig without a thumb end bone (the last joint is left out of the solve), hinge-only outer joints, the palm side from `palmNormal`, the cached solve, `thumbTo` only on closed hands, COFFEE back to "please check", the 10 signs "approved" in the report, these notes, a test for the pending-approval marker.

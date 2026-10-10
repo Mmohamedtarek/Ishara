@@ -4,31 +4,31 @@
   "note": "One entry per sign. glove = the model recognizes it (labels.txt); avatar = the avatar engine can perform it; verified = its form was checked against an ASL reference (Sign Vocabulary v2.2, docs/ASL-REFERENCES.md). en/ar.word = display text; spoken = text-to-speech; variants = what speech-to-text may hear for this sign (matched exactly after normalization, never fuzzy). draft = text not yet approved by the user.",
   "signs": [
     {
-      "label": "one", "category": "numbers", "glove": true, "avatar": false, "verified": true,
+      "label": "one", "category": "numbers", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "One", "spoken": "one", "variants": ["one"]},
       "ar": {"word": "واحد", "spoken": "واحد", "variants": ["واحد"]},
       "description": "Index straight, other fingers closed, thumb over them; index up, palm toward you, still."
     },
     {
-      "label": "two", "category": "numbers", "glove": true, "avatar": false, "verified": true,
+      "label": "two", "category": "numbers", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Two", "spoken": "two", "variants": ["two"]},
       "ar": {"word": "اتنين", "spoken": "اتنين", "variants": ["اتنين", "اثنين", "اثنان"]},
       "description": "Index and middle straight (V), thumb holds ring and pinky; fingers up, palm toward you, still."
     },
     {
-      "label": "three", "category": "numbers", "glove": true, "avatar": false, "verified": true,
+      "label": "three", "category": "numbers", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Three", "spoken": "three", "variants": ["three"]},
       "ar": {"word": "تلاتة", "spoken": "تلاتة", "variants": ["تلاتة", "ثلاثة"]},
       "description": "Thumb, index and middle straight (ASL form); fingers up, palm toward you, still."
     },
     {
-      "label": "four", "category": "numbers", "glove": true, "avatar": false, "verified": true,
+      "label": "four", "category": "numbers", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Four", "spoken": "four", "variants": ["four"]},
       "ar": {"word": "أربعة", "spoken": "أربعة", "variants": ["أربعة"]},
       "description": "Four fingers straight, thumb folded on the palm; fingers up, palm toward you, still."
     },
     {
-      "label": "five", "category": "numbers", "glove": true, "avatar": false, "verified": true,
+      "label": "five", "category": "numbers", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Five", "spoken": "five", "variants": ["five"]},
       "ar": {"word": "خمسة", "spoken": "خمسة", "variants": ["خمسة"]},
       "description": "Whole hand open, fingers spread; fingers up, still."
@@ -88,25 +88,25 @@
       "description": "Index, middle and ring straight (W), thumb holds the pinky; the index fingertip taps the mouth twice."
     },
     {
-      "label": "bye", "category": "social", "glove": true, "avatar": false, "verified": true,
+      "label": "bye", "category": "social", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Bye", "spoken": "bye", "variants": ["bye", "goodbye"]},
       "ar": {"word": "مع السلامة", "spoken": "مع السلامة", "variants": ["مع السلامة", "باي"]},
       "description": "Open hand, fingers bend down and up together, twice or more; palm out, at shoulder height, the arm stays still."
     },
     {
-      "label": "come", "category": "actions", "glove": true, "avatar": false, "verified": true,
+      "label": "come", "category": "actions", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Come", "spoken": "come", "variants": ["come"]},
       "ar": {"word": "تعالى", "spoken": "تعالى", "variants": ["تعالى", "تعال", "تعالي"]},
       "description": "Index straight, pointing forward, palm up; one quick arc toward you (one-handed form)."
     },
     {
-      "label": "drink", "category": "needs", "glove": true, "avatar": false, "verified": true,
+      "label": "drink", "category": "needs", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Drink", "spoken": "drink", "variants": ["drink"]},
       "ar": {"word": "اشرب", "spoken": "اشرب", "variants": ["اشرب"]},
       "description": "C shape, as if holding a cup; at the mouth, tilts toward you."
     },
     {
-      "label": "call", "category": "actions", "glove": true, "avatar": false, "verified": true,
+      "label": "call", "category": "actions", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Call", "spoken": "call", "variants": ["call", "phone"]},
       "ar": {"word": "اتصل", "spoken": "اتصل", "variants": ["اتصل", "تليفون"]},
       "description": "Thumb and pinky straight (Y); beside the ear and cheek."
@@ -118,7 +118,7 @@
       "description": "Thumb, index and pinky straight (ILY); palm out, held still in front."
     },
     {
-      "label": "hungry", "category": "needs", "glove": true, "avatar": false, "verified": true,
+      "label": "hungry", "category": "needs", "glove": true, "avatar": true, "verified": true,
       "en": {"word": "Hungry", "spoken": "hungry", "variants": ["hungry"]},
       "ar": {"word": "جعان", "spoken": "جعان", "variants": ["جعان", "جعانة"]},
       "description": "C shape; on the upper chest, moves down once."

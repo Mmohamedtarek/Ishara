@@ -8,7 +8,7 @@
     "relax": {"curl": [18, 22, 26, 30, 34], "reach": 0.9},
     "b": {"curl": [34, 2, 2, 3, 4], "reach": 1},
     "open": {"curl": [4, 2, 2, 3, 4], "reach": 1},
-    "s": {"curl": [100, 92, 94, 92, 90], "reach": 0.55, "thumbMax": 150, "thumbDir": [2, 0.5]},
+    "s": {"curl": [66, 92, 94, 92, 90], "reach": 0.55, "thumbTo": "fingers"},
     "a": {"curl": [8, 92, 94, 92, 90], "reach": 0.55},
     "point": {"curl": [62, 2, 92, 92, 90], "reach": 1.03, "tip": "index"},
     "w": {"curl": [72, 2, 2, 4, 86], "reach": 1.02, "tip": "index"},

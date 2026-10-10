@@ -115,6 +115,12 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | S5-14 | As the user asked (round 5: fix the shared S shape if its thumb is wrong, then recheck YES), S hand (YES, COFFEE): the thumb wraps across the front of the curled fingers (Lifeprint COFFEE / YES); the prototype's thumb stuck out forward. The engine's thumb bends in one direction, at most 80°, so it could not wrap; two optional per-shape fields: `thumbMax` (the thumb's full bend, degrees) and `thumbDir` (where it bends to: [palm normal, toward the pinky] weights; default [0.55, 1] as before). S = thumb curl 100, `thumbMax` 150, `thumbDir` [2, 0.5], chosen from candidates rendered side by side; validated (`thumbMax` ≤ 180°, `thumbDir` weights in [0, 4]); a character's thumb rest curl stays measured against 80°. YES's keyframes are unchanged (only its hand shape); both signs wait for the user's approval. Only S uses them; SORRY's fist is the A hand (thumb at the side), unchanged. |
 | S5-15 | Kit v3.2.2 (AI team, 358a279): models retrained for vocabulary v2.2; labels, decider.json and AI-SPEC v3.2.1 unchanged. Synced with `tools/sync_kit.sh` (96 files); all 88 mock files match `expected.json`; for both mock people "Sign now" confirms each of the 20 signs exactly once. |
 
+## Step 5 review, round 6 (2026-10-10)
+| ID | Decision |
+|---|---|
+| S5-16 | The 10 new signs (one, two, three, four, five, bye, come, drink, call, hungry) are approved by the user: `avatar: true` in signs.json; speech → sign now plays them (e.g. "hungry", "جعانه"). COFFEE approved. |
+| S5-17 | Replaces S5-14's method (user: in YES the S thumb hung below the fist like a hook). In an S the thumb lies flat across the front of the curled index and middle fingers, close to the fist, at any wrist angle. Measured in the hand's own frame, the round-5 thumb sat near the wrist, 1.5 cm past the bottom of the fist: a thumb bent in one plane can't reach the fingers. New optional shape field `thumbTo: "fingers"`: after the fingers curl, the engine places the thumb (CCD over its three joints) so its tip lies 1.2 cm outside the middle finger's middle segment; its IP joint then lies over the index's. `thumbMax` / `thumbDir` (round 5) are removed. S = the prototype's curls + `thumbTo`. Only S uses it (YES, COFFEE). |
+
 ## Backend
 | ID | Decision |
 |---|---|

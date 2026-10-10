@@ -68,11 +68,9 @@ void main() {
         isEmpty,
         reason: 'the library only animates catalogue signs',
       );
-      // Sign rule 2: animated but waiting for the user's preview approval.
-      expect(library.difference(avatar), {
-        'one', 'two', 'three', 'four', 'five', //
-        'bye', 'come', 'drink', 'call', 'hungry',
-      });
+      // Sign rule 2: every animated sign is approved (the 10 new signs on
+      // 2026-10-10, after their front + side review).
+      expect(library.difference(avatar), isEmpty);
     });
 
     test('every entry has words in both languages and a description', () {
@@ -199,10 +197,7 @@ void main() {
         ('much', null),
       ]);
       expect(m('I love you', en), [('I love you', 'iloveyou')]);
-      expect(m("I'm hungry", en), [
-        ("I'm", null),
-        ('hungry', null),
-      ]); // no avatar animation yet
+      expect(m("I'm hungry", en), [("I'm", null), ('hungry', 'hungry')]);
       expect(m('Hello, you!', en), [('Hello,', 'hello'), ('you!', 'you')]);
       expect(m('My house, okay?', en), [
         ('My', null),
@@ -226,10 +221,7 @@ void main() {
         ('يا', null),
         ('دكتور', 'doctor'),
       ]);
-      expect(m('انا جعانه', ar), [
-        ('انا', 'me'),
-        ('جعانه', null),
-      ]); // no animation yet
+      expect(m('انا جعانه', ar), [('انا', 'me'), ('جعانه', 'hungry')]);
       expect(m('مية من فضلك', ar), [('مية', 'water'), ('من فضلك', 'please')]);
       expect(m('السلام', ar), [('السلام', null)]);
       expect(m('أكيد', ar), [('أكيد', null)]);
@@ -302,11 +294,23 @@ void main() {
     ];
 
     test('a sign the avatar cannot perform gives no sign (ready pose)', () {
+      // every catalogue sign is animated now: take one away to test the rule
+      final j = jsonDecode(readText(_catalogue)) as Map<String, dynamic>;
+      for (final s in j['signs'] as List<dynamic>) {
+        if ((s as Map<String, dynamic>)['label'] == 'hungry') {
+          s['avatar'] = false;
+        }
+      }
+      final noHungry = SignCatalogue.parse(jsonEncode(j), labels: labels);
+      List<(String, String?)> m2(String t) => [
+        for (final seg in SpeechToSign.match(t, noHungry, SpokenLanguage.en))
+          (seg.text, seg.label),
+      ];
+      expect(m2('bye hungry'), [('bye', 'bye'), ('hungry', null)]);
       expect(m('bye hungry', SpokenLanguage.en), [
-        ('bye', null),
-        ('hungry', null),
+        ('bye', 'bye'),
+        ('hungry', 'hungry'),
       ]);
-      expect(m('hello', SpokenLanguage.en), [('hello', 'hello')]);
     });
 
     test('draft variants are not matched until approved', () {

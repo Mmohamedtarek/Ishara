@@ -59,10 +59,9 @@
   // Ishara app: the shapes (CURL), their contact reach (REACH) and finger
   // spread (SPREAD, degrees per finger, + = toward the thumb side; Q-A6) come
   // from the language pack's library.json.
-  var CURL = {}, REACH = {}, SPREAD = {}, TIPF = {}, SPLIT = {}, THUMB = {}, THUMBDIR = {};
+  var CURL = {}, REACH = {}, SPREAD = {}, TIPF = {}, SPLIT = {}, WRAP = {};
   var FINGERS = ['Thumb','Index','Middle','Ring','Pinky'];
   var FMAX = [80, 250, 255, 255, 250];
-  var THUMB_DIR = [.55, 1];   // Ishara app: the prototype's thumb bend direction (shape `thumbDir` default)
   var FSPLIT = [[.3,.4,.3], [.36,.4,.24]];
 
   // ---------- sign library ----------
@@ -85,8 +84,7 @@
       CURL[k] = s.curl; REACH[k] = s.reach; if (s.spread) SPREAD[k] = s.spread;
       TIPF[k] = s.tip || 'middle';
       if (s.split) SPLIT[k] = s.split;   // Ishara app: [knuckle, middle, tip] share of the fingers' curl
-      if (s.thumbMax) THUMB[k] = s.thumbMax;   // Ishara app: the thumb's full bend (degrees) for this shape
-      if (s.thumbDir) THUMBDIR[k] = s.thumbDir;   // Ishara app: where the thumb bends to: [palm normal, toward the pinky]
+      if (s.thumbTo === 'fingers') WRAP[k] = true;   // Ishara app: the thumb lies across the curled fingers (S)
     });
     Object.keys(lib.signs).forEach(function(k){ if (k !== 'rest') SIGNS[k] = lib.signs[k]; });
   }
@@ -253,10 +251,9 @@
         rollAbout(H, dh, a);
         [S + 'ForeArm1', S + 'ForeArm2'].forEach(function(nm){ if (B[nm]) rollAbout(B[nm], df, a * (C.twistShare[nm] || .5)); });
       }
-      curlHand(C, S, CURL[sp.c] || CURL.relax, SPREAD[sp.c], SPLIT[sp.c], THUMB[sp.c], THUMBDIR[sp.c]);
+      curlHand(C, S, CURL[sp.c] || CURL.relax, SPREAD[sp.c], SPLIT[sp.c], WRAP[sp.c] ? sp.c : null);
     }
-    function curlHand(C, S, curl, spread, fsplit, thumbMax, thumbDir){
-      var td = thumbDir || THUMB_DIR;   // Ishara app
+    function curlHand(C, S, curl, spread, fsplit, wrap){
       var B = C.bones, H = B[S + 'Hand'], M1 = B[S + 'HandMiddle1'], I1 = B[S + 'HandIndex1'], P1 = B[S + 'HandPinky1'];
       if (!H || !M1 || !I1 || !P1) return;
       var N = palmNormal(C, S), L = dirTo(P1, I1);
@@ -275,7 +272,8 @@
       FINGERS.forEach(function(f, fi){
         var j1 = B[S + 'Hand' + f + '1'], j2 = B[S + 'Hand' + f + '2'];
         if (!j1 || !j2) return;
-        var d0 = dirTo(j1, j2), tgt = fi === 0 ? N.clone().multiplyScalar(td[0]).addScaledVector(L, -td[1]).normalize() : N;
+        if (fi === 0 && wrap) return;   // Ishara app: placed by wrapThumb below
+        var d0 = dirTo(j1, j2), tgt = fi === 0 ? N.clone().multiplyScalar(.55).addScaledVector(L, -1).normalize() : N;
         var axis = new V3().crossVectors(d0, tgt);
         if (axis.lengthSq() < 1e-6) return;
         axis.normalize();
@@ -283,12 +281,54 @@
         // Ishara app: a shape may bend the four fingers mostly at the
         // knuckles (flat-O): `split` replaces their default share per joint
         // (the thumb keeps its own)
-        // Ishara app: a shape may give the thumb a larger full bend (an S
-        // thumb wraps across the curled fingers)
-        // (a character's rest curl c0 stays measured against the default)
-        var total = (curl[fi] / 100 * (fi === 0 && thumbMax ? thumbMax : FMAX[fi]) - c0 / 100 * FMAX[fi]) * DEG, split = fi === 0 ? FSPLIT[0] : (fsplit || FSPLIT[1]);
+        var total = ((curl[fi] - c0) / 100) * FMAX[fi] * DEG, split = fi === 0 ? FSPLIT[0] : (fsplit || FSPLIT[1]);
         for (var j = 1; j <= 3; j++){ var b = B[S + 'Hand' + f + j]; if (b) rollAbout(b, axis, total * split[j - 1]); }
       });
+      if (wrap) wrapThumb(C, S, wrap, N, L);
+    }
+    // Ishara app: an S thumb lies flat across the front of the curled index
+    // and middle fingers at any wrist angle: after the fingers curl, its tip
+    // is placed (CCD over the thumb joints) 1.2 cm outside the middle
+    // finger's middle segment, on the palm side (N); the base joint turns
+    // freely, the two outer joints only bend on their hinge (as a thumb
+    // does). The result depends only on the hand itself, so it is solved once
+    // per character, hand and shape and then reused (local rotations).
+    var WRAP_OUT = .012;
+    function wrapThumb(C, S, shape, N, L){
+      var B = C.bones, T = [B[S + 'HandThumb1'], B[S + 'HandThumb2'], B[S + 'HandThumb3']], T4 = B[S + 'HandThumb4'];
+      var M2 = B[S + 'HandMiddle2'], M3 = B[S + 'HandMiddle3'];
+      if (!T[0] || !T[1] || !T[2] || !M2 || !M3) return;
+      var key = S + ':' + shape, cache = C.wrapCache || (C.wrapCache = {});
+      if (cache[key]){
+        T.forEach(function(b, i){ b.quaternion.copy(cache[key][i]); });
+        T[0].updateMatrixWorld(true);
+        return;
+      }
+      // the tip: the end bone, or (without one) a segment past the last joint;
+      // without an end bone the last joint can't move the tip, so it is left
+      var tip = function(){ if (T4) return wpos(T4); var a = wpos(T[1]), c = wpos(T[2]); return c.clone().add(c.clone().sub(a)); };
+      var joints = T4 ? [2, 1, 0] : [1, 0];
+      var target = wpos(M2).add(wpos(M3)).multiplyScalar(.5).addScaledVector(N, WRAP_OUT * C.k);
+      // the thumb's hinge (its default bend plane, as in curlHand)
+      var bendTo = N.clone().multiplyScalar(.55).addScaledVector(L, -1).normalize();
+      for (var it = 0; it < 10; it++){
+        joints.forEach(function(j){
+          var b = T[j], p = wpos(b), a = tip().sub(p), t = target.clone().sub(p), ax;
+          if (j === 0) ax = new V3().crossVectors(a, t);
+          else {
+            ax = new V3().crossVectors(dirTo(b, j === 2 && T4 ? T4 : T[j + 1]), bendTo);
+            if (ax.lengthSq() < 1e-8) return;
+            ax.normalize();
+            a.projectOnPlane(ax); t.projectOnPlane(ax);
+            if (a.lengthSq() < 1e-10 || t.lengthSq() < 1e-10) return;
+            rollAbout(b, ax, signedAngle(a.normalize(), t.normalize(), ax) * .5);
+            return;
+          }
+          var l = ax.length(); if (l < 1e-6) return;
+          rollAbout(b, ax.divideScalar(l), Math.atan2(l, a.dot(t)) * .5);
+        });
+      }
+      cache[key] = T.map(function(b){ return b.quaternion.clone(); });
     }
     function headTurn(C, h){
       if (!h) return;
@@ -698,7 +738,7 @@
         activePose = c.label; speedK = 1; poseT = (+c.t || 0) + LEAD; talking = false; frozen = c.frozen !== false;
       },
       whenReady: function(fn){ if (ready) fn(); else readyResolvers.push(fn); },
-      _dbg: { T: T, SIGNS: SIGNS, CURL: CURL, SPREAD: SPREAD, SPLIT: SPLIT, THUMB: THUMB, THUMBDIR: THUMBDIR, REACH: REACH, camera: camera, scene: scene, renderer: renderer, avatar: function(){ return A; }, resize: resize,
+      _dbg: { T: T, SIGNS: SIGNS, CURL: CURL, SPREAD: SPREAD, SPLIT: SPLIT, WRAP: WRAP, REACH: REACH, camera: camera, scene: scene, renderer: renderer, avatar: function(){ return A; }, resize: resize,
         // contact check: for every landmark contact key, the distance (mm)
         // between the target and the real tip / palm after baking
         contacts: function(){
