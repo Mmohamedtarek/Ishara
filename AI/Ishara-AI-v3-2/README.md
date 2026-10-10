@@ -205,6 +205,23 @@ When the glove receives `j`, it answers:
 
 If a glove can't send `#CAL`, you can still record `calib_open` and `calib_fist` the old way (`python record.py calib_open ahmed`). The gyro bias then comes from the open-hand recording, because the hand is still.
 
+## Tests
+
+```bash
+python -m pytest tests -q                              # about 40 s
+python tests/verify_kit.py ../../app/Ishara-Mobile-Kit # independent check of the kit, a few minutes
+```
+
+- `tests/test_ai_core.py` checks that:
+  - every script compiles;
+  - the labels, models and Decider settings in the kit are the current ones in this folder;
+  - `#CAL` parsing accepts snake_case and camelCase keys;
+  - normalize, the Decider and the BLE gap rule reproduce the kit's test vectors;
+  - the simulator makes valid takes for all 22 classes.
+- `tests/verify_kit.py` imports nothing from this folder. It re-implements the app's recognizer from `AI-SPEC.md`, runs the kit's `.tflite` files, and compares every test vector and all mock files with `expected.json`.
+
+Both run in CI on every push. After you rebuild the kit, run them before you commit.
+
 ## How recognition works (v3)
 
 - **`other` class:** everyday movements that aren't signs, such as typing, a phone, a cup, pointing or carrying a bag. Without it, the model had to pick a sign for every movement.
