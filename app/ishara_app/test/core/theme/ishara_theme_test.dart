@@ -38,7 +38,7 @@ void main() {
     expect(t.eyebrow.fontSize, 11.5);
     expect(t.eyebrow.letterSpacing, closeTo(.69, 1e-9));
     expect(t.caps('Step 1'), 'STEP 1');
-    expect(t.lead.fontFamilyFallback, [IsharaFonts.arabic]);
+    expect(t.lead.fontFamilyFallback, [IsharaFonts.arabic, IsharaFonts.ui]);
   });
 
   test('Arabic: Cairo everywhere, no tracking, bigger labels, no caps', () {

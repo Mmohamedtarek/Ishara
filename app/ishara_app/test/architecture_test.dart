@@ -50,7 +50,9 @@ void main() {
             ((label == 'rest' || label == 'other') &&
                 f.path == 'lib/core/recognition/recognition_config.dart') ||
             (label == 'rest' &&
-                f.path == 'lib/core/avatar/avatar_library.dart');
+                f.path == 'lib/core/avatar/avatar_library.dart') ||
+            // ICU `select` key for the avatar's gender, not a sign label
+            (label == 'other' && f.path == 'lib/core/avatar/avatar_cast.dart');
         if (!allowed) offenders.add('${f.path}: "$label"');
       }
     }

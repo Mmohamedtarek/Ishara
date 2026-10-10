@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/router/transitions.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/theme/ishara_tokens.dart';
 import 'package:ishara_app/core/ui/ishara_mark.dart';
+import 'package:ishara_app/features/pair/application/reconnect.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
 /// Prototype `#splash`: the mark, the name "Ishara" (Latin letters in both
@@ -80,7 +83,15 @@ class _SplashScreenState extends State<SplashScreen>
   void _end() {
     if (_done || !mounted) return;
     _done = true;
-    context.go(AppRoutes.welcome);
+    // S6-2: after onboarding the app starts on Talk and reconnects the
+    // paired glove in the background.
+    final container = ProviderScope.containerOf(context, listen: false);
+    if (container.read(profileControllerProvider).onboardingDone) {
+      unawaited(container.read(reconnectPairedGloveProvider.future));
+      context.go(AppRoutes.talk);
+    } else {
+      context.go(AppRoutes.welcome);
+    }
   }
 
   @override

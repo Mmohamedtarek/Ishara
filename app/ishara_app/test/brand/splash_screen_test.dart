@@ -3,13 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ishara_app/app.dart';
+import 'package:ishara_app/core/glove/glove_providers.dart';
+import 'package:ishara_app/core/profile/onboarding_store.dart';
+import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/router/app_router.dart';
+import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/ishara_mark.dart';
 import 'package:ishara_app/features/onboarding/presentation/splash_screen.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
-Widget _app({bool reduceMotion = false}) {
+import '../support/fake_glove.dart';
+
+Widget _app({
+  bool reduceMotion = false,
+  KeyValueStore? store,
+  FakeGloveSource? glove,
+}) {
   final router = GoRouter(
     routes: [
       GoRoute(path: '/', builder: (_, _) => const SplashScreen()),
@@ -17,8 +27,23 @@ Widget _app({bool reduceMotion = false}) {
         path: '/welcome',
         builder: (_, _) => const Scaffold(body: Text('WELCOME')),
       ),
+      GoRoute(
+        path: '/talk',
+        builder: (_, _) => const Scaffold(body: Text('TALK')),
+      ),
     ],
   );
+  return ProviderScope(
+    overrides: [
+      keyValueStoreProvider.overrideWithValue(store ?? MemoryKeyValueStore()),
+      gloveSourceProvider.overrideWithValue(glove ?? FakeGloveSource()),
+      glovePermissionsProvider.overrideWithValue(FakeGlovePermissions()),
+    ],
+    child: _themed(reduceMotion, router),
+  );
+}
+
+Widget _themed(bool reduceMotion, GoRouter router) {
   return MediaQuery(
     data: MediaQueryData(disableAnimations: reduceMotion),
     child: MaterialApp.router(
@@ -73,6 +98,25 @@ void main() {
     await t.pump(const Duration(milliseconds: 400)); // 2.15 s
     await t.pumpAndSettle();
     expect(find.text('WELCOME'), findsOneWidget);
+  });
+
+  testWidgets('S6-2: after onboarding it goes to Talk and reconnects the '
+      'paired glove', (t) async {
+    final kv = MemoryKeyValueStore();
+    final store = OnboardingStore(kv);
+    await store.saveDone(done: true);
+    await store.saveGlove(const PairedGlove(id: 'g1', name: 'Ishara-3FA2'));
+    final glove = FakeGloveSource();
+    await t.pumpWidget(_app(store: kv, glove: glove));
+    await t.tap(find.byKey(const ValueKey('screen-splash')));
+    for (var i = 0; i < 5; i++) {
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 5)),
+      );
+      await t.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('TALK'), findsOneWidget);
+    expect(glove.commands, ['scan', 'connect g1']);
   });
 
   testWidgets('a tap ends it at once (prototype), with a semantic action', (

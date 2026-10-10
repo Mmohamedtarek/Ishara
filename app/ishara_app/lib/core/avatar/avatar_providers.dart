@@ -18,6 +18,14 @@ const avatarCastAsset = 'assets/avatar/cast.json';
 Future<AvatarCast> avatarCast(Ref ref) async =>
     AvatarCast.parse(await rootBundle.loadString(avatarCastAsset));
 
+/// The character that signs for the user (the cast default until the
+/// Avatar studio saves a choice, step 9). Null while the cast loads. Texts
+/// use its name and, in Arabic, its gender (RB-1: hidden characters never
+/// come back from [AvatarCast.byId]).
+@Riverpod(keepAlive: true)
+AvatarCharacter? currentCharacter(Ref ref) =>
+    ref.watch(avatarCastProvider).value?.byId(null);
+
 /// The active pack's avatar sign library.
 @Riverpod(keepAlive: true)
 Future<AvatarLibrary> avatarLibrary(Ref ref) async {

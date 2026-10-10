@@ -1034,5 +1034,334 @@
   "ok": "OK",
   "@ok": {
     "description": "approved new text (user prompt, Sign language section)"
+  },
+  "back": "Back",
+  "@back": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: the back button's label (prototype aria-label, not in I18N)"
+  },
+  "stepOfLabel": "Step {n} of 3: {name}",
+  "@stepOfLabel": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: the 3-step header for screen readers",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tryAgain": "Try again",
+  "@tryAgain": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: retry after a failure"
+  },
+  "loginLeadEmail": "Sign in to keep your saved phrases, settings and Learn progress on any phone.",
+  "@loginLeadEmail": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): replaces loginLead (the glove isn't synced; Q-B4: saved phrases and settings sync)"
+  },
+  "termsLocal": "By continuing you agree to the Terms of Use and Privacy Policy. Your conversations stay on this phone.",
+  "@termsLocal": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): replaces terms (there is no conversation backup, Q-B4)"
+  },
+  "lblEmail": "Email",
+  "@lblEmail": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-B2: replaces 'Phone number or email'"
+  },
+  "phEmail": "you@example.com",
+  "@phEmail": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-B2: replaces '010… or you@example.com'"
+  },
+  "errEmail": "Enter your email",
+  "@errEmail": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-B2: replaces errId"
+  },
+  "errEmailFormat": "Enter a valid email address",
+  "@errEmailFormat": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-B2: replaces errIdFormat (no phone numbers)"
+  },
+  "authErrInvalid": "Wrong email or password.",
+  "@authErrInvalid": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: sign-in failed (one message for both, no account leak)"
+  },
+  "authErrEmailInUse": "This email already has an account. Sign in instead.",
+  "@authErrEmailInUse": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: create account, email taken"
+  },
+  "authErrNetwork": "No internet connection. Check it and try again.",
+  "@authErrNetwork": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: offline"
+  },
+  "authErrTooMany": "Too many tries. Wait a few minutes and try again.",
+  "@authErrTooMany": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: rate limited"
+  },
+  "authErrUnknown": "Something went wrong. Try again.",
+  "@authErrUnknown": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: any other auth error"
+  },
+  "forgotNeedsEmail": "Enter your email above first, then tap Forgot password.",
+  "@forgotNeedsEmail": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: Forgot password with no email"
+  },
+  "pairLeadTrue": "Switch your glove on, keep it close to your phone and keep Bluetooth on. It shows up as “Ishara-” and 4 letters or numbers.",
+  "@pairLeadTrue": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K2: replaces pairLead (no button, no light colours; name from BLE-CONTRACT §1)"
+  },
+  "c2Sensors": "Checking the sensors",
+  "@c2Sensors": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K3: replaces c2"
+  },
+  "tipOn": "Make sure the glove is switched on and charged.",
+  "@tipOn": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): S6-3: replaces tip1 (no light colour)"
+  },
+  "tipNear": "Keep it close to your phone.",
+  "@tipNear": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): S6-3: replaces tip2 (no wrist button)"
+  },
+  "tipOtherPhone": "If it's connected to another phone, disconnect it there first. A connected glove doesn't show up.",
+  "@tipOtherPhone": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): S6-3: BLE-CONTRACT §1 (it advertises only when not connected)"
+  },
+  "sigGood": "Good signal",
+  "@sigGood": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: signal from RSSI (thresholds are a draft too: ≥ −60 strong, ≥ −70 good, ≥ −80 fair, else weak)"
+  },
+  "sigFair": "Fair signal",
+  "@sigFair": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: signal from RSSI (draft thresholds)"
+  },
+  "sigWeak": "Weak signal",
+  "@sigWeak": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: signal from RSSI (draft thresholds)"
+  },
+  "rssiDbm": "{v} dBm",
+  "@rssiDbm": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K2: the real RSSI (kept left-to-right in Arabic)",
+    "placeholders": {
+      "v": {
+        "type": "int"
+      }
+    }
+  },
+  "battPercent": "Battery {p}%",
+  "@battPercent": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K2: real battery after connecting (#BAT OK)",
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  },
+  "battLow": "Battery low",
+  "@battLow": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K2: #BAT LOW"
+  },
+  "battUsb": "On USB power",
+  "@battUsb": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K2: #BAT NO_BATTERY (USB)"
+  },
+  "firmware": "Firmware {v}",
+  "@firmware": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K2: fw from INFO",
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "notFound": "No glove found",
+  "@notFound": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: the scan ended without a glove"
+  },
+  "notFoundSub": "Check the tips below, then scan again.",
+  "@notFoundSub": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: not found"
+  },
+  "permTitle": "Bluetooth permission needed",
+  "@permTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: permission refused"
+  },
+  "permBody": "Allow Ishara to use Bluetooth to find and connect to your glove.",
+  "@permBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: permission refused once"
+  },
+  "permBodySettings": "Turn on the Bluetooth permission for Ishara in your phone's settings.",
+  "@permBodySettings": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: permission refused for good"
+  },
+  "permLocationBody": "On this Android version, finding Bluetooth devices needs the location permission. Ishara doesn't use your location.",
+  "@permLocationBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: Android 11 and older"
+  },
+  "allow": "Allow",
+  "@allow": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: ask for the permission again"
+  },
+  "openSettings": "Open settings",
+  "@openSettings": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: permission refused for good"
+  },
+  "btOffTitle": "Bluetooth is off",
+  "@btOffTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6"
+  },
+  "btOffBody": "Turn on Bluetooth, then tap Scan again.",
+  "@btOffBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6"
+  },
+  "locOffTitle": "Location is off",
+  "@locOffTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: Android 11 and older"
+  },
+  "locOffBody": "On this Android version, Bluetooth scanning needs Location turned on. Ishara doesn't use your location.",
+  "@locOffBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: Android 11 and older"
+  },
+  "btUnsupported": "This phone doesn't support Bluetooth Low Energy, so it can't connect to the glove.",
+  "@btUnsupported": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6"
+  },
+  "btNotReady": "Bluetooth isn't ready yet. Try again in a moment.",
+  "@btNotReady": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6"
+  },
+  "connFailTitle": "Couldn't connect to the glove",
+  "@connFailTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: check 1 failed"
+  },
+  "connFailBody": "Keep it close to your phone and try again.",
+  "@connFailBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6"
+  },
+  "protoTitle": "This glove needs a different version of the app",
+  "@protoTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): BLE-CONTRACT §2: proto ≠ 1"
+  },
+  "protoBody": "Update the Ishara app and the glove's firmware, then try again.",
+  "@protoBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): BLE-CONTRACT §2"
+  },
+  "mpuTitle": "The glove's motion sensor isn't responding",
+  "@mpuTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): BLE-CONTRACT §6: #MPU FAIL (Q-K3 check 2)"
+  },
+  "mpuBody": "Switch the glove off and on, then try again. If it keeps happening, the glove needs a check.",
+  "@mpuBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6"
+  },
+  "linkLostTitle": "The connection stopped",
+  "@linkLostTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: timeout, rejected command or lost link"
+  },
+  "linkLostBody": "Keep the glove close to your phone and try again.",
+  "@linkLostBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6"
+  },
+  "pose3s3": "Turn your palm to the left, then to the right, slowly, for 3 seconds. This calibrates the motion sensor.",
+  "@pose3s3": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K4: replaces pose3s (3 s)"
+  },
+  "handStill": "Hand still",
+  "@handStill": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K7: hold-still indicator"
+  },
+  "handMoving": "Hand moving",
+  "@handMoving": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K7: hold-still indicator"
+  },
+  "fingersLater": "Finger bars appear after Open and Fist.",
+  "@fingersLater": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K7: bars hidden until OPEN and FIST"
+  },
+  "failMovedTitle": "Your hand moved",
+  "@failMovedTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): BLE-CONTRACT §7: MOVED"
+  },
+  "failMovedBody": "Keep your hand still for the whole 2 seconds, then try again.",
+  "@failMovedBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): MOVED"
+  },
+  "failRangeTitle": "Turn your wrist further",
+  "@failRangeTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): BLE-CONTRACT §7: RANGE"
+  },
+  "failRangeBody": "Turn your palm further to the left and to the right (at least 30° in all), then try again.",
+  "@failRangeBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): RANGE (firmware CAL_MIN_ROLL_RANGE_DEG 30)"
+  },
+  "failCancelledTitle": "The capture stopped",
+  "@failCancelledTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): BLE-CONTRACT §7: CANCELLED"
+  },
+  "failCancelledBody": "Tap Start capture to try again.",
+  "@failCancelledBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): CANCELLED"
+  },
+  "weakTitle": "Weak finger sensor",
+  "@weakTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): BLE-CONTRACT §6: #FLEX WEAK"
+  },
+  "weakBody": "{fingers}: the reading barely changed between Open and Fist. Make sure the glove fits snugly and calibrate again. If it keeps happening, the glove needs a check.",
+  "@weakBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): #FLEX WEAK",
+    "placeholders": {
+      "fingers": {
+        "type": "String"
+      }
+    }
+  },
+  "busyTitle": "The glove is busy",
+  "@busyTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): #ERR CAL BUSY"
+  },
+  "busyBody": "Wait a moment and try again.",
+  "@busyBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): #ERR CAL BUSY"
+  },
+  "saveFailTitle": "The glove couldn't save the calibration",
+  "@saveFailTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): #ERR CAL NVS / other #ERR CAL"
+  },
+  "saveFailBody": "Try again. If it keeps happening, the glove needs a check.",
+  "@saveFailBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): #ERR CAL"
+  },
+  "disconnectedTitle": "The glove disconnected",
+  "@disconnectedTitle": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: link lost during calibration"
+  },
+  "disconnectedBody": "Pair it again to continue.",
+  "@disconnectedBody": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6"
+  },
+  "pairAgain": "Pair again",
+  "@pairAgain": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6"
+  },
+  "saving": "Saving…",
+  "@saving": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): step 6: CAL SAVE running"
+  },
+  "skipNeedsCal": "This glove hasn't been calibrated yet, so calibration can't be skipped.",
+  "@skipNeedsCal": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): Q-K6: Skip hidden with #CAL NONE"
+  },
+  "sumGloveBatt": "Connected · Battery {p}%",
+  "@sumGloveBatt": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): replaces sumGlove (real battery)",
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  },
+  "sumGloveLow": "Connected · Battery low",
+  "@sumGloveLow": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): replaces sumGlove (#BAT LOW)"
+  },
+  "sumGloveUsb": "Connected · On USB power",
+  "@sumGloveUsb": {
+    "description": "DRAFT, awaiting the user's approval (Q-D2): replaces sumGlove (#BAT NO_BATTERY)"
   }
 }

@@ -24,6 +24,10 @@ class AvatarCharacter {
   final bool feminine;
 
   String name({required bool arabic}) => arabic ? nameAr : nameEn;
+
+  /// The ICU `select` key the ARB texts use for this character's gender
+  /// (`{gender, select, female{…} other{…}}`).
+  String get icuGender => feminine ? 'female' : 'other';
 }
 
 /// The character list, in picker order.

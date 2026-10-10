@@ -5,28 +5,70 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ishara_app/app.dart';
+import 'package:ishara_app/core/auth/auth_providers.dart';
+import 'package:ishara_app/core/auth/auth_repository.dart';
+import 'package:ishara_app/core/glove/glove_providers.dart';
+import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/router/app_router.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/router/transitions.dart';
+import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/core/theme/ishara_tokens.dart';
 import 'package:ishara_app/core/ui/ishara_tab_bar.dart';
 
-Finder _screen(String key) => find.byKey(ValueKey('skeleton-$key'));
+import 'support/fake_glove.dart';
+
+/// A screen by key: the real onboarding screens (`screen-…`) or a skeleton
+/// still waiting for its step (`skeleton-…`).
+Finder _screen(String key) => find.byWidgetPredicate(
+  (w) => w.key == ValueKey('skeleton-$key') || w.key == ValueKey('screen-$key'),
+);
+
+/// Pumps [n] frames [step] apart (screens with endless animations never
+/// settle).
+Future<void> _run(WidgetTester t, {int n = 10, int step = 100}) async {
+  for (var i = 0; i < n; i++) {
+    // a little real time too: some futures complete on the real event loop
+    await t.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 2)),
+    );
+    await t.pump(Duration(milliseconds: step));
+  }
+}
 
 Future<GoRouter> _pumpApp(
   WidgetTester t, {
   String at = AppRoutes.splash,
+  bool settle = true,
 }) async {
   final router = buildRouter(initialLocation: at);
   addTearDown(router.dispose);
+  final glove = FakeGloveSource();
+  addTearDown(glove.dispose);
   await t.pumpWidget(
     ProviderScope(
-      overrides: [appRouterProvider.overrideWithValue(router)],
+      overrides: [
+        appRouterProvider.overrideWithValue(router),
+        gloveSourceProvider.overrideWithValue(glove),
+        glovePermissionsProvider.overrideWithValue(FakeGlovePermissions()),
+        keyValueStoreProvider.overrideWithValue(MemoryKeyValueStore()),
+        authRepositoryProvider.overrideWithValue(
+          FakeAuthRepository(delay: Duration.zero),
+        ),
+      ],
       child: const IsharaApp(),
     ),
   );
-  await t.pumpAndSettle();
+  if (settle) await t.pumpAndSettle();
   return router;
+}
+
+/// Scrolls the widget with [key] into view and taps it.
+Future<void> _tapKey(WidgetTester t, String key) async {
+  final f = find.byKey(ValueKey(key));
+  await t.ensureVisible(f);
+  await t.pump();
+  await t.tap(f);
 }
 
 Future<void> _tap(WidgetTester t, String label) async {
@@ -46,15 +88,48 @@ void main() {
     await _tap(t, 'Get started');
     expect(_screen('auth'), findsOneWidget);
     expect(find.text('Create your account'), findsOneWidget);
-    await _tap(t, 'Create account');
+    await t.enterText(
+      find.descendant(
+        of: find.byKey(const ValueKey('auth-name')),
+        matching: find.byType(TextField),
+      ),
+      'Mona',
+    );
+    await t.enterText(
+      find.descendant(
+        of: find.byKey(const ValueKey('auth-email')),
+        matching: find.byType(TextField),
+      ),
+      'mona@example.com',
+    );
+    await t.enterText(
+      find.descendant(
+        of: find.byKey(const ValueKey('auth-password')),
+        matching: find.byType(TextField),
+      ),
+      'secret123',
+    );
+    await _tapKey(t, 'auth-submit');
+    await _run(t, n: 8);
     expect(_screen('setup'), findsOneWidget);
-    await _tap(t, 'Continue');
+    await _tapKey(t, 'setup-continue');
+    await _run(t, n: 8);
     expect(_screen('pair'), findsOneWidget);
-    await _tap(t, 'Continue to calibration');
+    // the fake glove is found at once
+    await _tapKey(t, 'pair-connect-g1');
+    await _run(t, n: 8);
+    expect(find.text('Connected'), findsOneWidget);
+    await _tapKey(t, 'pair-cta');
+    await _run(t, n: 8);
     expect(_screen('calibrate'), findsOneWidget);
-    await _tap(t, 'Captured');
+    for (var step = 0; step < 3; step++) {
+      await _tapKey(t, 'cal-cta');
+      await _run(t, n: 12); // the step, then 0.75 s before the next
+    }
     expect(_screen('ready'), findsOneWidget);
-    await _tap(t, 'Start talking');
+    expect(find.text("You're all set"), findsOneWidget);
+    await _tapKey(t, 'ready-talk');
+    await _run(t, n: 8);
     expect(_screen('talk'), findsOneWidget);
     expect(find.byType(IsharaTabBar), findsOneWidget);
   });
@@ -125,14 +200,17 @@ void main() {
     expect(_screen('avatar'), findsOneWidget);
     await _tap(t, 'Save avatar');
     expect(_screen('settings'), findsOneWidget);
-    await _tap(t, 'Pair a new glove');
+    // Pair and Calibrate animate without end: timed frames, not settle
+    await t.tap(find.text('Pair a new glove'));
+    await _run(t);
     expect(_screen('pair'), findsOneWidget);
     router.pop();
-    await t.pumpAndSettle();
-    await _tap(t, 'Calibrate');
+    await _run(t);
+    await t.tap(find.text('Calibrate'));
+    await _run(t);
     expect(_screen('calibrate'), findsOneWidget);
     router.go(AppRoutes.settings);
-    await t.pumpAndSettle();
+    await _run(t);
     await _tap(t, 'Sign out');
     expect(_screen('welcome'), findsOneWidget);
   });
@@ -140,7 +218,7 @@ void main() {
   testWidgets('Arabic switches text and layout to RTL', (t) async {
     await _pumpApp(t, at: AppRoutes.welcome);
     expect(Directionality.of(t.element(_screen('welcome'))), TextDirection.ltr);
-    await t.tap(find.byKey(const ValueKey('skeleton-lang')));
+    await t.tap(find.byKey(const ValueKey('lang-toggle')));
     await t.pumpAndSettle();
     expect(Directionality.of(t.element(_screen('welcome'))), TextDirection.rtl);
     expect(find.text('يلا نبدأ'), findsOneWidget);

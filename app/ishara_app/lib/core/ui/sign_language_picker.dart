@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/core/packs/pack_providers.dart';
 import 'package:ishara_app/core/packs/sign_language.dart';
+import 'package:ishara_app/core/theme/ishara_text.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/ishara_icon.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
@@ -31,7 +32,7 @@ class _PickerState extends ConsumerState<SignLanguagePicker> {
       runSpacing: 8,
       children: [
         for (final lang in const [SignLanguage.arsl, SignLanguage.asl])
-          _Pill(
+          ChoicePill(
             key: ValueKey('sign-language-${lang.id}'),
             label: lang == SignLanguage.asl ? l.asl : l.arsl,
             selected: active == lang,
@@ -93,19 +94,24 @@ Future<void> showArslComingSoon(BuildContext context) {
 }
 
 /// `.pill` (CSS l.273-276, light overrides l.64): glass background, 1.5 px
-/// line border, check icon when on.
-class _Pill extends StatelessWidget {
+/// line border, check icon when on. Used by every single-choice row of
+/// Setup and Settings.
+class ChoicePill extends StatelessWidget {
   const new({
     required this.label,
     required this.selected,
-    required this.comingSoon,
     required this.onTap,
+    this.comingSoon = false,
+    this.cairo = false,
     super.key,
   });
 
   final String label;
   final bool selected;
   final bool comingSoon;
+
+  /// `.pill .ar`: the label is Arabic (Cairo font) in every UI language.
+  final bool cairo;
   final VoidCallback onTap;
 
   @override
@@ -148,7 +154,11 @@ class _Pill extends StatelessWidget {
                   ],
                   Text(
                     label,
-                    style: t.chip.copyWith(fontSize: 13.5, color: fg),
+                    style: t.chip.copyWith(
+                      fontSize: 13.5,
+                      color: fg,
+                      fontFamily: cairo ? IsharaFonts.arabic : null,
+                    ),
                   ),
                   if (comingSoon) ...[
                     const SizedBox(width: 7),

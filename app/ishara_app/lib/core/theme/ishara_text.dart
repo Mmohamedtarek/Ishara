@@ -51,7 +51,9 @@ class IsharaText extends ThemeExtension<IsharaText> {
   }) {
     final body = isArabic ? IsharaFonts.arabic : IsharaFonts.ui;
     final display = isArabic ? IsharaFonts.arabic : IsharaFonts.display;
-    const fallback = [IsharaFonts.arabic];
+    // Cairo has no arrows (→ ←) and Figtree no Arabic: each falls back to
+    // the other.
+    const fallback = [IsharaFonts.arabic, IsharaFonts.ui];
     TextStyle s(
       double size,
       FontWeight w, {

@@ -48,7 +48,7 @@ GoRouter buildRouter({String initialLocation = AppRoutes.splash}) => GoRouter(
     _route(AppRoutes.calibrate, (_) => const CalibrateScreen()),
     _route(
       AppRoutes.ready,
-      (_) => const ReadyScreen(),
+      (s) => ReadyScreen(skipped: s.uri.queryParameters['skipped'] == '1'),
       entrance: ScreenEntrance.pop,
     ),
     _route(

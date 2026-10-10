@@ -46,7 +46,7 @@ abstract final class IsharaTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: c.bg,
       fontFamily: family,
-      fontFamilyFallback: const [IsharaFonts.arabic],
+      fontFamilyFallback: const [IsharaFonts.arabic, IsharaFonts.ui],
       splashFactory: InkSparkle.splashFactory,
       materialTapTargetSize: MaterialTapTargetSize.padded,
       textTheme: _textTheme(text),

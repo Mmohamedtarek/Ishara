@@ -313,3 +313,47 @@
 **Review:** `/code-review` found 9 issues, all fixed: a rig without a thumb end bone (the last joint is left out of the solve), hinge-only outer joints, the palm side from `palmNormal`, the cached solve, `thumbTo` only on closed hands, COFFEE back to "please check", the 10 signs "approved" in the report, these notes, a test for the pending-approval marker.
 
 **Step 5 approved by the user (2026-10-10):** YES and COFFEE (the S thumb lies flat across the fingers from every angle). Step 5 is done.
+
+## Step 6: onboarding, pair, calibration (started 2026-10-10)
+
+Checklist (before coding), each traced to its source:
+
+| # | Requirement | Source |
+|---|---|---|
+| 1 | Welcome: brand bar + EN/ع toggle; avatar hero with the "Hi, I'm Nour!" bubble waving `hello`; title, lead (avatar name from the cast), 3 features; Get started → Create account, I already have an account → Sign in, Continue as guest → Setup | prototype `#s-welcome`; RB-1 / S5-13 (name from the cast) |
+| 2 | Login / Create account: segmented toggle, name (create only), **email** (not phone), password with show / hide, Forgot password, guest card, terms; field errors with `role=alert` semantics; no Remember me, no Google, no phone; loading and error states; `AuthRepository` + local fake | prototype `#s-login`; Q-B2; S6-1; CLAUDE.md (Firebase behind a repository with a fake) |
+| 3 | Setup: 3-step header; who (I sign / I speak); sign language (ASL selected; ArSL → "coming soon" dialog, stays ASL); spoken language (Arabic default); avatar choice only when `showPicker` (Nour only → none); Continue → Pair | prototype `#s-setup`; sign rule 8; Q-B5; S5-13; Q-D4 |
+| 4 | Pair: radar; scan → found (device card: real name `Ishara-XXXX`, real RSSI, battery after connecting, fw from INFO) → connecting (3 real checks) → connected; Scan again; tips (draft) | prototype `#s-pair`; Q-K2; Q-K3; BLE-CONTRACT §1, §3; S6-3 |
+| 5 | Pair states the prototype lacks: Bluetooth off, permission denied, location off (Android ≤ 11), not found / timeout, `proto ≠ 1`, `#MPU FAIL`, connection lost; runtime permission prompts | Phase 0 screen map; BLE-CONTRACT §2, §6; PROGRESS step 3 (permissions come with Pair) |
+| 6 | Calibrate: Step n of 3; OPEN / FIST (2 s) / TURN (3 s, text says 3 s) driven by `CAL OPEN/FIST/TURN`, then `CAL SAVE` → `#CAL {…}` to the recognizer; hold-still indicator from the gyro during OPEN / FIST; finger bars hidden until OPEN and FIST are done; rotation track during TURN; Back cancels (`CAL CANCEL`) | prototype `#s-cal`; BLE-CONTRACT §5, §7; Q-K4; Q-K7 |
+| 7 | Calibrate failures: `MOVED`, `RANGE`, `MPU`, `CANCELLED`, `#FLEX WEAK i`, `#ERR CAL …`, disconnect; Skip only with a stored `#CAL` (else hidden, with the reason) | BLE-CONTRACT §6, §7; Q-K6 |
+| 8 | Ready: no "96 %"; glove row with the real name and battery; sign language + voice + role; Start talking → Talk (role decides what comes first); Calibrate again / Calibrate now (skipped) | prototype `#s-ready`; Q-K5; Q-D4 |
+| 9 | Restart: setup answers, paired glove and "onboarding done" persist; with onboarding done the splash goes to Talk and the last glove reconnects | S6-2 |
+| 10 | Every new or changed text in EN + Egyptian Arabic, listed as a draft for approval | Q-D2; CLAUDE.md (drafts) |
+| 11 | New packages: licence and telemetry checked (permission handling, local key-value store) | CLAUDE.md › Dependencies |
+| 12 | Tests (repositories, validation, pair and calibration state machines on the mock glove, widgets, goldens), screenshots EN/AR × light/dark next to the prototype, mock integration test on the emulator | review protocol |
+
+**Open (on the draft list):** signal bars from RSSI (Q-K2 says real RSSI, no thresholds anywhere: I show the dBm value and propose thresholds as a draft); finger bars after OPEN + FIST come from the flex values the phone received during each 2 s step (the glove sends `open` / `fist` only after `CAL SAVE`).
+
+### Step 6 results (2026-10-10)
+
+| # | Requirement | Status | Evidence |
+|---|---|---|---|
+| 1 | Welcome | ✓ | goldens `onboarding_welcome`; emulator cold start `tools/out/step6/device/welcome_pair.png` (real avatar, "Hi, I'm Nour!") |
+| 2 | Login / Create account (email only, fake repository) | ✓ | `test/onboarding/auth_screen_test.dart` (7), `test/auth/auth_repository_test.dart` (6); goldens `onboarding_create_account`, `onboarding_sign_in` |
+| 3 | Setup | ✓ | goldens `onboarding_setup`; answers saved as chosen |
+| 4 | Pair: scan → found → 3 real checks → connected | ✓ | `test/pair/pair_controller_test.dart` (10), `pair_screen_test.dart` (5); goldens `onboarding_pair_*`; emulator run |
+| 5 | Pair states the prototype lacks | ✓ | permission once / for good, Android 11 location, Bluetooth off / location off / unsupported / not ready, not found (+ tips), failed check, `#MPU FAIL`, `proto ≠ 1` (tests + goldens) |
+| 6 | Calibrate (OPEN 2 s / FIST 2 s / TURN 3 s, SAVE, live hand, hold still, rotation) | ✓ | `test/calibration/*` (17), `test/glove/live_hand_test.dart` (6); emulator: three steps + save in ~10 s |
+| 7 | Calibrate failures, Skip only with a stored `#CAL` | ✓ | MOVED / RANGE / MPU / CANCELLED / `#FLEX WEAK` / `#ERR CAL` / disconnect (tests) |
+| 8 | Ready (no 96 %, real glove line, answers) | ✓ | goldens `onboarding_ready`, `onboarding_ready_skipped` |
+| 9 | Restart: answers, glove, done persist; splash → Talk + reconnect | ✓ | `test/profile/onboarding_store_test.dart` (7, incl. the export for the S6-2 migration), splash test; emulator: `ishara.*` keys saved in the phone store |
+| 10 | New texts as drafts | ✓ (awaiting approval) | 74 drafts, `tools/out/step6/drafts.html`; ARB descriptions say "DRAFT" |
+| 11 | Package licences / telemetry | ✓ | S6-4 |
+| 12 | Tests, goldens, screenshots, emulator | ✓ | 483 tests, `lib/core` 94.2 %; 11 goldens × EN/AR × light/dark; prototype comparison `tools/out/step6/compare/*.png`; `integration_test/onboarding_test.dart` passed on `emulator-5554` |
+
+**Emulator (mock glove, real store):** account 1.5 s → Setup → Pair found 1.1 s after the scan starts → 3 checks 0.7 s → OPEN / FIST / TURN + SAVE ~10 s → Ready → Talk; saved `{onboarding.version: 1, setup.role: speak, setup.spoken: en, glove.id: mock:ishara, glove.name: Ishara-M0CK, onboarding.done: true}`.
+
+**Open (for the user):** the 74 draft texts; signal-bar thresholds (S6-6); the live calibration view (S6-5); the prototype differences kept on purpose (DECISIONS 2026-10-10). Not done here: the avatar picker (step 9, S6-9); email verification and the real reset email (step 10, S6-1); the database migration test (step 10, S6-2); the real-glove check on your phone (BLE permissions and pairing).
+
+**Review (step 6):** `/code-review` found 10 issues, all fixed with tests: a drop during the 0.75 s pause after a step was overwritten (mutation-checked); Calibrate opened with no glove had no action (now "disconnected" + Pair again); Pair re-checks permissions / Bluetooth when the app resumes (back from settings); "Pair again" pushes Pair (it replaced the stack, so Back had nothing to pop); start-up reconnect stops the scan before connecting and refuses `#MPU FAIL` as pairing does; Back can't run twice; Welcome's greeting checks `mounted` and logs failures; the live view redraws on samples (the frame ticker only runs during a countdown); `main` warms the cast provider instead of repeating it; font names come from `IsharaFonts`.

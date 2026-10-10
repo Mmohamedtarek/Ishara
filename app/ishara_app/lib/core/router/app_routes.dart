@@ -23,6 +23,11 @@ abstract final class AppRoutes {
   static String auth({required bool signUp}) =>
       '$authPath?mode=${signUp ? 'signup' : 'signin'}';
 
+  /// Ready after calibrating, or after skipping it (prototype
+  /// `state.calibrated`).
+  static String readyAfter({required bool skipped}) =>
+      skipped ? '$ready?skipped=1' : ready;
+
   static String mission(String moduleId) =>
       '/mission/${Uri.encodeComponent(moduleId)}';
 

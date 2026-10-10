@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:ishara_app/core/assets/asset_bytes.dart';
 import 'package:ishara_app/core/glove/ble/reactive_ble_transport.dart';
 import 'package:ishara_app/core/glove/glove_client.dart';
+import 'package:ishara_app/core/glove/glove_permissions.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
 import 'package:ishara_app/core/glove/mock/mock_feed.dart';
 import 'package:ishara_app/core/glove/mock/mock_glove.dart';
@@ -60,4 +61,19 @@ GloveSource gloveSource(Ref ref) {
   );
   ref.onDispose(source.dispose);
   return source;
+}
+
+/// The permissions the active glove needs (none for the mock glove).
+@Riverpod(keepAlive: true)
+GlovePermissions glovePermissions(Ref ref) =>
+    ref.watch(activeGloveKindProvider) == GloveSourceKind.mock
+    ? const NoGlovePermissions()
+    : const PlatformGlovePermissions();
+
+/// The glove's status as a stream for the UI (starts with the current one).
+@Riverpod(keepAlive: true)
+Stream<GloveStatus> gloveStatus(Ref ref) async* {
+  final source = ref.watch(gloveSourceProvider);
+  yield source.status;
+  yield* source.statusChanges;
 }

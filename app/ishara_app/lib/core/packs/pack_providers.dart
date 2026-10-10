@@ -2,24 +2,28 @@ import 'package:flutter/services.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/errors/failure.dart';
 import 'package:ishara_app/core/packs/sign_language.dart';
+import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/recognition/recognition_config.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'pack_providers.g.dart';
 
 /// The sign language in use. ASL by default; ArSL can be chosen in the UI
-/// but never becomes active in v1.
+/// but never becomes active in v1. Saved on the phone (S6-2); a stored
+/// `arsl` falls back to ASL (sign rule 8).
 @Riverpod(keepAlive: true)
 class ActiveSignLanguage extends _$ActiveSignLanguage {
   @override
-  SignLanguage build() => PackRegistry.defaultLanguage;
+  SignLanguage build() =>
+      PackRegistry.resolve(ref.watch(onboardingStoreProvider).signLanguageId);
 
-  /// Selects [language] if its pack is available. Returns false otherwise:
-  /// nothing changes and nothing is saved (the caller shows the "coming
-  /// soon" dialog).
+  /// Selects [language] if its pack is available and saves it. Returns false
+  /// otherwise: nothing changes and nothing is saved (the caller shows the
+  /// "coming soon" dialog).
   bool select(SignLanguage language) {
     if (!PackRegistry.isAvailable(language)) return false;
     state = language;
+    ref.read(onboardingStoreProvider).saveSignLanguageId(language.id).ignore();
     return true;
   }
 

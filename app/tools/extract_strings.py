@@ -73,6 +73,91 @@ APPROVED_NEW = {
     "ok": ("OK", "تمام", "user prompt, Sign language section"),
 }
 
+# New or changed texts written for a step's screens: DRAFTS for the user's
+# approval (Q-D2). key: (en, ar, why, placeholders). Approved ones move to
+# APPROVED_NEW. Egyptian colloquial Arabic.
+DRAFTS = {
+    # --- shared
+    "back": ("Back", "رجوع", "step 6: the back button's label (prototype aria-label, not in I18N)", None),
+    "stepOfLabel": ("Step {n} of 3: {name}", "خطوة {n} من 3: {name}", "step 6: the 3-step header for screen readers", {"n": "int", "name": "String"}),
+    "tryAgain": ("Try again", "جرّب تاني", "step 6: retry after a failure", None),
+    # --- login (Q-B2, S6-1)
+    "loginLeadEmail": ("Sign in to keep your saved phrases, settings and Learn progress on any phone.", "سجّل دخولك عشان جملك المحفوظة وإعداداتك وتقدّمك في التعلّم يفضلوا معاك على أي موبايل.", "replaces loginLead (the glove isn't synced; Q-B4: saved phrases and settings sync)", None),
+    "termsLocal": ("By continuing you agree to the Terms of Use and Privacy Policy. Your conversations stay on this phone.", "بالمتابعة إنت موافق على شروط الاستخدام وسياسة الخصوصية. محادثاتك بتفضل على الموبايل ده.", "replaces terms (there is no conversation backup, Q-B4)", None),
+    "lblEmail": ("Email", "الإيميل", "Q-B2: replaces 'Phone number or email'", None),
+    "phEmail": ("you@example.com", "you@example.com", "Q-B2: replaces '010… or you@example.com'", None),
+    "errEmail": ("Enter your email", "اكتب الإيميل بتاعك", "Q-B2: replaces errId", None),
+    "errEmailFormat": ("Enter a valid email address", "اكتب إيميل صحيح", "Q-B2: replaces errIdFormat (no phone numbers)", None),
+    "authErrInvalid": ("Wrong email or password.", "الإيميل أو كلمة السر غلط.", "step 6: sign-in failed (one message for both, no account leak)", None),
+    "authErrEmailInUse": ("This email already has an account. Sign in instead.", "الإيميل ده عليه حساب بالفعل. سجّل دخول بدل كده.", "step 6: create account, email taken", None),
+    "authErrNetwork": ("No internet connection. Check it and try again.", "مفيش إنترنت. اتأكد من الاتصال وجرّب تاني.", "step 6: offline", None),
+    "authErrTooMany": ("Too many tries. Wait a few minutes and try again.", "محاولات كتير. استنى كام دقيقة وجرّب تاني.", "step 6: rate limited", None),
+    "authErrUnknown": ("Something went wrong. Try again.", "حصلت مشكلة. جرّب تاني.", "step 6: any other auth error", None),
+    "forgotNeedsEmail": ("Enter your email above first, then tap Forgot password.", "اكتب الإيميل فوق الأول، وبعدين دوس «نسيت كلمة السر؟».", "step 6: Forgot password with no email", None),
+    # --- pair (Q-K2, Q-K3, S6-3)
+    "pairLeadTrue": ("Switch your glove on, keep it close to your phone and keep Bluetooth on. It shows up as “Ishara-” and 4 letters or numbers.", "شغّل الجوانتي وقرّبه من الموبايل وخلّي البلوتوث شغال. هيظهر باسم «\u2066Ishara-\u2069» وبعده 4 حروف أو أرقام.", "Q-K2: replaces pairLead (no button, no light colours; name from BLE-CONTRACT §1)", None),
+    "c2Sensors": ("Checking the sensors", "فحص الحساسات", "Q-K3: replaces c2", None),
+    "tipOn": ("Make sure the glove is switched on and charged.", "اتأكد إن الجوانتي شغال ومشحون.", "S6-3: replaces tip1 (no light colour)", None),
+    "tipNear": ("Keep it close to your phone.", "قرّبه من الموبايل.", "S6-3: replaces tip2 (no wrist button)", None),
+    "tipOtherPhone": ("If it's connected to another phone, disconnect it there first. A connected glove doesn't show up.", "لو متوصّل بموبايل تاني، افصله من هناك الأول. الجوانتي المتوصّل مش بيظهر.", "S6-3: BLE-CONTRACT §1 (it advertises only when not connected)", None),
+    "sigGood": ("Good signal", "إشارة كويسة", "step 6: signal from RSSI (thresholds are a draft too: ≥ −60 strong, ≥ −70 good, ≥ −80 fair, else weak)", None),
+    "sigFair": ("Fair signal", "إشارة متوسطة", "step 6: signal from RSSI (draft thresholds)", None),
+    "sigWeak": ("Weak signal", "إشارة ضعيفة", "step 6: signal from RSSI (draft thresholds)", None),
+    "rssiDbm": ("{v} dBm", "\u2066{v} dBm\u2069", "Q-K2: the real RSSI (kept left-to-right in Arabic)", {"v": "int"}),
+    "battPercent": ("Battery {p}%", "البطارية {p}%", "Q-K2: real battery after connecting (#BAT OK)", {"p": "int"}),
+    "battLow": ("Battery low", "البطارية ضعيفة", "Q-K2: #BAT LOW", None),
+    "battUsb": ("On USB power", "شغال على USB", "Q-K2: #BAT NO_BATTERY (USB)", None),
+    "firmware": ("Firmware {v}", "السوفتوير {v}", "Q-K2: fw from INFO", {"v": "String"}),
+    "notFound": ("No glove found", "ملقيناش الجوانتي", "step 6: the scan ended without a glove", None),
+    "notFoundSub": ("Check the tips below, then scan again.", "شوف النصايح اللي تحت، وبعدين ابحث تاني.", "step 6: not found", None),
+    "permTitle": ("Bluetooth permission needed", "محتاجين إذن البلوتوث", "step 6: permission refused", None),
+    "permBody": ("Allow Ishara to use Bluetooth to find and connect to your glove.", "اسمح لإشارة يستخدم البلوتوث عشان يلاقي الجوانتي ويتوصّل بيه.", "step 6: permission refused once", None),
+    "permBodySettings": ("Turn on the Bluetooth permission for Ishara in your phone's settings.", "شغّل إذن البلوتوث لإشارة من إعدادات الموبايل.", "step 6: permission refused for good", None),
+    "permLocationBody": ("On this Android version, finding Bluetooth devices needs the location permission. Ishara doesn't use your location.", "في إصدار الأندرويد ده، البحث عن أجهزة البلوتوث محتاج إذن الموقع. إشارة مش بيستخدم موقعك.", "step 6: Android 11 and older", None),
+    "allow": ("Allow", "اسمح", "step 6: ask for the permission again", None),
+    "openSettings": ("Open settings", "افتح الإعدادات", "step 6: permission refused for good", None),
+    "btOffTitle": ("Bluetooth is off", "البلوتوث مقفول", "step 6", None),
+    "btOffBody": ("Turn on Bluetooth, then tap Scan again.", "شغّل البلوتوث، وبعدين دوس «ابحث تاني».", "step 6", None),
+    "locOffTitle": ("Location is off", "الموقع مقفول", "step 6: Android 11 and older", None),
+    "locOffBody": ("On this Android version, Bluetooth scanning needs Location turned on. Ishara doesn't use your location.", "في إصدار الأندرويد ده، البحث بالبلوتوث محتاج الموقع يبقى شغال. إشارة مش بيستخدم موقعك.", "step 6: Android 11 and older", None),
+    "btUnsupported": ("This phone doesn't support Bluetooth Low Energy, so it can't connect to the glove.", "الموبايل ده مش بيدعم بلوتوث Low Energy، فمش هيقدر يتوصّل بالجوانتي.", "step 6", None),
+    "btNotReady": ("Bluetooth isn't ready yet. Try again in a moment.", "البلوتوث لسه مش جاهز. جرّب تاني بعد شوية.", "step 6", None),
+    "connFailTitle": ("Couldn't connect to the glove", "مقدرناش نتوصّل بالجوانتي", "step 6: check 1 failed", None),
+    "connFailBody": ("Keep it close to your phone and try again.", "قرّبه من الموبايل وجرّب تاني.", "step 6", None),
+    "protoTitle": ("This glove needs a different version of the app", "الجوانتي ده محتاج إصدار تاني من التطبيق", "BLE-CONTRACT §2: proto ≠ 1", None),
+    "protoBody": ("Update the Ishara app and the glove's firmware, then try again.", "حدّث تطبيق إشارة وسوفتوير الجوانتي، وبعدين جرّب تاني.", "BLE-CONTRACT §2", None),
+    "mpuTitle": ("The glove's motion sensor isn't responding", "حساس الحركة في الجوانتي مش بيرد", "BLE-CONTRACT §6: #MPU FAIL (Q-K3 check 2)", None),
+    "mpuBody": ("Switch the glove off and on, then try again. If it keeps happening, the glove needs a check.", "اقفل الجوانتي وافتحه، وبعدين جرّب تاني. لو المشكلة فضلت، الجوانتي محتاج فحص.", "step 6", None),
+    "linkLostTitle": ("The connection stopped", "الاتصال وقف", "step 6: timeout, rejected command or lost link", None),
+    "linkLostBody": ("Keep the glove close to your phone and try again.", "قرّب الجوانتي من الموبايل وجرّب تاني.", "step 6", None),
+    # --- calibrate (Q-K4, Q-K6, Q-K7, BLE-CONTRACT §7)
+    "pose3s3": ("Turn your palm to the left, then to the right, slowly, for 3 seconds. This calibrates the motion sensor.", "لفّ كف إيدك ناحية الشمال وبعدين اليمين بالراحة، لمدة 3 ثواني. دي معايرة حساس الحركة.", "Q-K4: replaces pose3s (3 s)", None),
+    "handStill": ("Hand still", "الإيد ثابتة", "Q-K7: hold-still indicator", None),
+    "handMoving": ("Hand moving", "الإيد بتتحرك", "Q-K7: hold-still indicator", None),
+    "fingersLater": ("Finger bars appear after Open and Fist.", "شرايط الصوابع بتظهر بعد «مفتوحة» و«قبضة».", "Q-K7: bars hidden until OPEN and FIST", None),
+    "failMovedTitle": ("Your hand moved", "إيدك اتحركت", "BLE-CONTRACT §7: MOVED", None),
+    "failMovedBody": ("Keep your hand still for the whole 2 seconds, then try again.", "خلّي إيدك ثابتة طول الثانيتين، وبعدين جرّب تاني.", "MOVED", None),
+    "failRangeTitle": ("Turn your wrist further", "لفّ رسغك أكتر", "BLE-CONTRACT §7: RANGE", None),
+    "failRangeBody": ("Turn your palm further to the left and to the right (at least 30° in all), then try again.", "لفّ كف إيدك أكتر ناحية الشمال واليمين (30 درجة على الأقل في المجموع)، وبعدين جرّب تاني.", "RANGE (firmware CAL_MIN_ROLL_RANGE_DEG 30)", None),
+    "failCancelledTitle": ("The capture stopped", "التسجيل وقف", "BLE-CONTRACT §7: CANCELLED", None),
+    "failCancelledBody": ("Tap Start capture to try again.", "دوس «ابدأ التسجيل» عشان تجرّب تاني.", "CANCELLED", None),
+    "weakTitle": ("Weak finger sensor", "حساس صباع ضعيف", "BLE-CONTRACT §6: #FLEX WEAK", None),
+    "weakBody": ("{fingers}: the reading barely changed between Open and Fist. Make sure the glove fits snugly and calibrate again. If it keeps happening, the glove needs a check.", "{fingers}: القراءة اتغيرت قليل جداً بين «مفتوحة» و«قبضة». اتأكد إن الجوانتي لابسه مظبوط وعاير تاني. لو المشكلة فضلت، الجوانتي محتاج فحص.", "#FLEX WEAK", {"fingers": "String"}),
+    "busyTitle": ("The glove is busy", "الجوانتي مشغول", "#ERR CAL BUSY", None),
+    "busyBody": ("Wait a moment and try again.", "استنى شوية وجرّب تاني.", "#ERR CAL BUSY", None),
+    "saveFailTitle": ("The glove couldn't save the calibration", "الجوانتي مقدرش يحفظ المعايرة", "#ERR CAL NVS / other #ERR CAL", None),
+    "saveFailBody": ("Try again. If it keeps happening, the glove needs a check.", "جرّب تاني. لو المشكلة فضلت، الجوانتي محتاج فحص.", "#ERR CAL", None),
+    "disconnectedTitle": ("The glove disconnected", "الجوانتي اتفصل", "step 6: link lost during calibration", None),
+    "disconnectedBody": ("Pair it again to continue.", "وصّله تاني عشان تكمّل.", "step 6", None),
+    "pairAgain": ("Pair again", "وصّل تاني", "step 6", None),
+    "saving": ("Saving…", "بنحفظ…", "step 6: CAL SAVE running", None),
+    "skipNeedsCal": ("This glove hasn't been calibrated yet, so calibration can't be skipped.", "الجوانتي ده لسه ما اتعايرش، فمينفعش تتخطّى المعايرة.", "Q-K6: Skip hidden with #CAL NONE", None),
+    # --- ready (Q-K5)
+    "sumGloveBatt": ("Connected · Battery {p}%", "متصل · بطارية {p}%", "replaces sumGlove (real battery)", {"p": "int"}),
+    "sumGloveLow": ("Connected · Battery low", "متصل · البطارية ضعيفة", "replaces sumGlove (#BAT LOW)", None),
+    "sumGloveUsb": ("Connected · On USB power", "متصل · شغال على USB", "replaces sumGlove (#BAT NO_BATTERY)", None),
+}
+
 STR = r'"((?:[^"\\]|\\.)*)"'
 # Dart reserved words can't be getter names: such keys get a "Label" suffix.
 DART_RESERVED = {"assert", "break", "case", "catch", "class", "const", "continue", "default", "do", "else",
@@ -163,11 +248,21 @@ def main() -> int:
         out_en[key], out_ar[key] = e, a
         out_en["@" + key] = {"description": f"approved new text ({src})"}
 
+    for key, (e, a, why, ph) in DRAFTS.items():
+        if key in out_en:
+            print(f"error: draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"DRAFT, awaiting the user's approval (Q-D2): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
     OUT.mkdir(parents=True, exist_ok=True)
     for name, data in (("app_en.arb", out_en), ("app_ar.arb", out_ar)):
         (OUT / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     kept = sum(1 for k in out_en if not k.startswith("@"))
-    print(f"{kept} strings written, {len(EXCLUDED)} excluded:")
+    print(f"{kept} strings written ({len(DRAFTS)} drafts), {len(EXCLUDED)} excluded:")
     for k, why in sorted(EXCLUDED.items()):
         print(f"  {k:14} {why}")
     return 0
