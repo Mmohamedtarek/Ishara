@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:alchemist/alchemist.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ishara_app/app.dart';
 import 'package:ishara_app/core/auth/auth_providers.dart';
 import 'package:ishara_app/core/auth/auth_repository.dart';
+import 'package:ishara_app/core/avatar/avatar_cast.dart';
+import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/glove/glove_permissions.dart';
 import 'package:ishara_app/core/glove/glove_providers.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
@@ -23,8 +27,13 @@ class _Fixed extends AppSettingsController {
   AppSettings build() => settings;
 }
 
+/// The real cast, read once from the asset file. `main` loads it before the
+/// first frame; a bundle load inside the test raced the capture (when it
+/// finished late, Welcome had no "Hi, I'm Nour!" and no name in the lead).
+final _cast = AvatarCast.parse(File(avatarCastAsset).readAsStringSync());
+
 /// One onboarding screen through the real app root and router, with the
-/// fakes (glove, permissions, accounts, store).
+/// fakes (glove, permissions, accounts, store) and the cast already loaded.
 Widget _app(
   String route,
   AppLanguage language,
@@ -49,6 +58,7 @@ Widget _app(
         FakeAuthRepository(delay: Duration.zero),
       ),
       keyValueStoreProvider.overrideWithValue(MemoryKeyValueStore()),
+      avatarCastProvider.overrideWithValue(AsyncData(_cast)),
     ],
     child: const IsharaApp(),
   );

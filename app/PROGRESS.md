@@ -363,3 +363,41 @@ Checklist (before coding), each traced to its source:
 
 **Kit v3.2.3 (2026-10-10):** merged `ai-tests` (2cf40f5, 65d9ff4); `sync_kit.sh` (102 files; the two new `calibration/` folders added to pubspec); the mock glove plays the calibration recordings. New tests: `mock_calibration_test.dart` (persons A and B: full calibration on the real mock glove + glove client + Calibrate screen: "Hand still" through OPEN and FIST, five real bars, ≥ 30° of TURN rotation, saved, Ready; fails with the old rest playback, mutation-checked), `mock_feed_calibration_test.dart` (looping, back to rest, `#CAL` source). Emulator: the paced flow again (`tools/out/step6/device/onboarding_flow.mp4`, Calibrate key frames checked: "Hand still" while capturing, bars 0-51 %, rotation −50° … +20°). Previous video kept in `device/old-v322/`.
 **Open:** at the real data's ±42° the turned hand drawing leaves the card on the left / covers the finger labels on the right; the prototype does the same at its own ±33° (`device/prototype_turn_peaks.png`). Asked the user.
+
+## CI fix: welcome golden made deterministic (2026-10-11)
+
+**Failed:** CI run 38088177938 (commit 95fd6c0), job *Flutter app*, `flutter test --coverage`: 489 passed, 1 failed, 1 skipped. The failure was `onboarding_golden_test.dart` › `welcome` (variant: CI), 19,205 px. The AI and Firmware jobs passed; Android was skipped.
+
+**Root cause (evidence):**
+- In the `golden-failures` artifact, the isolated diff is exactly the four "Hi, I'm Nour!" bubbles (EN/AR × light/dark), with 0 px different outside the bubble band. The runner drew the bubble. The committed `ci/onboarding_welcome.png` (from 432af54) has none.
+- Welcome reads `currentCharacterProvider`, which is the cast loaded from `rootBundle`. The golden test didn't override it, so the bubble and the name in the lead depended on whether the load finished before the capture (6 × `runAsync(2 ms)`).
+- Reproduced on a Mac. The old test with the normal load drew the bubble. With a temporary real 300 ms delay on the cast load (not committed), it drew no bubble and matched the committed golden. The fixed test with the same delay draws the bubble.
+- The committed `linux/` real-text golden already shows the bubble and is correct (unchanged).
+
+**Fix (test only):** `onboarding_golden_test.dart` reads `assets/avatar/cast.json` once from the file and overrides `avatarCastProvider` with `AsyncData(cast)` for every scenario, so the cast is loaded from the first frame, as in `main.dart`. No product code changed, no tolerance changed, nothing skipped.
+
+**New `ci/onboarding_welcome.png`:** the CI runner's own `onboarding_welcome_testImage.png` from run 38088177938 (user decision). It was used instead of `--update-goldens` on this Mac, because:
+- On the Mac the fixed test's image is identical (0 px) to the old test's image whenever the cast loaded in time, so the runner's image is what the fixed test draws.
+- A Mac-made golden differs from the runner's by 20 px on the bubble edges, and would fail CI.
+
+No other golden changed.
+
+**Checks (MacBook, Apple Silicon, Flutter 3.47.6 in `~/development/flutter`):**
+
+| Check | Result |
+|---|---|
+| pub get, gen-l10n, build_runner | ✓ |
+| `flutter test test/kit`, then `sync_kit.sh` | ✓ 3 passed, no drift |
+| `dart format` | ✓ 0 changed |
+| `flutter analyze --fatal-infos --fatal-warnings` | ✓ no issues |
+| `CI=true flutter test --coverage` | 463 passed, 1 skipped, 27 failed. All 27 are CI goldens that differ by 1–83 px on this Mac (Apple Silicon rasterising vs the Linux-made goldens), welcome included: 23 px of bubble edges now, instead of 19,205. Every non-golden test passes. |
+| Coverage gate | ✓ `lib/core` 94.1 % |
+| `pio run -e devkit -e xiao -e wokwi` | ✓ (build only, no firmware change) |
+
+**Not verified here:**
+- The expected 490 passed / 0 failed / 1 skipped can only be checked on Linux: the CI runner after the push, or the Linux laptop.
+- Platform goldens (`flutter test` without `CI=true`) can't be compared on a Mac: it uses `goldens/macos/`, and only `linux/` is committed.
+
+**Notes:**
+- CI goldens are not pixel-identical across OS / CPU, contrary to the earlier assumption. They match between Linux machines.
+- The suite has 491 tests today; the Step 6 entry says 515.
