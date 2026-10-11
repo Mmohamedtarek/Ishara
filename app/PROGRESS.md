@@ -394,8 +394,9 @@ No other golden changed.
 | Coverage gate | ✓ `lib/core` 94.1 % |
 | `pio run -e devkit -e xiao -e wokwi` | ✓ (build only, no firmware change) |
 
+**CI after the push:** run 38164162404 on `eaa9286`, all 4 jobs green (Flutter app, Android build, AI, Firmware). Flutter app: 490 tests passed, 1 skipped, `lib/core` 94.1 %.
+
 **Not verified here:**
-- The expected 490 passed / 0 failed / 1 skipped can only be checked on Linux: the CI runner after the push, or the Linux laptop.
 - Platform goldens (`flutter test` without `CI=true`) can't be compared on a Mac: it uses `goldens/macos/`, and only `linux/` is committed.
 
 **Notes:**
