@@ -186,8 +186,8 @@ STEP7_DRAFTS = {
     "clearLabel": ("Clear and move to the conversation", "امسح وانقل للمحادثة", "D22: screen reader, Clear (Q-T2)", None),
 }
 
-# Step 7 texts written after the D1-D23 approval: NOT approved yet
-# (app/tools/out/step7/drafts.html). Their ARB descriptions say DRAFT.
+# Step 7 texts written after the D1-D23 approval. D24 approved by the user
+# on 2026-10-13 (DECISIONS S7-16). New drafts get "DRAFT" until approved.
 STEP7_NEW_DRAFTS = {
     "sttTryShortSentence": ("Try saying it in a short sentence.", "جرّب تقولها في جملة قصيرة.", "D24: under D9 when nothing was heard (the phone's recognizer drops very short words said alone)", None),
 }
@@ -307,7 +307,7 @@ def main() -> int:
             print(f"error: step 7 draft key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
-        out_en["@" + key] = {"description": f"DRAFT (step 7, not approved yet): {why}"}
+        out_en["@" + key] = {"description": f"approved new text (step 7, 2026-10-13): {why}"}
 
     OUT.mkdir(parents=True, exist_ok=True)
     for name, data in (("app_en.arb", out_en), ("app_ar.arb", out_ar)):

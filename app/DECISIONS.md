@@ -153,6 +153,20 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | S7-14 | D1-D23 approved as written (user, 2026-10-12): the ARB descriptions say "approved new text (step 7, 2026-10-12)", and the iOS microphone / speech texts (D20, D21) are final. |
 | S7-15 | Tap targets keep the prototype sizes (user, 2026-10-12): 44 px icon buttons (`.icon-btn`) and the 40 px high EN / ع toggle, on every screen, although Android's guideline is 48 dp. The Talk screen test checks that every tap target has a label, not the 48 dp size. |
 
+## Step 7b answers (2026-10-13)
+| ID | Decision |
+|---|---|
+| S7-16 | D24 "Try saying it in a short sentence." / «جرّب تقولها في جملة قصيرة.» approved. |
+| S7-17 | Glove words are shown and spoken in the spoken-language setting (the Setup voice), not the app language: live box, face-to-face card, feed. |
+| S7-18 | Quick phrases: the current live sentence goes to the feed first, then the phrase is spoken and added to the feed as its own "me" message. SOS the same, plus the D2 toast. |
+| S7-19 | The glove drops during Talk: one background reconnect attempt, only if the Bluetooth permission is already granted (no prompt); "Reconnecting…" (D11) while it tries, then "Glove not connected" (D10) → Pair. |
+| S7-20 | Unconfirmed (tentative) words are dropped when the sentence ends or Clear is pressed: never spoken, never in the feed (sign rule 6). |
+| S7-21 | The conversation ends `active_s` (decider.json) after the last spoken word: a glove `word` / `confirm`, a typed word, or a tapped tentative word. |
+| S7-22 | Speak is disabled with no sentence and shows "Speaking…" while it speaks. |
+| S7-23 | Voice: Arabic `ar-EG` if the phone has it, else any Arabic voice; English: the phone's English, else `en-US`; normal rate and pitch. |
+| S7-24 | Dev panel: a "Mock" button in Talk's top bar, only in debug / profile builds with `GLOVE=mock`, opening a sheet (English only): person A / B and every mock file (each sign, `sentences`, `everyday`), played through the real pipeline. |
+| S7-25 | The Talk goldens (idle, signing, face to face listening, mic blocked) approved; committed from the runner (`f9b8b1c`). |
+
 ## Backend
 | ID | Decision |
 |---|---|
