@@ -57,6 +57,16 @@ protection: a failing job shows as a red ✗ on the commit). `app`, `ai` and `fi
 | **AI (Python + kit)** (`AI/Ishara-AI-v3-2`) | `python -m pytest tests -q` (33 tests), then `python tests/verify_kit.py ../../app/Ishara-Mobile-Kit`: recomputes every test vector, the BLE gap test and all 88 mock files from the models, independently of the app | `AI/` belongs to the AI team: don't fix it in the app. Tell them, with the failing test or the `MISMATCH` line. If only `verify_kit` fails right after a kit update, the kit in `app/Ishara-Mobile-Kit/` and the AI code disagree: ask the AI team which one is right. |
 | **Firmware (ESP32-S3)** (`firmware/ishara-firmware`) | `pio run -e devkit -e xiao -e wokwi` (flash and RAM use of each build in the log and the run summary); the Wokwi calibration test `test/calibration.test.yaml` when the `WOKWI_CLI_TOKEN` secret exists, otherwise a "skipped" notice | `firmware/` belongs to the embedded team: don't fix it here. Send them the build error or the Wokwi step's log. To enable the Wokwi test, add the secret (repository *Settings → Secrets and variables → Actions*); the test then uploads the wokwi build to Wokwi's simulator. |
 
+**Golden images** (`.github/workflows/goldens.yml`, manual): CI goldens are made on Linux, never on a Mac. The
+workflow renders the goldens you name on the runner and uploads only the new or changed images as the `goldens`
+artifact (with `CHANGED.txt`); it never commits. Review the images, then commit them yourself:
+```bash
+gh workflow run goldens.yml --ref <branch> -f tests="test/goldens/talk_golden_test.dart" -f variant=both
+gh run download <run-id> -n goldens -D /tmp/goldens   # files keep their repo paths
+```
+`variant=ci` renders only the CI images (text as blocks); `both` also the `linux/` ones (real text). `name` limits
+the run to tests whose name contains it.
+
 Run a job's commands locally before pushing: the *Tests* commands above; `cd AI/Ishara-AI-v3-2` and the two
 Python commands (in a Python 3.12 venv with `requirements.txt`); `cd firmware/ishara-firmware && pio run -e devkit -e xiao -e wokwi`.
 `data/` and `ishara_rf.joblib` are not in git; the AI job doesn't need them.

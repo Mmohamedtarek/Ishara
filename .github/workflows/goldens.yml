@@ -1,0 +1,101 @@
+name: Update goldens
+
+# Manual only. Renders golden images on the Linux runner (CI goldens are made
+# on Linux, never on a Mac: app/DECISIONS.md 2026-10-11) and uploads them as
+# the `goldens` artifact. It never commits: download the artifact, review the
+# diff, commit the images yourself.
+#
+#   gh workflow run goldens.yml --ref <branch> \
+#     -f tests="test/goldens/talk_golden_test.dart" -f variant=both
+#   gh run download <run-id> -n goldens -D <dir>
+on:
+  workflow_dispatch:
+    inputs:
+      tests:
+        description: Test files or folders under app/ishara_app, space-separated (all goldens = test/goldens)
+        required: true
+        default: test/goldens
+      name:
+        description: Only tests whose name contains this text (optional, flutter test --plain-name)
+        required: false
+        default: ''
+      variant:
+        description: ci = text as blocks only (checked in CI); both = also linux (real text, screenshot review)
+        required: true
+        type: choice
+        options: [both, ci]
+        default: both
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: 3.47.6
+
+jobs:
+  render:
+    name: Render goldens
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: app/ishara_app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Dependencies and generated code
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
+
+      # Inputs reach the shell only through env vars, and the paths must be
+      # plain test paths (no shell syntax).
+      - name: Check the inputs
+        env:
+          TESTS: ${{ inputs.tests }}
+        run: |
+          for p in $TESTS; do
+            [[ "$p" =~ ^test/[A-Za-z0-9_./-]+$ && "$p" != *..* ]] || { echo "::error::bad test path: $p"; exit 1; }
+            [[ -e "$p" ]] || { echo "::error::no such test: $p"; exit 1; }
+          done
+
+      # flutter_test_config.dart: CI=true renders only the CI images; without
+      # it alchemist renders both the CI and the linux (real text) images.
+      - name: Render
+        env:
+          TESTS: ${{ inputs.tests }}
+          NAME: ${{ inputs.name }}
+          VARIANT: ${{ inputs.variant }}
+        run: |
+          args=(); [[ -n "$NAME" ]] && args=(--plain-name "$NAME")
+          if [[ "$VARIANT" == ci ]]; then export CI=true; else unset CI; fi
+          flutter test --update-goldens "${args[@]}" $TESTS
+
+      # Only the images that are new or differ from the commit, at their repo
+      # paths, plus the list.
+      - name: Collect the changed images
+        working-directory: .
+        run: |
+          out="$RUNNER_TEMP/goldens"
+          mkdir -p "$out"
+          git status --porcelain --untracked-files=all -- app/ishara_app/test \
+            | sed -E 's/^.. //' | grep -E '/goldens/.*\.png$' > "$out/CHANGED.txt" || true
+          while read -r f; do
+            mkdir -p "$out/$(dirname "$f")"
+            cp "$f" "$out/$f"
+          done < "$out/CHANGED.txt"
+          echo "### Changed golden images" >> "$GITHUB_STEP_SUMMARY"
+          sed 's/^/- /' "$out/CHANGED.txt" >> "$GITHUB_STEP_SUMMARY"
+          [[ -s "$out/CHANGED.txt" ]] || echo "No image changed." >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goldens
+          path: ${{ runner.temp }}/goldens/
+          if-no-files-found: error
