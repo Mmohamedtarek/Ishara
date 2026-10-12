@@ -167,6 +167,7 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | S7-24 | Dev panel: a "Mock" button in Talk's top bar, only in debug / profile builds with `GLOVE=mock`, opening a sheet (English only): person A / B and every mock file (each sign, `sentences`, `everyday`), played through the real pipeline. |
 | S7-25 | The Talk goldens (idle, signing, face to face listening, mic blocked) approved; committed from the runner (`f9b8b1c`). |
 | S7-26 | D25 "Add" / «ضيف» (the Type box's send button, screen reader) approved. |
+| S7-28 | The 7b Talk goldens (idle, signing, face to face listening, mic blocked, glove words, no glove, no calibration) approved; rendered on the Linux runner (run 38313837906). |
 | S7-27 | Recognizer biasing: option a. A copy of `speech_to_text` 7.5.0 (BSD-3) in the repo with a small Android patch passing the active language's sign words as `EXTRA_BIASING_STRINGS` (Android 13+); the app uses it through `dependency_overrides`. |
 
 ## Backend
