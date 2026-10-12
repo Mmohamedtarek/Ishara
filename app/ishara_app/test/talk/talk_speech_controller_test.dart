@@ -275,6 +275,21 @@ void main() {
     });
 
     test(
+      'the phone is busy: a "try again" notice, the mic not stuck',
+      () async {
+        final r = await _Rig.make(support: SpeechSupport.busy);
+        await r.talk.tapMic();
+        expect(r.state.mic, MicState.idle);
+        expect(r.state.notice, MicNotice.failed);
+        r.stt
+          ..support = SpeechSupport.ready
+          ..heard.add('yes');
+        await r.say();
+        expect(r.played, ['yes']);
+      },
+    );
+
+    test(
       'no recognizer (D6) / no recognition for the language (D7, D8)',
       () async {
         var r = await _Rig.make(support: SpeechSupport.unavailable);

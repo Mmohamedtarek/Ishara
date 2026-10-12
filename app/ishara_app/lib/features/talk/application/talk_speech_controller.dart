@@ -146,6 +146,10 @@ class TalkSpeech extends _$TalkSpeech {
     _showPrivacyOnce();
     final stt = ref.read(speechToTextProvider);
     final support = await stt.prepare(_language);
+    if (support == SpeechSupport.busy) {
+      state = state.copyWith(mic: MicState.idle, notice: MicNotice.failed);
+      return;
+    }
     if (support != SpeechSupport.ready) {
       state = state.copyWith(
         mic: support == SpeechSupport.unavailable

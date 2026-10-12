@@ -18,6 +18,10 @@ class _Phone {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
   bool initOk = true;
+
+  /// The phone never answers `locales` (Android 13+: its support check
+  /// failed, phone test 3).
+  bool localesHang = false;
   List<String> locales = ['en_US:English (US)', 'ar_EG:Arabic (Egypt)'];
 
   /// Answers to successive `listen` calls: true / false, or a
@@ -31,6 +35,7 @@ class _Phone {
       case 'initialize':
         return initOk;
       case 'locales':
+        if (localesHang) await Completer<void>().future;
         return locales;
       case 'listen':
         final a = listenAnswers.isEmpty ? true : listenAnswers.removeAt(0);
@@ -150,11 +155,70 @@ void main() {
       phone.dispose();
     });
 
-    test('prepare: ready, language missing, unavailable', () async {
+    test('prepare: ready, language missing', () async {
       expect(await s.prepare(SpokenLanguage.ar), SpeechSupport.ready);
       phone.locales = ['fr_FR:French'];
-      expect(await s.prepare(SpokenLanguage.ar), SpeechSupport.languageMissing);
+      final fresh = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+      );
+      expect(
+        await fresh.prepare(SpokenLanguage.ar),
+        SpeechSupport.languageMissing,
+      );
     });
+
+    test('phone test 3: the phone never answers the locale list → busy '
+        'within the time limit, never stuck preparing', () async {
+      await s.cancel();
+      s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+        prepareTimeout: const Duration(milliseconds: 50),
+      );
+      phone.localesHang = true;
+      final t0 = DateTime.now();
+      expect(await s.prepare(SpokenLanguage.en), SpeechSupport.busy);
+      expect(
+        DateTime.now().difference(t0),
+        lessThan(const Duration(seconds: 2)),
+      );
+      // the phone answers again: the next tap works
+      phone.localesHang = false;
+      expect(await s.prepare(SpokenLanguage.en), SpeechSupport.ready);
+    });
+
+    test(
+      'the locale list is asked once per language, not on every tap',
+      () async {
+        int asked() => phone.calls.where((c) => c.method == 'locales').length;
+        expect(await s.prepare(SpokenLanguage.ar), SpeechSupport.ready);
+        final once = asked();
+        expect(await s.prepare(SpokenLanguage.ar), SpeechSupport.ready);
+        expect(await s.prepare(SpokenLanguage.ar), SpeechSupport.ready);
+        expect(asked(), once);
+        expect(await s.prepare(SpokenLanguage.en), SpeechSupport.ready);
+        expect(asked(), greaterThan(once), reason: 'another language');
+      },
+    );
+
+    test(
+      '"language missing" from a listen asks the phone again next time',
+      () async {
+        int asked() => phone.calls.where((c) => c.method == 'locales').length;
+        final got = <SpeechEvent>[];
+        s.listen(SpokenLanguage.ar).listen(got.add);
+        await _flush();
+        await _flush();
+        await phone.error('error_language_unavailable');
+        await _flush();
+        await _flush();
+        await phone.error('error_language_unavailable');
+        await _flush();
+        expect((got.last as SpeechFailed).error, SpeechError.languageMissing);
+        final before = asked();
+        await s.prepare(SpokenLanguage.ar);
+        expect(asked(), greaterThan(before));
+      },
+    );
 
     test('prepare: no recognizer', () async {
       phone.initOk = false;

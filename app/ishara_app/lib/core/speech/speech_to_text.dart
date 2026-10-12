@@ -16,6 +16,10 @@ enum SpeechSupport {
 
   /// The recognizer can't do this language.
   languageMissing,
+
+  /// The phone didn't answer in time (its recognizer may still be busy
+  /// with the last session): try again.
+  busy,
 }
 
 /// Why a listen produced no text.
@@ -111,9 +115,21 @@ String? pickSpeechLocale(
 /// the on-device one can't do the language, the listen is retried once
 /// without it.
 class PlatformSpeechToText implements SpeechToText {
-  new({stt.SpeechToText? plugin, Duration? watchdog})
-    : _stt = plugin ?? stt.SpeechToText(),
-      watchdog = watchdog ?? listenFor + watchdogSlack;
+  new({
+    stt.SpeechToText? plugin,
+    Duration? watchdog,
+    this.prepareTimeout = const Duration(seconds: 4),
+  }) : _stt = plugin ?? stt.SpeechToText(),
+       watchdog = watchdog ?? listenFor + watchdogSlack;
+
+  /// How long getting the recognizer ready may take. On Android 13+ the
+  /// plugin's locale list never answers when the phone's support check
+  /// fails, which left the mic stuck in "preparing" (phone test 3).
+  final Duration prepareTimeout;
+
+  /// The locale picked for each language, so the phone is asked once, not
+  /// on every tap. Dropped when the phone says the language is missing.
+  final Map<SpokenLanguage, String> _picked = {};
 
   /// Q-T3 / Q10: stop after 3 s of silence or 30 s in all.
   static const pauseFor = Duration(seconds: 3);
@@ -161,29 +177,45 @@ class PlatformSpeechToText implements SpeechToText {
 
   @override
   Future<SpeechSupport> prepare(SpokenLanguage language) async {
+    _debug('prepare', {'language': language.name, 'init': _initialized});
     if (!_initialized) {
       try {
-        _initialized = await _stt.initialize(
-          onError: _onError,
-          onStatus: _onStatus,
-        );
+        _initialized = await _stt
+            .initialize(onError: _onError, onStatus: _onStatus)
+            .timeout(prepareTimeout);
+      } on TimeoutException {
+        _log.warn('init_timeout');
+        return SpeechSupport.busy;
       } on Object catch (e) {
         _log.warn('init_failed', {'error': e.toString()});
         _initialized = false;
       }
     }
     if (!_initialized) return SpeechSupport.unavailable;
-    final locales = await _stt.locales();
-    final system = await _stt.systemLocale();
-    _localeId = pickSpeechLocale(
-      [for (final l in locales) l.localeId],
-      language,
-      systemId: system?.localeId,
-    );
+    if (_picked[language] case final id?) {
+      _localeId = id;
+      _language = language;
+      return SpeechSupport.ready;
+    }
+    final List<String> ids;
+    final String? systemId;
+    try {
+      ids = [
+        for (final l in await _stt.locales().timeout(prepareTimeout))
+          l.localeId,
+      ];
+      systemId = (await _stt.systemLocale().timeout(prepareTimeout))?.localeId;
+    } on TimeoutException {
+      _log.warn('locales_timeout', {'language': language.name});
+      return SpeechSupport.busy;
+    }
+    final id = pickSpeechLocale(ids, language, systemId: systemId);
+    _debug('locales', {'count': ids.length, 'system': systemId, 'picked': id});
+    _localeId = id;
     _language = language;
-    return _localeId == null
-        ? SpeechSupport.languageMissing
-        : SpeechSupport.ready;
+    if (id == null) return SpeechSupport.languageMissing;
+    _picked[language] = id;
+    return SpeechSupport.ready;
   }
 
   @override
@@ -298,6 +330,7 @@ class PlatformSpeechToText implements SpeechToText {
       unawaited(_start(_language!, out, onDevice: false));
       return;
     }
+    if (error == SpeechError.languageMissing) _picked.remove(_language);
     _finish(out, SpeechFailed(error));
   }
 
