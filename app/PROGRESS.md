@@ -432,4 +432,6 @@ Checklist (before coding), each traced to its source. Your answers to the plan a
 
 **Not committed:** `test/goldens/talk_golden_test.dart` and its images. Its CI images were rendered on a Mac, and CI goldens come from Linux (2026-10-11); asked the user how to make them.
 
-**Open:** draft texts D1-D23 (`tools/out/step7/drafts.html`); the prototype's 44 px icon buttons and 40 px language toggle are under Android's 48 dp tap target (also on the onboarding screens); the Talk goldens (above); trying it on the phone.
+**Open:** the Talk goldens (above); trying it on the phone.
+
+**After the user's answers (2026-10-12):** D1-D23 approved as written (S7-14); tap targets keep the prototype sizes (S7-15). Talk goldens: a manual workflow (`.github/workflows/goldens.yml`) renders them on Linux and uploads them; the images are committed by hand after review.

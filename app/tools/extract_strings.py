@@ -161,9 +161,8 @@ DRAFTS = {
     "sumGloveUsb": ("Connected · On USB power", "متصل · شغال على USB", "replaces sumGlove (#BAT NO_BATTERY)", None),
 }
 
-# Step 7 (Talk) texts, NOT approved yet: shown to the user in
-# app/tools/out/step7/drafts.html (D1-D23). Their ARB descriptions say DRAFT.
-# Move them into DRAFTS-style approved entries only after the user's answer.
+# Step 7 (Talk) texts D1-D23 (app/tools/out/step7/drafts.html), approved by
+# the user as written on 2026-10-12 (DECISIONS S7-14).
 STEP7_DRAFTS = {
     "talkToday": ("Today", "النهارده", "D1: feed day marker (step 7 answer 13: no place)", None),
     "toastSosSpoken": ("SOS spoken out loud.", "اتنطقت الاستغاثة بصوت عالي.", "D2: replaces toastSOS (Q-T4: no SMS)", None),
@@ -289,10 +288,10 @@ def main() -> int:
 
     for key, (e, a, why, ph) in STEP7_DRAFTS.items():
         if key in out_en:
-            print(f"error: step 7 draft key {key} clashes with an existing key", file=sys.stderr)
+            print(f"error: step 7 key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
-        meta = {"description": f"DRAFT (step 7, not approved yet): {why}"}
+        meta = {"description": f"approved new text (step 7, 2026-10-12): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta
@@ -301,7 +300,7 @@ def main() -> int:
     for name, data in (("app_en.arb", out_en), ("app_ar.arb", out_ar)):
         (OUT / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     kept = sum(1 for k in out_en if not k.startswith("@"))
-    print(f"{kept} strings written ({len(DRAFTS)} step 6 texts, {len(STEP7_DRAFTS)} step 7 drafts), {len(EXCLUDED)} excluded:")
+    print(f"{kept} strings written ({len(DRAFTS)} step 6 texts, {len(STEP7_DRAFTS)} step 7 texts), {len(EXCLUDED)} excluded:")
     for k, why in sorted(EXCLUDED.items()):
         print(f"  {k:14} {why}")
     return 0

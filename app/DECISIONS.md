@@ -150,6 +150,8 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | S7-11 | No voice for the spoken language: words are shown, not spoken, with notice D16 (7b). |
 | S7-12 | "Today" only as the feed's day marker (no place). |
 | S7-13 | The new texts D1-D23 stay drafts (ARB descriptions say DRAFT; `extract_strings.py` `STEP7_DRAFTS`) until the user approves them in `tools/out/step7/drafts.html`. |
+| S7-14 | D1-D23 approved as written (user, 2026-10-12): the ARB descriptions say "approved new text (step 7, 2026-10-12)", and the iOS microphone / speech texts (D20, D21) are final. |
+| S7-15 | Tap targets keep the prototype sizes (user, 2026-10-12): 44 px icon buttons (`.icon-btn`) and the 40 px high EN / ع toggle, on every screen, although Android's guideline is 48 dp. The Talk screen test checks that every tap target has a label, not the 48 dp size. |
 
 ## Backend
 | ID | Decision |

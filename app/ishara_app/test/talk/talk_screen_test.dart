@@ -291,8 +291,8 @@ void main() {
     expect(find.text('النهارده'), findsOneWidget);
   });
 
-  // Open (step 7a): the prototype's 44 px icon buttons and 40 px language
-  // toggle are under Android's 48 dp tap-target guideline; asked the user.
+  // S7-15: the prototype's 44 px icon buttons and 40 px language toggle are
+  // kept (under Android's 48 dp guideline, by the user's decision).
   testWidgets('every tap target has a label', (t) async {
     final h = t.ensureSemantics();
     await _Talk().pump(t);
