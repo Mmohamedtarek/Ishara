@@ -5,32 +5,32 @@
   "signs": [
     {
       "label": "one", "category": "numbers", "glove": true, "avatar": true, "verified": true,
-      "en": {"word": "One", "spoken": "one", "variants": ["one"]},
-      "ar": {"word": "واحد", "spoken": "واحد", "variants": ["واحد"]},
+      "en": {"word": "One", "spoken": "one", "variants": ["one", "1"]},
+      "ar": {"word": "واحد", "spoken": "واحد", "variants": ["واحد", "1", "١"]},
       "description": "Index straight, other fingers closed, thumb over them; index up, palm toward you, still."
     },
     {
       "label": "two", "category": "numbers", "glove": true, "avatar": true, "verified": true,
-      "en": {"word": "Two", "spoken": "two", "variants": ["two"]},
-      "ar": {"word": "اتنين", "spoken": "اتنين", "variants": ["اتنين", "اثنين", "اثنان"]},
+      "en": {"word": "Two", "spoken": "two", "variants": ["two", "2"]},
+      "ar": {"word": "اتنين", "spoken": "اتنين", "variants": ["اتنين", "اثنين", "اثنان", "2", "٢"]},
       "description": "Index and middle straight (V), thumb holds ring and pinky; fingers up, palm toward you, still."
     },
     {
       "label": "three", "category": "numbers", "glove": true, "avatar": true, "verified": true,
-      "en": {"word": "Three", "spoken": "three", "variants": ["three"]},
-      "ar": {"word": "تلاتة", "spoken": "تلاتة", "variants": ["تلاتة", "ثلاثة"]},
+      "en": {"word": "Three", "spoken": "three", "variants": ["three", "3"]},
+      "ar": {"word": "تلاتة", "spoken": "تلاتة", "variants": ["تلاتة", "ثلاثة", "3", "٣"]},
       "description": "Thumb, index and middle straight (ASL form); fingers up, palm toward you, still."
     },
     {
       "label": "four", "category": "numbers", "glove": true, "avatar": true, "verified": true,
-      "en": {"word": "Four", "spoken": "four", "variants": ["four"]},
-      "ar": {"word": "أربعة", "spoken": "أربعة", "variants": ["أربعة"]},
+      "en": {"word": "Four", "spoken": "four", "variants": ["four", "4"]},
+      "ar": {"word": "أربعة", "spoken": "أربعة", "variants": ["أربعة", "4", "٤"]},
       "description": "Four fingers straight, thumb folded on the palm; fingers up, palm toward you, still."
     },
     {
       "label": "five", "category": "numbers", "glove": true, "avatar": true, "verified": true,
-      "en": {"word": "Five", "spoken": "five", "variants": ["five"]},
-      "ar": {"word": "خمسة", "spoken": "خمسة", "variants": ["خمسة"]},
+      "en": {"word": "Five", "spoken": "five", "variants": ["five", "5"]},
+      "ar": {"word": "خمسة", "spoken": "خمسة", "variants": ["خمسة", "5", "٥"]},
       "description": "Whole hand open, fingers spread; fingers up, still."
     },
     {

@@ -189,6 +189,48 @@ void main() {
       for (final seg in SpeechToSign.match(s, cat, l)) (seg.text, seg.label),
     ];
 
+    test('standalone digits 1-5 (and Arabic-Indic in Arabic) are the '
+        'numbers; nothing else (user, 2026-10-12)', () {
+      const en = SpokenLanguage.en;
+      const ar = SpokenLanguage.ar;
+      expect(m('1 2 3 4 5', en), [
+        ('1', 'one'),
+        ('2', 'two'),
+        ('3', 'three'),
+        ('4', 'four'),
+        ('5', 'five'),
+      ]);
+      expect(m('١ ٢ ٣ ٤ ٥', ar).map((e) => e.$2), [
+        'one',
+        'two',
+        'three',
+        'four',
+        'five',
+      ]);
+      expect(m('1', ar), [('1', 'one')]);
+      for (final s in [
+        '12', '6', '0', '1.5', '3:30', '1,000', '٣:٣٠', //
+        'to', 'too', 'for', 'won',
+      ]) {
+        expect(m(s, en).map((e) => e.$2).toSet(), {null}, reason: s);
+      }
+      expect(m('١', en), [('١', null)], reason: 'Arabic digits only in Arabic');
+      expect(m('yes,5', en), [('yes,', 'yes'), ('5', 'five')]);
+      expect(m('1.5', en), [('1.5', null)], reason: 'one word, no sign');
+    });
+
+    test('punctuation and capitals', () {
+      const en = SpokenLanguage.en;
+      expect(m('Yes.', en), [('Yes.', 'yes')]);
+      expect(m('YES!', en), [('YES!', 'yes')]);
+      expect(m('No, thank you.', en), [
+        ('No,', 'no'),
+        ('thank you.', 'thanks'),
+      ]);
+      expect(m('Help?', en), [('Help?', 'help')]);
+      expect(m('شكراً.', SpokenLanguage.ar), [('شكراً.', 'thanks')]);
+    });
+
     test('English sentences', () {
       const en = SpokenLanguage.en;
       expect(m('Thank you very much', en), [

@@ -39,9 +39,14 @@ class SignSegment {
 abstract final class SpeechToSign {
   /// Splits after punctuation that is followed by a letter or digit, so
   /// "ab,cd" gives "ab," + "cd" (the punctuation stays with
-  /// the word before it, for the caption).
+  /// the word before it, for the caption). Never between digits: "1.5",
+  /// "3:30" and "1,000" stay one word (no sign), so they can't become the
+  /// signs for 1 and 5.
   static final _glued = RegExp(
-    r"(?<=[^\p{L}\p{N}\s'’ʼ`])(?=[\p{L}\p{N}])",
+    // punctuation, then a letter
+    r"(?<=[^\p{L}\p{N}\s'’ʼ`])(?=\p{L})"
+    // punctuation not right after a digit, then a digit
+    r"|(?<!\p{N}[^\p{L}\p{N}\s'’ʼ`]*)(?<=[^\p{L}\p{N}\s'’ʼ`])(?=\p{N})",
     unicode: true,
   );
 

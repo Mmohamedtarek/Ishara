@@ -119,6 +119,13 @@ class PlatformSpeechToText implements SpeechToText {
   static const pauseFor = Duration(seconds: 3);
   static const listenFor = Duration(seconds: 30);
 
+  /// Debug builds only, for the phone test: `--dart-define=STT_ON_DEVICE=false`
+  /// skips the phone's on-device recognizer (Q-T3 prefers it).
+  static const _onDeviceDefine = bool.fromEnvironment(
+    'STT_ON_DEVICE',
+    defaultValue: true,
+  );
+
   /// A listen the platform didn't start reports nothing at all; past
   /// [listenFor] plus this, it ends as a failure (never stuck listening).
   static const watchdogSlack = Duration(seconds: 5);
@@ -142,9 +149,14 @@ class PlatformSpeechToText implements SpeechToText {
   /// Phrases the recognizer marked as finished (`intermediate` results:
   /// Google's on-device recognizer sends each one with `final_result` and
   /// keeps listening through the pause). If the session then ends with no
-  /// final result, they are the sentence. Unfinished partial guesses never
-  /// are (a half-heard word must not become a sign).
+  /// final result, they are the sentence (before any partial).
   final List<String> _phrases = [];
+
+  /// The recognizer's last partial result. When the session ends with no
+  /// final result and no finished phrase, it is the sentence: the last
+  /// thing the recognizer showed before it stopped (user rule, 2026-10-12).
+  /// Earlier partials are replaced as they come, so they never are.
+  String _lastPartial = '';
   Timer? _watchdog;
 
   @override
@@ -179,7 +191,7 @@ class PlatformSpeechToText implements SpeechToText {
     unawaited(_out?.close());
     _ignoreDone = false;
     final out = _out = StreamController<SpeechEvent>();
-    unawaited(_start(language, out, onDevice: true));
+    unawaited(_start(language, out, onDevice: !kDebugMode || _onDeviceDefine));
     return out.stream;
   }
 
@@ -205,6 +217,7 @@ class PlatformSpeechToText implements SpeechToText {
     _onDevice = onDevice;
     _gotFinal = false;
     _phrases.clear();
+    _lastPartial = '';
     _debug('listen', {'locale': _localeId, 'onDevice': onDevice});
     _watchdog?.cancel();
     _watchdog = Timer(watchdog, () {
@@ -216,7 +229,9 @@ class PlatformSpeechToText implements SpeechToText {
       await _stt.listen(
         onResult: _onResult,
         listenOptions: stt.SpeechListenOptions(
-          localeId: _localeId,
+          // Android wants a BCP-47 tag (`ar-EG`); the plugin lists `ar_EG`,
+          // and an unknown tag silently falls back to the phone's language.
+          localeId: _localeId?.replaceAll('_', '-'),
           onDevice: onDevice,
           listenMode: stt.ListenMode.dictation,
           pauseFor: pauseFor,
@@ -236,12 +251,18 @@ class PlatformSpeechToText implements SpeechToText {
   void _onResult(SpeechRecognitionResult r) {
     final out = _out;
     if (out == null || out.isClosed) return;
+    final text = r.recognizedWords.trim();
     _debug('result', {
       'type': r.resultTypeValue.name,
-      'words': r.recognizedWords.trim().split(RegExp(r'\s+')).length,
+      'words': text.isEmpty ? 0 : text.split(RegExp(r'\s+')).length,
     });
-    if (r.resultTypeValue == ResultType.intermediate) {
-      _addPhrase(r.recognizedWords.trim());
+    switch (r.resultTypeValue) {
+      case ResultType.intermediate:
+        _addPhrase(text);
+      case ResultType.partial:
+        if (text.isNotEmpty) _lastPartial = text;
+      case ResultType.finalResult:
+        break;
     }
     if (r.finalResult) {
       _gotFinal = true;
@@ -262,7 +283,8 @@ class PlatformSpeechToText implements SpeechToText {
     if (out == null || out.isClosed) return;
     final error = classifySpeechError(e.errorMsg);
     _log.info('listen_error', {'code': e.errorMsg, 'onDevice': _onDevice});
-    if (error == SpeechError.noSpeech && _phrases.isNotEmpty) {
+    if (error == SpeechError.noSpeech &&
+        (_phrases.isNotEmpty || _lastPartial.isNotEmpty)) {
       // The session ended badly after finished phrases: they were heard.
       _finishHeard(out);
       return;
@@ -304,7 +326,8 @@ class PlatformSpeechToText implements SpeechToText {
   }
 
   void _finishHeard(StreamController<SpeechEvent> out) {
-    final heard = _phrases.join(' ').trim();
+    final phrases = _phrases.join(' ').trim();
+    final heard = phrases.isEmpty ? _lastPartial : phrases;
     _finish(
       out,
       heard.isEmpty

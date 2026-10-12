@@ -174,7 +174,8 @@ void main() {
       await _flush();
       await _flush();
       expect(phone.listens.single['onDevice'], isTrue);
-      expect(phone.listens.single['localeId'], 'ar_EG');
+      // BCP-47 for Android (the plugin lists `ar_EG`)
+      expect(phone.listens.single['localeId'], 'ar-EG');
       expect(phone.listens.single['pauseFor'], 3000);
       expect(phone.listens.single['listenFor'], 30000);
       await phone.words('شكرا', last: false);
@@ -344,12 +345,46 @@ void main() {
         expect(got.whereType<SpeechFinal>().single.text, 'شكرا');
       });
 
-      test('unfinished partial guesses alone are never the sentence', () async {
+      test('no phrase: the last partial before the end is the sentence '
+          '(user rule)', () async {
         final got = await session(() async {
-          await phone.result('hel', type: 0);
+          await phone.result('ye', type: 0);
+          await phone.result('yes', type: 0);
           await phone.error('error_no_match');
         });
+        expect(got.whereType<SpeechFinal>().single.text, 'yes');
+      });
+
+      test('an empty finished phrase after a partial: the partial', () async {
+        final got = await session(() async {
+          await phone.result('yes', type: 0);
+          await phone.result('', type: 1);
+          await phone.status('notListening');
+          await phone.status('done');
+        });
+        expect(got.whereType<SpeechFinal>().single.text, 'yes');
+      });
+
+      test('finished phrases win over a later partial', () async {
+        final got = await session(() async {
+          await phone.result('hello', type: 1);
+          await phone.result('hello th', type: 0);
+          await phone.error('error_no_match');
+        });
+        expect(got.whereType<SpeechFinal>().single.text, 'hello');
+      });
+
+      test('the phone log of "yes" (2026-10-12, 19:59:35): one empty '
+          'finished phrase, no partial, done → nothing heard (the '
+          'recognizer returned no text)', () async {
+        final got = await session(() async {
+          await phone.status('listening');
+          await phone.result('', type: 1);
+          await phone.status('notListening');
+          await phone.status('done');
+        });
         expect((got.last as SpeechFailed).error, SpeechError.noSpeech);
+        expect(got.whereType<SpeechFinal>(), isEmpty);
       });
 
       test('a real final result still wins over the phrases', () async {
@@ -383,7 +418,7 @@ void main() {
       s.listen(SpokenLanguage.ar).listen((_) {});
       await _flush();
       await _flush();
-      expect(phone.listens.last['localeId'], 'ar_EG');
+      expect(phone.listens.last['localeId'], 'ar-EG');
     });
 
     test('a listen with no recognizer fails at once', () async {
