@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/logging/log.dart';
-import 'package:meta/meta.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -138,6 +138,13 @@ class PlatformSpeechToText implements SpeechToText {
   /// After an error-triggered retry, the failed session may still report
   /// `done`; it is ignored until the retry is listening.
   bool _ignoreDone = false;
+
+  /// Phrases the recognizer marked as finished (`intermediate` results:
+  /// Google's on-device recognizer sends each one with `final_result` and
+  /// keeps listening through the pause). If the session then ends with no
+  /// final result, they are the sentence. Unfinished partial guesses never
+  /// are (a half-heard word must not become a sign).
+  final List<String> _phrases = [];
   Timer? _watchdog;
 
   @override
@@ -197,6 +204,8 @@ class PlatformSpeechToText implements SpeechToText {
     }
     _onDevice = onDevice;
     _gotFinal = false;
+    _phrases.clear();
+    _debug('listen', {'locale': _localeId, 'onDevice': onDevice});
     _watchdog?.cancel();
     _watchdog = Timer(watchdog, () {
       _log.warn('listen_watchdog');
@@ -227,6 +236,13 @@ class PlatformSpeechToText implements SpeechToText {
   void _onResult(SpeechRecognitionResult r) {
     final out = _out;
     if (out == null || out.isClosed) return;
+    _debug('result', {
+      'type': r.resultTypeValue.name,
+      'words': r.recognizedWords.trim().split(RegExp(r'\s+')).length,
+    });
+    if (r.resultTypeValue == ResultType.intermediate) {
+      _addPhrase(r.recognizedWords.trim());
+    }
     if (r.finalResult) {
       _gotFinal = true;
       final text = r.recognizedWords.trim();
@@ -246,6 +262,11 @@ class PlatformSpeechToText implements SpeechToText {
     if (out == null || out.isClosed) return;
     final error = classifySpeechError(e.errorMsg);
     _log.info('listen_error', {'code': e.errorMsg, 'onDevice': _onDevice});
+    if (error == SpeechError.noSpeech && _phrases.isNotEmpty) {
+      // The session ended badly after finished phrases: they were heard.
+      _finishHeard(out);
+      return;
+    }
     if (error == SpeechError.languageMissing &&
         _onDevice &&
         _language != null) {
@@ -261,11 +282,40 @@ class PlatformSpeechToText implements SpeechToText {
   void _onStatus(String status) {
     final out = _out;
     if (out == null || out.isClosed) return;
-    // `done` without a final result or an error: nothing was heard.
+    _debug('status', {'status': status, 'onDevice': _onDevice});
     if (status == stt.SpeechToText.listeningStatus) _ignoreDone = false;
+    // `done` without a final result: the finished phrases, or nothing.
     if (status == stt.SpeechToText.doneStatus && !_gotFinal && !_ignoreDone) {
-      _finish(out, const SpeechFailed(SpeechError.noSpeech));
+      _finishHeard(out);
     }
+  }
+
+  void _addPhrase(String text) {
+    if (text.isEmpty) return;
+    final sofar = _phrases.join(' ');
+    // Some recognizers resend the whole text so far, others each phrase.
+    if (sofar.isNotEmpty && text.startsWith(sofar)) {
+      _phrases
+        ..clear()
+        ..add(text);
+    } else if (!_phrases.contains(text)) {
+      _phrases.add(text);
+    }
+  }
+
+  void _finishHeard(StreamController<SpeechEvent> out) {
+    final heard = _phrases.join(' ').trim();
+    _finish(
+      out,
+      heard.isEmpty
+          ? const SpeechFailed(SpeechError.noSpeech)
+          : SpeechFinal(heard),
+    );
+  }
+
+  /// Debug builds only: what the recognizer does (never the words).
+  void _debug(String event, Map<String, Object?> data) {
+    if (kDebugMode) _log.info('stt_$event', data);
   }
 
   void _finish(StreamController<SpeechEvent> out, SpeechEvent last) {

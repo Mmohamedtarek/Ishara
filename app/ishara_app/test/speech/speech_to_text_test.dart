@@ -56,13 +56,18 @@ class _Phone {
 
   Future<void> status(String s) => _send('notifyStatus', s);
 
-  Future<void> words(String w, {required bool last}) => _send(
+  Future<void> words(String w, {required bool last}) =>
+      result(w, type: last ? 2 : 0);
+
+  /// A result of [type]: 0 partial, 1 intermediate (a finished phrase in a
+  /// session that keeps listening: Android `final_result`), 2 final.
+  Future<void> result(String w, {required int type}) => _send(
     'textRecognition',
     jsonEncode({
       'alternates': [
         {'recognizedWords': w, 'confidence': .9},
       ],
-      'resultType': last ? 2 : 0,
+      'resultType': type,
     }),
   );
 
@@ -285,6 +290,88 @@ void main() {
       await phone.status('doneNoResult');
       await _flush();
       expect((got.single as SpeechFailed).error, SpeechError.noSpeech);
+    });
+
+    group('finished phrases, then the session ends with no final result '
+        '(Samsung, Google on-device recognizer, 2026-10-12)', () {
+      Future<List<SpeechEvent>> session(Future<void> Function() phone_) async {
+        final got = <SpeechEvent>[];
+        s.listen(SpokenLanguage.en).listen(got.add);
+        await _flush();
+        await _flush();
+        await phone_();
+        await _flush();
+        return got;
+      }
+
+      test('the phone log: phrase, listening again, the same phrase, '
+          'done → the phrase, once', () async {
+        final got = await session(() async {
+          await phone.status('listening');
+          await phone.result('hello', type: 0);
+          await phone.result('hello', type: 1);
+          await phone.result('hello', type: 1);
+          await phone.status('notListening');
+          await phone.status('done');
+        });
+        expect(got.whereType<SpeechFinal>().single.text, 'hello');
+        expect(got.whereType<SpeechFailed>(), isEmpty);
+      });
+
+      test('phrases one by one are joined', () async {
+        final got = await session(() async {
+          await phone.result('hello', type: 1);
+          await phone.result('thank you', type: 1);
+          await phone.status('done');
+        });
+        expect(got.whereType<SpeechFinal>().single.text, 'hello thank you');
+      });
+
+      test('the whole text so far replaces the phrases', () async {
+        final got = await session(() async {
+          await phone.result('hello', type: 1);
+          await phone.result('hello thank you', type: 1);
+          await phone.status('done');
+        });
+        expect(got.whereType<SpeechFinal>().single.text, 'hello thank you');
+      });
+
+      test('a no-match error after a phrase still gives the phrase', () async {
+        final got = await session(() async {
+          await phone.result('شكرا', type: 1);
+          await phone.error('error_no_match');
+        });
+        expect(got.whereType<SpeechFinal>().single.text, 'شكرا');
+      });
+
+      test('unfinished partial guesses alone are never the sentence', () async {
+        final got = await session(() async {
+          await phone.result('hel', type: 0);
+          await phone.error('error_no_match');
+        });
+        expect((got.last as SpeechFailed).error, SpeechError.noSpeech);
+      });
+
+      test('a real final result still wins over the phrases', () async {
+        final got = await session(() async {
+          await phone.result('hello', type: 1);
+          await phone.result('hello there', type: 2);
+          await phone.status('done');
+        });
+        expect(got.whereType<SpeechFinal>().single.text, 'hello there');
+      });
+
+      test('a new listen starts with no phrases', () async {
+        await session(() async {
+          await phone.result('hello', type: 1);
+          await phone.status('done');
+        });
+        // nothing heard: Android reports doneNoResult
+        final got = await session(() async {
+          await phone.status('doneNoResult');
+        });
+        expect((got.single as SpeechFailed).error, SpeechError.noSpeech);
+      });
     });
 
     test('the language changes: prepared again', () async {
