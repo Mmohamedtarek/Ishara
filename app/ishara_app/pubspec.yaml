@@ -47,6 +47,12 @@ dev_dependencies:
   very_good_analysis: ^11.0.0
   webview_flutter_platform_interface: ^2.15.1
 
+# S7-27 (option a): speech_to_text 7.5.0 with an Android patch that passes
+# the sign words as EXTRA_BIASING_STRINGS (app/third_party/speech_to_text/ISHARA.md).
+dependency_overrides:
+  speech_to_text:
+    path: ../third_party/speech_to_text
+
 flutter:
   uses-material-design: true
   generate: true

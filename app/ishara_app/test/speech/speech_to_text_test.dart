@@ -473,6 +473,21 @@ void main() {
       });
     });
 
+    test('S7-27: the bias words reach the plugin as contextualPhrases; '
+        'none: no key', () async {
+      s
+          .listen(SpokenLanguage.en, phrases: ['hello', 'thank you'])
+          .listen((_) {});
+      await _flush();
+      await _flush();
+      expect(phone.listens.last['contextualPhrases'], ['hello', 'thank you']);
+      await s.cancel();
+      s.listen(SpokenLanguage.en).listen((_) {});
+      await _flush();
+      await _flush();
+      expect(phone.listens.last.containsKey('contextualPhrases'), isFalse);
+    });
+
     test('the language changes: prepared again', () async {
       s.listen(SpokenLanguage.en).listen((_) {});
       await _flush();

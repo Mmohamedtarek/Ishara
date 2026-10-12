@@ -160,7 +160,9 @@ class TalkSpeech extends _$TalkSpeech {
     }
     state = state.copyWith(mic: MicState.listening);
     await _listen?.cancel();
-    _listen = stt.listen(_language).listen(_onSpeech);
+    _listen = stt
+        .listen(_language, phrases: await _phrases())
+        .listen(_onSpeech);
   }
 
   /// D4's "Allow": asks again.
@@ -206,6 +208,22 @@ class TalkSpeech extends _$TalkSpeech {
   }
 
   void dismissPrivacy() => state = state.copyWith(privacyNotice: false);
+
+  /// S7-27: every word and phrase of the signs the avatar can perform, in
+  /// the spoken language, to bias the recognizer. A catalogue that can't
+  /// load means no biasing (the listen still works).
+  Future<List<String>> _phrases() async {
+    try {
+      final catalogue = await ref.read(signCatalogueProvider.future);
+      return {
+        for (final s in catalogue.signs)
+          if (s.avatar) ...s.wordsIn(_language).variants,
+      }.toList();
+    } on Object catch (e) {
+      _log.warn('phrases_failed', {'error': '$e'});
+      return const [];
+    }
+  }
 
   void _onSpeech(SpeechEvent e) {
     switch (e) {

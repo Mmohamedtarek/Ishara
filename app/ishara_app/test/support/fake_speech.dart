@@ -27,9 +27,16 @@ class FakeSpeechToText implements SpeechToText {
     return support;
   }
 
+  /// The phrases of the last listen.
+  List<String> phrases = const [];
+
   @override
-  Stream<SpeechEvent> listen(SpokenLanguage language) {
+  Stream<SpeechEvent> listen(
+    SpokenLanguage language, {
+    List<String> phrases = const [],
+  }) {
     calls.add('listen ${language.name}');
+    this.phrases = phrases;
     final out = _open = StreamController<SpeechEvent>();
     if (heard.isNotEmpty) {
       final next = heard.removeAt(0);

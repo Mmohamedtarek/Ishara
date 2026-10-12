@@ -195,7 +195,7 @@ STEP7_NEW_DRAFTS = {
     "sttTryShortSentence": ("Try saying it in a short sentence.", "جرّب تقولها في جملة قصيرة.", "D24: under D9 when nothing was heard (the phone's recognizer drops very short words said alone)", None),
 }
 
-# Step 7b drafts, NOT approved yet (app/tools/out/step7/drafts.html).
+# Step 7b texts: D25 approved by the user on 2026-10-13 (DECISIONS S7-26).
 STEP7B_DRAFTS = {
     "typeAddLabel": ("Add", "ضيف", "D25: screen reader, the Type box's send button (prototype aria-label)", None),
 }
@@ -322,7 +322,7 @@ def main() -> int:
             print(f"error: step 7b draft key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
-        out_en["@" + key] = {"description": f"DRAFT (step 7b, not approved yet): {why}"}
+        out_en["@" + key] = {"description": f"approved new text (step 7b, 2026-10-13): {why}"}
 
     OUT.mkdir(parents=True, exist_ok=True)
     for name, data in (("app_en.arb", out_en), ("app_ar.arb", out_ar)):

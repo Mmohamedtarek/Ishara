@@ -1,0 +1,85 @@
+--- /tmp/orig.kt	2026-10-13 01:00:28
++++ third_party/speech_to_text/android/src/main/kotlin/com/csdcorp/speech_to_text/SpeechToTextPlugin.kt	2026-10-13 01:00:29
+@@ -127,6 +127,9 @@
+     private var previousPartialResults: Boolean = true
+     private var previousListenMode: ListenMode = ListenMode.deviceDefault
+     private var previousPauseFor: Int? = null
++    // Ishara: the intent is rebuilt when these change too
++    private var previousOnDevice: Boolean = false
++    private var previousPhrases: List<String>? = null
+     private var lastFinalTime: Long = 0
+     private var speechStartTime: Long = 0
+     private var minRms: Float = 1000.0F
+@@ -217,7 +220,9 @@
+                     }
+                     val pauseFor =
+                         call.argument<Int?>("pauseFor")
+-                    startListening(result, localeId, partialResults, listenModeIndex, onDevice, pauseFor )
++                    // Ishara: the Dart side already sends contextualPhrases
++                    val phrases = call.argument<List<String>>("contextualPhrases")
++                    startListening(result, localeId, partialResults, listenModeIndex, onDevice, pauseFor, phrases )
+                 }
+                 "stop" -> stopListening(result)
+                 "cancel" -> cancelListening(result)
+@@ -281,7 +286,8 @@
+     }
+ 
+     private fun startListening(result: Result, languageTag: String, partialResults: Boolean,
+-                               listenModeIndex: Int, onDevice: Boolean, pauseFor: Int?) {
++                               listenModeIndex: Int, onDevice: Boolean, pauseFor: Int?,
++                               phrases: List<String>?) {
+         if (sdkVersionTooLow() || isNotInitialized() || isListening()) {
+             result.success(false)
+             return
+@@ -295,7 +301,7 @@
+         debugLog("Start listening")
+ 
+         optionallyStartBluetooth()
+-        setupRecognizerIntent(languageTag, partialResults, listenMode, onDevice, pauseFor )
++        setupRecognizerIntent(languageTag, partialResults, listenMode, onDevice, pauseFor, phrases )
+         handler.post {
+             run {
+                 speechRecognizer?.startListening(recognizerIntent)
+@@ -647,20 +653,25 @@
+             }
+         }
+         debugLog("before setup intent")
+-        setupRecognizerIntent(defaultLanguageTag, true, listenMode, false, pauseFor )
++        setupRecognizerIntent(defaultLanguageTag, true, listenMode, false, pauseFor, null )
+         debugLog("after setup intent")
+     }
+ 
+-    private fun setupRecognizerIntent(languageTag: String, partialResults: Boolean, listenMode: ListenMode, onDevice: Boolean, pauseFor: Int? ) {
++    private fun setupRecognizerIntent(languageTag: String, partialResults: Boolean, listenMode: ListenMode, onDevice: Boolean, pauseFor: Int?, phrases: List<String>? ) {
+         debugLog("setupRecognizerIntent")
+         if (previousRecognizerLang == null ||
+                 previousRecognizerLang != languageTag ||
+                 partialResults != previousPartialResults || previousListenMode != listenMode ||
+-                previousPauseFor != pauseFor ) {
++                previousPauseFor != pauseFor ||
++                // Ishara: upstream left these out of the check, so a listen
++                // could reuse an intent built without onDevice / the phrases
++                previousOnDevice != onDevice || previousPhrases != phrases ) {
+             previousRecognizerLang = languageTag;
+             previousPartialResults = partialResults
+             previousListenMode = listenMode
+             previousPauseFor = pauseFor
++            previousOnDevice = onDevice
++            previousPhrases = phrases
+             handler.post {
+                 run {
+                     recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+@@ -692,6 +703,13 @@
+                         pauseFor?.also {
+                             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, it)
+                         }
++                        // Ishara: bias the recognizer toward the app's words
++                        // (Android 13+; older versions have no such extra)
++                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
++                                !phrases.isNullOrEmpty()) {
++                            putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS,
++                                    ArrayList(phrases))
++                        }
+                     }
+                 }
+             }

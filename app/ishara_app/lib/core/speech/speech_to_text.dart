@@ -69,7 +69,12 @@ abstract interface class SpeechToText {
   Future<SpeechSupport> prepare(SpokenLanguage language);
 
   /// Listens once (see [SpeechEvent]). Only one listen at a time.
-  Stream<SpeechEvent> listen(SpokenLanguage language);
+  /// [phrases] bias the recognizer toward the app's words (S7-27; Android
+  /// 13+, ignored elsewhere). Matching stays exact (sign rule 7).
+  Stream<SpeechEvent> listen(
+    SpokenLanguage language, {
+    List<String> phrases = const [],
+  });
 
   /// Ends the listen early: what was heard so far comes as [SpeechFinal].
   Future<void> stop();
@@ -158,6 +163,9 @@ class PlatformSpeechToText implements SpeechToText {
   String? _localeId;
   bool _gotFinal = false;
 
+  /// The words to bias this listen toward (S7-27).
+  List<String> _bias = const [];
+
   /// After an error-triggered retry, the failed session may still report
   /// `done`; it is ignored until the retry is listening.
   bool _ignoreDone = false;
@@ -219,7 +227,11 @@ class PlatformSpeechToText implements SpeechToText {
   }
 
   @override
-  Stream<SpeechEvent> listen(SpokenLanguage language) {
+  Stream<SpeechEvent> listen(
+    SpokenLanguage language, {
+    List<String> phrases = const [],
+  }) {
+    _bias = phrases;
     unawaited(_out?.close());
     _ignoreDone = false;
     final out = _out = StreamController<SpeechEvent>();
@@ -268,6 +280,7 @@ class PlatformSpeechToText implements SpeechToText {
           listenMode: stt.ListenMode.dictation,
           pauseFor: pauseFor,
           listenFor: listenFor,
+          contextualPhrases: _bias.isEmpty ? null : _bias,
         ),
       );
     } on Object catch (e) {

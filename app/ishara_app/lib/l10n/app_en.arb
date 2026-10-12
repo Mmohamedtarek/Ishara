@@ -1464,6 +1464,6 @@
   },
   "typeAddLabel": "Add",
   "@typeAddLabel": {
-    "description": "DRAFT (step 7b, not approved yet): D25: screen reader, the Type box's send button (prototype aria-label)"
+    "description": "approved new text (step 7b, 2026-10-13): D25: screen reader, the Type box's send button (prototype aria-label)"
   }
 }

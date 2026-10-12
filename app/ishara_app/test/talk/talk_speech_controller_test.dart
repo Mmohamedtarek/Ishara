@@ -445,6 +445,19 @@ void main() {
     expect(played(pages.last), ['no']);
   });
 
+  test('S7-27: the listen is biased toward the sign words of the spoken '
+      'language', () async {
+    var r = await _Rig.make(heard: ['yes']);
+    await r.say();
+    expect(r.stt.phrases, containsAll(['hello', 'thank you', 'i love you']));
+    expect(r.stt.phrases, contains('1'));
+    expect(r.stt.phrases, isNot(contains('شكراً')));
+    r = await _Rig.make(spoken: 'ar', heard: ['أيوه']);
+    await r.say();
+    expect(r.stt.phrases, containsAll(['شكراً', 'السلام عليكم', '١']));
+    expect(r.stt.phrases, isNot(contains('hello')));
+  });
+
   test('the feed message carries the clock time', () async {
     final r = await _Rig.make(heard: ['yes']);
     final at = DateTime(2026, 10, 12, 10, 5);
