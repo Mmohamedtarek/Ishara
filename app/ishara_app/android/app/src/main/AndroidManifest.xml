@@ -22,6 +22,9 @@
     <!-- Sockets: the avatar page is served on 127.0.0.1 (AvatarAssetServer);
          later also Firebase. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Talk, speech -> sign: the other person's voice goes to the phone's
+         own speech recognizer (speech_to_text; Q-T3). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Optional: without BLE the app still offers speech -> avatar and Learn. -->
     <uses-feature
         android:name="android.hardware.bluetooth_le"
@@ -68,6 +71,11 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Android 11+ package visibility: speech_to_text must see the
+             phone's speech recognizer. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
         </intent>
     </queries>
 </manifest>

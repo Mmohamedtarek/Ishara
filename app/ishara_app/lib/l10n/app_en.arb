@@ -546,10 +546,6 @@
   "@qSaySlower": {
     "description": "prototype I18N.qSaySlower"
   },
-  "qSaySos": "SOS · I need help",
-  "@qSaySos": {
-    "description": "prototype I18N.qSaySos"
-  },
   "qSayThanks": "Thank you",
   "@qSayThanks": {
     "description": "prototype I18N.qSayThanks"
@@ -1363,5 +1359,95 @@
   "sumGloveUsb": "Connected · On USB power",
   "@sumGloveUsb": {
     "description": "approved new text (step 6 review, 2026-10-10): replaces sumGlove (#BAT NO_BATTERY)"
+  },
+  "talkToday": "Today",
+  "@talkToday": {
+    "description": "DRAFT (step 7, not approved yet): D1: feed day marker (step 7 answer 13: no place)"
+  },
+  "toastSosSpoken": "SOS spoken out loud.",
+  "@toastSosSpoken": {
+    "description": "DRAFT (step 7, not approved yet): D2: replaces toastSOS (Q-T4: no SMS)"
+  },
+  "sosSay": "I need help, please.",
+  "@sosSay": {
+    "description": "DRAFT (step 7, not approved yet): D23: what the SOS quick phrase speaks (user, step 7 answer 7)"
+  },
+  "micPermBody": "Allow Ishara to use the microphone so it can hear the person you're talking to.",
+  "@micPermBody": {
+    "description": "DRAFT (step 7, not approved yet): D4: mic permission not given"
+  },
+  "micPermBodySettings": "Turn on the microphone permission for Ishara in your phone's settings.",
+  "@micPermBodySettings": {
+    "description": "DRAFT (step 7, not approved yet): D5: mic permission refused for good"
+  },
+  "sttUnavailable": "Speech recognition isn't available on this phone.",
+  "@sttUnavailable": {
+    "description": "DRAFT (step 7, not approved yet): D6: no recognizer"
+  },
+  "sttNoEnglish": "This phone can't recognize English speech yet.",
+  "@sttNoEnglish": {
+    "description": "DRAFT (step 7, not approved yet): D7: no English recognition"
+  },
+  "sttNoArabic": "This phone can't recognize Arabic speech yet.",
+  "@sttNoArabic": {
+    "description": "DRAFT (step 7, not approved yet): D8: no Arabic recognition"
+  },
+  "sttNothingHeard": "Didn't catch that. Tap the mic and try again.",
+  "@sttNothingHeard": {
+    "description": "DRAFT (step 7, not approved yet): D9: nothing heard"
+  },
+  "gloveOff": "Glove not connected",
+  "@gloveOff": {
+    "description": "DRAFT (step 7, not approved yet): D10: glove chip, no glove"
+  },
+  "gloveReconnecting": "Reconnecting…",
+  "@gloveReconnecting": {
+    "description": "DRAFT (step 7, not approved yet): D11: glove chip, reconnecting"
+  },
+  "gloveBattLow": "Glove battery low",
+  "@gloveBattLow": {
+    "description": "DRAFT (step 7, not approved yet): D12: glove chip, #BAT LOW"
+  },
+  "liveNoGlove": "Connect your glove to sign.",
+  "@liveNoGlove": {
+    "description": "DRAFT (step 7, not approved yet): D13: live box, no glove"
+  },
+  "liveNoCal": "Calibrate your glove to start signing.",
+  "@liveNoCal": {
+    "description": "DRAFT (step 7, not approved yet): D14: live box, #CAL NONE"
+  },
+  "liveStopped": "Sign recognition stopped. Reconnect the glove and try again.",
+  "@liveStopped": {
+    "description": "DRAFT (step 7, not approved yet): D15: recognizer failed"
+  },
+  "ttsNoVoice": "This phone has no {language} voice, so words are shown but not spoken.",
+  "@ttsNoVoice": {
+    "description": "DRAFT (step 7, not approved yet): D16: no TTS voice",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tentativeLabel": "{word}, not sure yet. Double-tap to confirm.",
+  "@tentativeLabel": {
+    "description": "DRAFT (step 7, not approved yet): D17: screen reader, tentative word",
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "micLabel": "Tap and speak",
+  "@micLabel": {
+    "description": "DRAFT (step 7, not approved yet): D18: screen reader, mic button (prototype aria-label)"
+  },
+  "privacySpeech": "Speech to text uses your phone's speech recognizer. On some phones it sends the other person's voice to Google or Apple to turn it into text. Your signs and sentences stay on your phone.",
+  "@privacySpeech": {
+    "description": "DRAFT (step 7, not approved yet): D19: Q-T3 privacy line"
+  },
+  "clearLabel": "Clear and move to the conversation",
+  "@clearLabel": {
+    "description": "DRAFT (step 7, not approved yet): D22: screen reader, Clear (Q-T2)"
   }
 }

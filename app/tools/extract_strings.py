@@ -59,6 +59,8 @@ EXCLUDED = {
     "avLook": "Q-A2", "avSkin": "Q-A2", "avHair": "Q-A2", "avOutfit": "Q-A2", "avGlasses": "Q-A2",
     # placeholders
     "toastSoon": "placeholder toast", "sAboutS": "fixed version (draft)",
+    # step 7 answer 7: TTS reads "SOS · I need help" as "S O S"; sosSay (D23) is spoken instead
+    "qSaySos": "step 7 answer 7 (replaced by sosSay)",
 }
 
 # Texts that are not in the prototype, approved by the user word for word
@@ -157,6 +159,32 @@ DRAFTS = {
     "sumGloveBatt": ("Connected · Battery {p}%", "متصل · بطارية {p}%", "replaces sumGlove (real battery)", {"p": "int"}),
     "sumGloveLow": ("Connected · Battery low", "متصل · البطارية ضعيفة", "replaces sumGlove (#BAT LOW)", None),
     "sumGloveUsb": ("Connected · On USB power", "متصل · شغال على USB", "replaces sumGlove (#BAT NO_BATTERY)", None),
+}
+
+# Step 7 (Talk) texts, NOT approved yet: shown to the user in
+# app/tools/out/step7/drafts.html (D1-D23). Their ARB descriptions say DRAFT.
+# Move them into DRAFTS-style approved entries only after the user's answer.
+STEP7_DRAFTS = {
+    "talkToday": ("Today", "النهارده", "D1: feed day marker (step 7 answer 13: no place)", None),
+    "toastSosSpoken": ("SOS spoken out loud.", "اتنطقت الاستغاثة بصوت عالي.", "D2: replaces toastSOS (Q-T4: no SMS)", None),
+    "sosSay": ("I need help, please.", "محتاج مساعدة من فضلك.", "D23: what the SOS quick phrase speaks (user, step 7 answer 7)", None),
+    "micPermBody": ("Allow Ishara to use the microphone so it can hear the person you're talking to.", "اسمح للتطبيق يستخدم الميكروفون عشان يسمع الشخص اللي بتكلمه.", "D4: mic permission not given", None),
+    "micPermBodySettings": ("Turn on the microphone permission for Ishara in your phone's settings.", "شغّل إذن الميكروفون لتطبيق إشارة من إعدادات الموبايل.", "D5: mic permission refused for good", None),
+    "sttUnavailable": ("Speech recognition isn't available on this phone.", "التعرّف على الكلام مش متاح على الموبايل ده.", "D6: no recognizer", None),
+    "sttNoEnglish": ("This phone can't recognize English speech yet.", "الموبايل ده لسه مش بيتعرّف على الكلام بالإنجليزي.", "D7: no English recognition", None),
+    "sttNoArabic": ("This phone can't recognize Arabic speech yet.", "الموبايل ده لسه مش بيتعرّف على الكلام بالعربي.", "D8: no Arabic recognition", None),
+    "sttNothingHeard": ("Didn't catch that. Tap the mic and try again.", "مسمعتش كويس. دوس على الميكروفون وجرّب تاني.", "D9: nothing heard", None),
+    "gloveOff": ("Glove not connected", "الجوانتي مش متصل", "D10: glove chip, no glove", None),
+    "gloveReconnecting": ("Reconnecting…", "بيتوصّل تاني…", "D11: glove chip, reconnecting", None),
+    "gloveBattLow": ("Glove battery low", "بطارية الجوانتي قربت تخلص", "D12: glove chip, #BAT LOW", None),
+    "liveNoGlove": ("Connect your glove to sign.", "وصّل الجوانتي عشان تعمل الإشارة.", "D13: live box, no glove", None),
+    "liveNoCal": ("Calibrate your glove to start signing.", "عاير الجوانتي عشان تبدأ تعمل الإشارة.", "D14: live box, #CAL NONE", None),
+    "liveStopped": ("Sign recognition stopped. Reconnect the glove and try again.", "التعرّف على الإشارات وقف. وصّل الجوانتي تاني وجرّب.", "D15: recognizer failed", None),
+    "ttsNoVoice": ("This phone has no {language} voice, so words are shown but not spoken.", "الموبايل ده مفيهوش صوت {language}، فالكلمات هتظهر بس مش هتتنطق.", "D16: no TTS voice", {"language": "String"}),
+    "tentativeLabel": ("{word}, not sure yet. Double-tap to confirm.", "{word}، لسه مش متأكد. دوس مرتين عشان تأكدها.", "D17: screen reader, tentative word", {"word": "String"}),
+    "micLabel": ("Tap and speak", "دوس واتكلم", "D18: screen reader, mic button (prototype aria-label)", None),
+    "privacySpeech": ("Speech to text uses your phone's speech recognizer. On some phones it sends the other person's voice to Google or Apple to turn it into text. Your signs and sentences stay on your phone.", "تحويل الكلام لنص بيستخدم خاصية التعرّف على الكلام في موبايلك. في بعض الموبايلات بيبعت صوت الشخص التاني لجوجل أو أبل عشان يحوّله لنص. إشاراتك وجملك بيفضلوا على موبايلك.", "D19: Q-T3 privacy line", None),
+    "clearLabel": ("Clear and move to the conversation", "امسح وانقل للمحادثة", "D22: screen reader, Clear (Q-T2)", None),
 }
 
 STR = r'"((?:[^"\\]|\\.)*)"'
@@ -259,11 +287,21 @@ def main() -> int:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta
 
+    for key, (e, a, why, ph) in STEP7_DRAFTS.items():
+        if key in out_en:
+            print(f"error: step 7 draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"DRAFT (step 7, not approved yet): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
     OUT.mkdir(parents=True, exist_ok=True)
     for name, data in (("app_en.arb", out_en), ("app_ar.arb", out_ar)):
         (OUT / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     kept = sum(1 for k in out_en if not k.startswith("@"))
-    print(f"{kept} strings written ({len(DRAFTS)} step 6 texts), {len(EXCLUDED)} excluded:")
+    print(f"{kept} strings written ({len(DRAFTS)} step 6 texts, {len(STEP7_DRAFTS)} step 7 drafts), {len(EXCLUDED)} excluded:")
     for k, why in sorted(EXCLUDED.items()):
         print(f"  {k:14} {why}")
     return 0

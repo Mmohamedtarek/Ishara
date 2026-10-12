@@ -134,6 +134,23 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | S6-8 | Start-up after onboarding: Talk, and the paired glove reconnects in the background only if the Bluetooth permission is already granted (no prompt at start-up). |
 | S6-9 | The avatar choice in Setup is not built: with Nour alone there is none (S5-13). The picker (with thumbnails) comes with the Avatar studio, step 9, and Setup will reuse it. |
 
+## Step 7: Talk (2026-10-12)
+| ID | Decision |
+|---|---|
+| S7-1 | The Talk feed is stored by a `ConversationRepository` with a local implementation on the phone's key-value store (S6-2 pattern: versioned, `export` / `clear`); the database replaces it in step 10, with a migration test. |
+| S7-2 | Q-D4 reading: the layout stays as the prototype. "I sign" = face to face off and screen-reader focus on the live box (7b); "I speak" = face to face on. |
+| S7-3 | The avatar card keeps Replay and the speed button (1x → 0.5x → 1.5x); the speed lives in memory until the Avatar studio saves it (step 9, Q-A2). |
+| S7-4 | Glove chip: connected → Settings (prototype), not connected → Pair (7b). |
+| S7-5 | The screen stays on only while Talk is visible and the app is in the foreground (7b). |
+| S7-6 | Glove → text on the mock: a developer panel (debug / profile builds with `GLOVE=mock` only, never in release) plays mock files through the real pipeline (7b). |
+| S7-7 | Quick phrases speak the prototype's texts; SOS speaks a clear sentence instead of "SOS · I need help" (read as "S O S"): D23 "I need help, please." / «محتاج مساعدة من فضلك.» (draft). The button label stays SOS. `qSaySos` is excluded. |
+| S7-8 | The Q-T3 privacy line (D19) shows once, from the first use of the mic until "OK", and later also in Settings › Privacy (step 9). |
+| S7-9 | A tentative word the user tapped (Q-T1) stays confirmed: a later Decider `cancel` keeps it, a later `confirm` isn't spoken again (7b). |
+| S7-10 | Listening stops after 3 s of silence or 30 s in all; a sign's `signEnded` is awaited for its length + 1.5 s. |
+| S7-11 | No voice for the spoken language: words are shown, not spoken, with notice D16 (7b). |
+| S7-12 | "Today" only as the feed's day marker (no place). |
+| S7-13 | The new texts D1-D23 stay drafts (ARB descriptions say DRAFT; `extract_strings.py` `STEP7_DRAFTS`) until the user approves them in `tools/out/step7/drafts.html`. |
+
 ## Backend
 | ID | Decision |
 |---|---|
@@ -228,3 +245,8 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | 2026-10-10 | Kit v3.2.3 (user, replaces options A/B/C): the mock glove plays `mock/<person>/calibration/open|fist|turn.csv` during `CAL OPEN / FIST / TURN` (from the start, looped), never `rest.csv`; `CAL SAVE` / `GETCAL` answer with that file's `#CAL`. Outside a step the mock plays rest as before, so the idle screens between steps can say "Hand moving" (kit README: rest isn't still). |
 | 2026-10-10 | Live "hold still" during a step: the 2 s window restarts when the step starts, so it judges only that step's samples, like the firmware's capture (same 3 °/s rule). Before, the window still held the 2 s before the tap and showed "Hand moving" for most of a still step. |
 | 2026-10-11 | Golden tests override every async provider their screen reads (e.g. `avatarCastProvider` with `AsyncData`, loaded once from the asset file), so the image never depends on machine speed. CI goldens are made on Linux (the runner or the Linux laptop), never on a Mac. | The welcome CI golden was captured before the cast loaded (no "Hi, I'm Nour!") and failed on the faster CI runner. A Mac renders the same CI golden 1–83 px differently from Linux. |
+| 2026-10-12 | Speech to text (Q-T3): `speech_to_text` 7.5.0 behind a `SpeechToText` interface (`lib/core/speech/`). Each listen asks for on-device recognition; Android falls back to the normal recognizer when there is none, and a language the on-device one lacks (`error_language_*`, iOS `onDeviceError`) is retried once without it. Locale: `ar-EG`, else any Arabic; the phone's English, else `en-US`, else any English; never another language. A listen the platform never starts ends after 35 s (watchdog). Partial results aren't shown (the prototype shows "Listening…"). | Q-T3, Q10; never stuck listening. |
+| 2026-10-12 | Speech → sign sequencing: `SignSequencer` (`lib/core/avatar/`) plays `SpeechToSign` segments one by one, waiting for each `signEnded` (length + 1.5 s, then `stop` and on); an interrupted sign (pause, page reload) ends the sentence. While the avatar isn't ready, nothing is sent to it (a queued sign would play late, out of step) and each caption word lasts the sign's length (the engine's own no-sign length: max(360, 520 / speed) ms). | DECISIONS 2026-10-09 (Talk sequences on signStarted / signEnded); sign rule 7. |
+| 2026-10-12 | A heard sentence goes into the feed ("Signed by Nour") when its signing ends, also when a new mic tap or Replay stops it: it was heard either way. If the catalogue or the avatar fails to load, nothing is signed and the mic card shows the generic error. | Never lose what the other person said; never guess a sign. |
+| 2026-10-12 | The feed keeps the newest 500 messages in the key-value store (meant for small values); the step 10 database lifts the limit. | Technical limit, not a product rule. |
+| 2026-10-12 | Widget tests that load assets clear `rootBundle` after each test: a load started in one test's fake clock never completes in the next, and the bundle caches it. | Found in the Talk screen tests. |

@@ -26,6 +26,7 @@ dependencies:
   permission_handler: 13.0.2
   riverpod_annotation: ^4.0.7
   shared_preferences: 2.5.6
+  speech_to_text: 7.5.0
   webview_flutter: 4.14.1
 
 dev_dependencies:

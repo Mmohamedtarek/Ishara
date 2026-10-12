@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ishara_app/core/auth/auth_providers.dart';
@@ -45,6 +46,7 @@ Future<Harness> pumpScreen(
   Harness? harness,
   bool dark = true,
   AppLanguage language = AppLanguage.en,
+  List<Override> overrides = const [],
 }) async {
   final h = harness ?? Harness();
   addTearDown(h.glove.dispose);
@@ -77,6 +79,7 @@ Future<Harness> pumpScreen(
         glovePermissionsProvider.overrideWithValue(h.perms),
         authRepositoryProvider.overrideWithValue(h.auth),
         keyValueStoreProvider.overrideWithValue(h.store),
+        ...overrides,
       ],
       child: MaterialApp.router(
         routerConfig: h.router,

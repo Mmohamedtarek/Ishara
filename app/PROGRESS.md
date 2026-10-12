@@ -402,3 +402,34 @@ No other golden changed.
 **Notes:**
 - CI goldens are not pixel-identical across OS / CPU, contrary to the earlier assumption. They match between Linux machines.
 - The suite has 491 tests today; the Step 6 entry says 515.
+
+## Step 7a: Talk, speech → sign (2026-10-12)
+
+Checklist (before coding), each traced to its source. Your answers to the plan are S7-1…S7-13 (DECISIONS).
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| S1 | Mic card idle / listening (state dot, pulse, level bars); no demo sentences | prototype `#s-talk .mic-card`, `listen()` | ✓ |
+| S2 | Phone recognizer, on-device first (retry without it when it lacks the language); `ar-EG` → any Arabic; phone English → `en-US` → any English; language from the spoken-language setting | Q-T3, C14 | ✓ |
+| S3 | `SpeechToSign` exact match, longest phrase first, only the Q-T5 aliases | sign rule 7 | ✓ (EN, AR, aliases, gendered forms, removed aliases and near-misses tested) |
+| S4 | Segments played in order, each awaiting `signEnded` (length + 1.5 s); no sign → ready pose; interrupted → stop; never blocking | DECISIONS 2026-10-09; Q10 | ✓ |
+| S5 | Avatar card: Ready / Signing pill, Replay, speed 1x → 0.5x → 1.5x, caption word by word | prototype `#avatar`, `avSign()`; S7-3 | ✓ |
+| S6 | Feed "them" bubble "Signed by Nour" after signing | prototype `avatarSay()` | ✓ |
+| S7 | Face to face: card turned 180° (0.6 s), "For the hearing person", "Waiting for signs…" + "Tap the mic to reply", toasts | prototype `.f2f` | ✓ (the live words in the card come with 7b) |
+| S8 | Missing states: mic refused (D4 Allow) / for good (D5 Open settings, cleared on resume), no recognizer (D6), language missing (D7 / D8), nothing heard (D9), other error | Phase 0 row 7 | ✓ |
+| S9 | Q-T3 privacy line (D19), once, until OK | Q-T3; S7-8 | ✓ |
+| T1 | "I speak" opens face to face | Q-D4; S7-2 | ✓ ("I sign" focus on the live box: 7b) |
+| T2 | Feed on the phone behind `ConversationRepository` (versioned, export / clear for step 10) | Q-B4; S7-1 | ✓ |
+| T3 | EN / AR, RTL, light / dark, TalkBack labels, reduced motion | prototype CSS; review protocol | ✓ (48 dp: see Open) |
+
+**Built:** `lib/core/speech/` (`SpeechToText` + `PlatformSpeechToText` on `speech_to_text` 7.5.0, `MicPermissions`), `lib/core/avatar/sign_sequencer.dart`, `sign_speed.dart`, `lib/core/conversation/` (repository + providers), `lib/core/ui/dashed_box.dart`, `IconCircleButton` toggle state, `features/talk/` (controller, screen, mic card, avatar overlay, feed). Android `RECORD_AUDIO` + `RecognitionService` query; iOS microphone / speech usage texts (DRAFT D20 / D21). 20 draft keys (`STEP7_DRAFTS`); `qSaySos` excluded (S7-7). New package: `speech_to_text` 7.5.0 (+ `_platform_interface` 2.5.0, `_windows` 1.0.1), all BSD-3, no network code in their sources (the phone's recognizer may use the network: Q-T3 line).
+
+**Tests:** 82 new: speech 21 (through the plugin's real method channel: locales, on-device fallback, late `done`, watchdog, errors), sequencer 9, conversation 7, Talk controller 27, Talk screen 18 (incl. labelled tap targets). Two `/code-review` findings fixed, each with a test that fails without the fix (mutation-checked): a stale avatar controller after the runtime rebuilds; the on-device fallback ended as "nothing heard". Line-by-line review fixed: feed keys by position (identical messages), errors while signing logged and shown.
+
+**Results (MacBook, Apple Silicon):** `flutter analyze` 0 issues; `dart format` 0 changed; `CI=true flutter test --coverage`: 545 passed, 1 skipped, 27 failed: the same 27 Linux-made CI goldens off by 1-83 px on a Mac (2026-10-11 entry); every non-golden test passes. Expected on Linux CI: 572 passed, 1 skipped. Coverage `lib/core` 94.0 %.
+
+**Screenshots:** `tools/out/step7/compare/talk_idle_*.png` (prototype | app, EN / AR × light / dark), app renders of the signing, face-to-face listening and mic-blocked states. Differences: the glove chip and the user's zone (live box, Speak / Type / Clear, quick phrases) are 7b; "Today" without a place (S7-12); in the golden harness the avatar card is ~10 px taller (CSS `27vh` uses the screen height, the harness's size differs; on the phone it is the real height).
+
+**Not committed:** `test/goldens/talk_golden_test.dart` and its images. Its CI images were rendered on a Mac, and CI goldens come from Linux (2026-10-11); asked the user how to make them.
+
+**Open:** draft texts D1-D23 (`tools/out/step7/drafts.html`); the prototype's 44 px icon buttons and 40 px language toggle are under Android's 48 dp tap target (also on the onboarding screens); the Talk goldens (above); trying it on the phone.

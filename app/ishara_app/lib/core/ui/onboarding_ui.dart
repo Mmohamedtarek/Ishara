@@ -128,12 +128,14 @@ class _Brand extends StatelessWidget {
   );
 }
 
-/// `.icon-btn` (44 px touch size, glass, line border).
+/// `.icon-btn` (44 px touch size, glass, line border). With [on] set it is
+/// a toggle (`aria-pressed`); `.icon-btn.on` is tinted.
 class IconCircleButton extends StatelessWidget {
   const new({
     required this.icon,
     required this.label,
     required this.onPressed,
+    this.on,
     super.key,
   });
 
@@ -141,23 +143,33 @@ class IconCircleButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
 
+  /// null: a plain button; true / false: a toggle and its state.
+  final bool? on;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final lit = on ?? false;
     return Semantics(
       button: true,
+      toggled: on,
       label: label,
       excludeSemantics: true,
       onTap: onPressed,
       child: Material(
-        color: c.glass,
-        shape: CircleBorder(side: BorderSide(color: c.line)),
+        // .icon-btn.on: rgba(142,156,255,.16), border rgba(183,192,255,.5)
+        color: lit ? const Color(0x298E9CFF) : c.glass,
+        shape: CircleBorder(
+          side: BorderSide(color: lit ? const Color(0x80B7C0FF) : c.line),
+        ),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onPressed,
           child: SizedBox.square(
             dimension: 44,
-            child: Center(child: IsharaIcon(icon, color: c.sub)),
+            child: Center(
+              child: IsharaIcon(icon, color: lit ? c.tealSoft : c.sub),
+            ),
           ),
         ),
       ),

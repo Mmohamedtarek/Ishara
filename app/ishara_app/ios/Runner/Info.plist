@@ -24,6 +24,11 @@
 	</dict>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Ishara uses Bluetooth to connect to your Ishara glove and read your signs.</string>
+	<!-- DRAFT (step 7, D20 / D21): not approved yet. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ishara uses the microphone to hear the person you're talking to and show their words in sign language.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Ishara turns the other person's speech into text so the avatar can sign it.</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
