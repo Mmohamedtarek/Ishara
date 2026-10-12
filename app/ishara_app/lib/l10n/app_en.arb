@@ -1449,5 +1449,9 @@
   "clearLabel": "Clear and move to the conversation",
   "@clearLabel": {
     "description": "approved new text (step 7, 2026-10-12): D22: screen reader, Clear (Q-T2)"
+  },
+  "sttTryShortSentence": "Try saying it in a short sentence.",
+  "@sttTryShortSentence": {
+    "description": "DRAFT (step 7, not approved yet): D24: under D9 when nothing was heard (the phone's recognizer drops very short words said alone)"
   }
 }

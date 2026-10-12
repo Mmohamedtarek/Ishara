@@ -113,7 +113,10 @@ void main() {
     await tapIt(t, find.byKey(const ValueKey('talk-mic')));
     expect(talk.stt.calls.last, 'stop');
     expect(
-      find.text("Didn't catch that. Tap the mic and try again."),
+      find.text(
+        "Didn't catch that. Tap the mic and try again.\n"
+        'Try saying it in a short sentence.',
+      ),
       findsOneWidget,
     );
   });
@@ -279,6 +282,14 @@ void main() {
     expect(find.text('yesterday'), findsNothing);
     expect(find.text('yes'), findsNWidgets(2));
     expect(find.text('Spoken'), findsNWidgets(2));
+  });
+
+  testWidgets('nothing heard in Arabic: D9 and the short-sentence hint '
+      '(D24, draft)', (t) async {
+    await _Talk(heard: [const SpeechFailed(SpeechError.noSpeech)])
+        .pump(t, language: AppLanguage.ar);
+    await tapIt(t, find.byKey(const ValueKey('talk-mic')));
+    expect(find.textContaining('جرّب تقولها في جملة قصيرة.'), findsOneWidget);
   });
 
   testWidgets('Arabic, RTL: the Arabic hint and the idle caption', (t) async {

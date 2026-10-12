@@ -314,7 +314,10 @@ class _MicHint extends ConsumerWidget {
       MicState.unavailable => l.sttUnavailable,
       MicState.languageMissing => arabicVoice ? l.sttNoArabic : l.sttNoEnglish,
       _ => switch (state.notice) {
-        MicNotice.nothingHeard => l.sttNothingHeard,
+        // D9 + D24: the phone's recognizer drops very short words said
+        // alone (phone test 4); a short sentence works.
+        MicNotice.nothingHeard =>
+          '${l.sttNothingHeard}\n${l.sttTryShortSentence}',
         MicNotice.failed => l.authErrUnknown,
         MicNotice.none => null,
       },

@@ -186,6 +186,12 @@ STEP7_DRAFTS = {
     "clearLabel": ("Clear and move to the conversation", "امسح وانقل للمحادثة", "D22: screen reader, Clear (Q-T2)", None),
 }
 
+# Step 7 texts written after the D1-D23 approval: NOT approved yet
+# (app/tools/out/step7/drafts.html). Their ARB descriptions say DRAFT.
+STEP7_NEW_DRAFTS = {
+    "sttTryShortSentence": ("Try saying it in a short sentence.", "جرّب تقولها في جملة قصيرة.", "D24: under D9 when nothing was heard (the phone's recognizer drops very short words said alone)", None),
+}
+
 STR = r'"((?:[^"\\]|\\.)*)"'
 # Dart reserved words can't be getter names: such keys get a "Label" suffix.
 DART_RESERVED = {"assert", "break", "case", "catch", "class", "const", "continue", "default", "do", "else",
@@ -296,11 +302,18 @@ def main() -> int:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta
 
+    for key, (e, a, why, ph) in STEP7_NEW_DRAFTS.items():
+        if key in out_en:
+            print(f"error: step 7 draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        out_en["@" + key] = {"description": f"DRAFT (step 7, not approved yet): {why}"}
+
     OUT.mkdir(parents=True, exist_ok=True)
     for name, data in (("app_en.arb", out_en), ("app_ar.arb", out_ar)):
         (OUT / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     kept = sum(1 for k in out_en if not k.startswith("@"))
-    print(f"{kept} strings written ({len(DRAFTS)} step 6 texts, {len(STEP7_DRAFTS)} step 7 texts), {len(EXCLUDED)} excluded:")
+    print(f"{kept} strings written ({len(DRAFTS)} step 6 texts, {len(STEP7_DRAFTS)} step 7 texts, {len(STEP7_NEW_DRAFTS)} new drafts), {len(EXCLUDED)} excluded:")
     for k, why in sorted(EXCLUDED.items()):
         print(f"  {k:14} {why}")
     return 0

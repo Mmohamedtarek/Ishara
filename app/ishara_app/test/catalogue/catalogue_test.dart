@@ -210,7 +210,8 @@ void main() {
       expect(m('1', ar), [('1', 'one')]);
       for (final s in [
         '12', '6', '0', '1.5', '3:30', '1,000', '٣:٣٠', //
-        'to', 'too', 'for', 'won',
+        // no homophone aliases (user, 2026-10-12)
+        'to', 'too', 'for', 'won', 'know', 'eye', 'ewe',
       ]) {
         expect(m(s, en).map((e) => e.$2).toSet(), {null}, reason: s);
       }
