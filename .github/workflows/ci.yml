@@ -78,6 +78,17 @@ jobs:
       run:
         working-directory: app/ishara_app
     steps:
+      # The debug APK build (NDK, CMake, Gradle, every ABI) filled the runner's
+      # disk after step 7a ("No space left on device" copying app-debug.apk).
+      # Toolchains this job never uses are removed first; df shows the room.
+      - name: Free disk space
+        working-directory: .
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
+            /usr/local/share/boost /usr/share/swift "$AGENT_TOOLSDIRECTORY/CodeQL"
+          df -h /
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v4
@@ -100,6 +111,11 @@ jobs:
 
       - name: Build debug APK (mock glove)
         run: flutter build apk --debug --dart-define=GLOVE=mock
+
+      - name: Disk use after the build
+        if: always()
+        working-directory: .
+        run: df -h /
 
   ai:
     name: AI (Python + kit)

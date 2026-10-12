@@ -435,3 +435,5 @@ Checklist (before coding), each traced to its source. Your answers to the plan a
 **Open:** the Talk goldens (above); trying it on the phone.
 
 **After the user's answers (2026-10-12):** D1-D23 approved as written (S7-14); tap targets keep the prototype sizes (S7-15). Talk goldens: a manual workflow (`.github/workflows/goldens.yml`) renders them on Linux and uploads them; the images are committed by hand after review.
+
+**CI after the 7a push (run 38267215903, `ba28b2c`):** Flutter app ✓ 572 passed, 1 skipped, `lib/core` 94.0 %; AI ✓; Firmware ✓; **Android build ✗** `java.io.IOException: No space left on device` while copying `app-debug.apk` to `flutter-apk/` (the APK itself built; the previous green run on the same runner image installed the same NDK r28c and CMake). Fix: the Android job frees runner disk first and logs `df -h` (DECISIONS 2026-10-12). Verified by the next push's CI (below).
