@@ -14,7 +14,11 @@ part 'reconnect.g.dart';
 /// never throws: Talk shows the glove's state (step 7). Completes with
 /// whether the glove is connected.
 @Riverpod(keepAlive: true)
-Future<bool> reconnectPairedGlove(Ref ref) async {
+Future<bool> reconnectPairedGlove(Ref ref) => reconnectToPairedGlove(ref);
+
+/// One attempt to find and connect the paired glove (start-up, and Talk
+/// after the glove drops: S7-19). Never asks for permissions, never throws.
+Future<bool> reconnectToPairedGlove(Ref ref) async {
   final log = Log('reconnect');
   final paired = ref.read(profileControllerProvider).glove;
   if (paired == null) return false;

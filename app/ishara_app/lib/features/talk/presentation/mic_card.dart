@@ -8,6 +8,7 @@ import 'package:ishara_app/core/theme/ishara_tokens.dart';
 import 'package:ishara_app/core/ui/dashed_box.dart';
 import 'package:ishara_app/core/ui/ishara_icon.dart';
 import 'package:ishara_app/core/ui/onboarding_ui.dart';
+import 'package:ishara_app/features/talk/application/talk_glove_controller.dart';
 import 'package:ishara_app/features/talk/application/talk_speech_controller.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
@@ -422,17 +423,20 @@ class _LevelBarsState extends State<_LevelBars>
       .25 + .75 * Curves.easeInOut.transform(1 - (2 * t - 1).abs());
 }
 
-/// `.mic-signs` (face to face): the user's live words for the person
-/// opposite, or "Waiting for signs…", and "Tap the mic to reply". The live
-/// words come with glove → text (step 7b).
-class _MicSigns extends StatelessWidget {
+/// `.mic-signs` (face to face): the user's words for the person opposite
+/// (the confirmed ones: what the voice has said), or "Waiting for signs…",
+/// and "Tap the mic to reply".
+class _MicSigns extends ConsumerWidget {
   const new();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
     final t = context.text;
     final l = AppLocalizations.of(context);
+    final words = [
+      for (final w in ref.watch(talkGloveProvider).sentence) w.text,
+    ].join(' ');
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: DashedBox(
@@ -443,13 +447,19 @@ class _MicSigns extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
         child: Column(
           children: [
-            Text(
-              l.waitSigns,
-              textAlign: TextAlign.center,
-              style: t.micSigns.copyWith(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: c.muted,
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                words.isEmpty ? l.waitSigns : words,
+                key: const ValueKey('talk-mic-signs'),
+                textAlign: TextAlign.center,
+                style: words.isEmpty
+                    ? t.micSigns.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: c.muted,
+                      )
+                    : t.micSigns.copyWith(color: c.ink),
               ),
             ),
             const SizedBox(height: 4),

@@ -1450,8 +1450,20 @@
   "@clearLabel": {
     "description": "approved new text (step 7, 2026-10-12): D22: screen reader, Clear (Q-T2)"
   },
+  "langNameEn": "English",
+  "@langNameEn": {
+    "description": "approved new text (step 7, 2026-10-12): D16 value: the English voice"
+  },
+  "langNameAr": "Arabic",
+  "@langNameAr": {
+    "description": "approved new text (step 7, 2026-10-12): D16 value: the Arabic voice"
+  },
   "sttTryShortSentence": "Try saying it in a short sentence.",
   "@sttTryShortSentence": {
     "description": "approved new text (step 7, 2026-10-13): D24: under D9 when nothing was heard (the phone's recognizer drops very short words said alone)"
+  },
+  "typeAddLabel": "Add",
+  "@typeAddLabel": {
+    "description": "DRAFT (step 7b, not approved yet): D25: screen reader, the Type box's send button (prototype aria-label)"
   }
 }

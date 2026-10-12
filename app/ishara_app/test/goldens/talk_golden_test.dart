@@ -20,9 +20,11 @@ import 'package:ishara_app/core/router/app_router.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/settings/app_settings.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
+import 'package:ishara_app/features/talk/application/talk_glove_controller.dart';
 import 'package:ishara_app/features/talk/application/talk_speech_controller.dart';
 
 import '../support/fake_glove.dart';
+import '../support/fake_talk.dart';
 
 /// Settings fixed for one scenario (language, theme).
 class _Fixed extends AppSettingsController {
@@ -30,6 +32,14 @@ class _Fixed extends AppSettingsController {
   final AppSettings settings;
   @override
   AppSettings build() => settings;
+}
+
+/// Talk's glove → text state fixed for one scenario.
+class _FixedGlove extends TalkGlove {
+  new(this.fixed);
+  final TalkGloveState fixed;
+  @override
+  TalkGloveState build() => fixed;
 }
 
 /// Talk's speech state fixed for one scenario.
@@ -63,11 +73,21 @@ AvatarRuntime _runtime() {
   );
 }
 
+/// A glove past the three checks (Pair "connected"), with or without a
+/// stored calibration.
+FakeGloveSource _connected({bool stored = true}) {
+  final g = FakeGloveSource(stored: stored);
+  g.connect(g.found.single).ignore();
+  return g;
+}
+
 Widget _app(
   AppLanguage language,
   ThemeMode mode,
   TalkSpeechState talk,
   List<TalkMessage> Function(AppLanguage) feed,
+  TalkGloveState glove,
+  FakeGloveSource Function() source,
 ) => ProviderScope(
   overrides: [
     appSettingsControllerProvider.overrideWith(
@@ -76,13 +96,17 @@ Widget _app(
     appRouterProvider.overrideWith(
       (ref) => buildRouter(initialLocation: AppRoutes.talk),
     ),
-    gloveSourceProvider.overrideWithValue(FakeGloveSource()),
+    gloveSourceProvider.overrideWithValue(source()),
+    // the product screen: no developer panel (it shows only with the mock)
+    activeGloveKindProvider.overrideWithValue(GloveSourceKind.ble),
     glovePermissionsProvider.overrideWithValue(FakeGlovePermissions()),
     keyValueStoreProvider.overrideWithValue(MemoryKeyValueStore()),
     avatarCastProvider.overrideWithValue(AsyncData(_cast)),
     avatarRuntimeProvider.overrideWithValue(AsyncData(_runtime())),
     conversationProvider.overrideWithValue(AsyncData(feed(language))),
     talkSpeechProvider.overrideWith(() => _FixedTalk(talk)),
+    talkGloveProvider.overrideWith(() => _FixedGlove(glove)),
+    ...TalkFakes().overrides,
   ],
   child: const IsharaApp(),
 );
@@ -91,6 +115,8 @@ Future<void> _screen(
   String name,
   TalkSpeechState Function(AppLanguage) talk, {
   List<TalkMessage> Function(AppLanguage)? feed,
+  TalkGloveState Function(AppLanguage)? glove,
+  FakeGloveSource Function()? source,
 }) => goldenTest(
   '$name: EN / AR x light / dark',
   fileName: 'talk_$name',
@@ -111,7 +137,14 @@ Future<void> _screen(
           GoldenTestScenario(
             name: '${lang.name} ${mode.name}',
             constraints: const BoxConstraints.tightFor(width: 390, height: 844),
-            child: _app(lang, mode, talk(lang), feed ?? (_) => const []),
+            child: _app(
+              lang,
+              mode,
+              talk(lang),
+              feed ?? (_) => const [],
+              glove?.call(lang) ?? const TalkGloveState(),
+              source ?? _connected,
+            ),
           ),
     ],
   ),
@@ -159,6 +192,25 @@ List<TalkMessage> _feed(AppLanguage l) {
   };
 }
 
+/// The user's live words: confirmed ones and a tentative one ("…").
+TalkGloveState _words(AppLanguage l) {
+  final ar = l == AppLanguage.ar;
+  LiveWord w(int id, String en, String a, LiveWordState s) => LiveWord(
+    id: id,
+    label: en,
+    text: ar ? a : en,
+    spoken: ar ? a : en,
+    state: s,
+  );
+  return TalkGloveState(
+    words: [
+      w(1, 'me', 'أنا', LiveWordState.confirmed),
+      w(2, 'hungry', 'جعان', LiveWordState.confirmed),
+      w(3, 'water', 'مية', LiveWordState.tentative),
+    ],
+  );
+}
+
 Future<void> main() async {
   await _screen('idle', (_) => const TalkSpeechState());
   await _screen(
@@ -169,6 +221,23 @@ Future<void> main() async {
   await _screen(
     'listening_f2f',
     (_) => const TalkSpeechState(mic: MicState.listening, faceToFace: true),
+    glove: _words,
+  );
+  await _screen(
+    'glove_words',
+    (_) => const TalkSpeechState(),
+    glove: _words,
+    feed: _feed,
+  );
+  await _screen(
+    'no_glove',
+    (_) => const TalkSpeechState(),
+    source: FakeGloveSource.new,
+  );
+  await _screen(
+    'no_calibration',
+    (_) => const TalkSpeechState(),
+    source: () => _connected(stored: false),
   );
   await _screen(
     'mic_blocked',

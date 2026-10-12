@@ -445,3 +445,32 @@ Checklist (before coding), each traced to its source. Your answers to the plan a
 **Phone test 3 (user, 2026-10-12, `862b203`):** A (on-device): only "help" signs; B (`STT_ON_DEVICE=false`): nothing; no `stt_` line in the output (the lines use `debugPrint` and reached logcat in test 2, so no listen started). Found in the plugin's Android code: (1) the locale list never answers when the on-device support check fails, and each tap asked again: the mic could stay in "preparing" forever: fixed (time limits, the locale kept per language, a "try again" notice; tests: the phone never answering → busy within the limit, then works; asked once per language; asked again after "language missing"; the controller isn't stuck; the cache test fails without the fix). (2) Not changed yet, needs the phone's log: the plugin caches its recognizer intent without the on-device flag in the key, so since `862b203` (`en-GB` equal to the phone default) English listens reuse an intent built without the on-device flag or a language; before, `en_GB` forced a rebuild. Mac: 561 passed, 1 skipped, the 27 known Mac golden failures; expected on Linux CI 588 passed, 1 skipped; `lib/core` 94.0 %. CI for `862b203`: green (584 passed, 1 skipped).
 
 **Phone test 4 (user, 2026-10-12):** very short words said alone come back empty from the phone's recognizer; in a sentence they work. Added D24 under D9 (draft, `tools/out/step7/drafts.html`); homophone list tested (`know`, `eye`, `ewe` added). Biasing: `speech_to_text` 7.5.0 ignores `contextualPhrases` on Android and iOS (only its Dart interface has it); options for the user. Mac: 562 passed, 1 skipped, the 27 known Mac golden failures; the architecture test caught a model label in a comment (fixed).
+
+## Step 7b: Talk, glove → text and the rest of Talk (2026-10-13)
+
+Answers: S7-16…S7-25 (DECISIONS). Checklist, each traced to its source:
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Real `RecognitionService` events only; labels from `labels.txt`, words from `signs.json` | CLAUDE.md; AI-SPEC §5 | ✓ (`RecognitionFeed`; unknown labels ignored) |
+| 2 | word: shown + spoken; tentative: faded "…", not spoken; confirm: normal + spoken; cancel: fades out | AI-SPEC §5, §7; sign rule 6 | ✓ |
+| 3 | Tap a tentative word: confirm + speak, logged as a user confirmation; later cancel keeps it, later confirm not spoken again | Q-T1; S7-9 | ✓ |
+| 4 | Conversation end (`active_s` after the last spoken word) and Clear: confirmed words → feed as "me"; tentative dropped; Speak repeats (disabled when empty, "Speaking…"); Type adds words spoken when sent | Q-T2; S7-20, S7-21, S7-22 | ✓ |
+| 5 | Quick phrases: the sentence first, then the phrase spoken and added; SOS speaks D23 and shows D2 | S7-18; Q-T4; S7-7 | ✓ |
+| 6 | Words shown and spoken in the voice language; voice `ar-EG` / any Arabic, phone English / `en-US`; no voice → shown, not spoken (D16) | S7-17, S7-23, S7-11 | ✓ (`flutter_tts` 4.2.5, MIT) |
+| 7 | Glove chip: real `#BAT` %, LOW (amber, D12), USB (no %), Reconnecting (D11), not connected (D10); tap → Settings / Pair | Q-K2; S7-4 | ✓ |
+| 8 | Missing glove states in the live box: no glove (D13 + Connect), no calibration (D14 + Calibrate now), recognizer stopped (D15) | Phase 0 row 7; Q-K6 | ✓ |
+| 9 | One background reconnect after a drop (permission already granted, no prompt) | S7-19 | ✓ |
+| 10 | Conversation on the phone (ConversationRepository) | Q-B4; S7-1 | ✓ (from 7a; "me" messages now) |
+| 11 | Screen on only while Talk is visible and in the foreground | S7-5 | ✓ (own channel, no package) |
+| 12 | Developer panel: debug / profile + mock only; person A / B; every mock file through the real pipeline | S7-24 | ✓ |
+| 13 | "I sign": the live box first for screen readers; face-to-face card shows the user's words | S7-2; prototype `.mic-signs` | ✓ |
+| 14 | Goldens override every async provider; CI images rendered on Linux | DECISIONS 2026-10-11 | test updated (7 states); images from the goldens workflow, pending |
+
+**Built:** `lib/core/speech/text_to_speech.dart`, `lib/core/device/keep_screen_on.dart` (+ `MainActivity`, `AppDelegate`), `RecognitionFeed` + `recognitionFeedProvider` + `conversationTimeoutProvider`, `reconnectToPairedGlove` (shared with start-up), `lib/core/glove/mock/mock_controls.dart`; `features/talk`: `TalkGlove` controller, `MeZone` (live box, type box, Speak / Type / Clear, quick phrases), `GloveChip`, `MockPanelButton`; the screen's layout (the avatar yields height). Android `TTS_SERVICE` query. Texts: D16's language names (approved with D16); D25 "Add" / «ضيف» (draft).
+
+**Tests:** Talk 90 (controller 25, glove screen 20, plus 7a's), navigation tests with the Talk fakes; integration test `integration_test/talk_test.dart` (mock glove plays A/hello.csv through the real pipeline; not run here: no emulator on this Mac). `/code-review` found 5 bugs, all fixed with tests: glove → text stopped after the recognizer was rebuilt; words were spoken with no voice for the language; the reconnect after a drop was missed when the glove was connected before Talk started (the realistic test then found a crash: a state change inside build); a faded word could be left behind when Talk was hidden; leaving Talk didn't stop glove → text. Mutation-checked: 4 of 5 fail without their fix; the dispose one is also covered by the visibility path (a second safety net, not separately testable). The architecture tests caught the panel reaching the mock glove directly and a label in a comment.
+
+**Results (Mac):** analyze 0 issues; format 0 changed; `CI=true flutter test --coverage`: 604 passed, 1 skipped, 35 failed = the 27 known Mac goldens + the 7 Talk goldens (new images pending from Linux) + one navigation test (a pending timer from the real recognizer: fixed by giving it the Talk fakes; then `app_navigation_test.dart` 15/15 passed); `lib/core` 93.5 %.
+
+**Open:** D25 approval; the Talk golden images (workflow, then the user's OK); the emulator / phone run of the integration test; recognizer biasing (a / b / c).

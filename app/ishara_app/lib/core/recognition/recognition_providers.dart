@@ -37,3 +37,16 @@ Future<RecognitionService> recognitionService(Ref ref) async {
   ref.onDispose(service.dispose);
   return service;
 }
+
+/// Recognition as Talk reads it (tests override it with a fake feed).
+@Riverpod(keepAlive: true)
+Future<RecognitionFeed> recognitionFeed(Ref ref) =>
+    ref.watch(recognitionServiceProvider.future);
+
+/// Q-T2 / S7-21: the conversation ends this long after the last spoken word
+/// (`active_s` in `decider.json`).
+@Riverpod(keepAlive: true)
+Future<Duration> conversationTimeout(Ref ref) async {
+  final config = (await ref.watch(modelBundleProvider.future)).config;
+  return Duration(milliseconds: (config.activeSeconds * 1000).round());
+}

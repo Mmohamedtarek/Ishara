@@ -67,6 +67,7 @@ Future<Harness> pumpScreen(
         AppRoutes.calibrate,
         AppRoutes.ready,
         AppRoutes.talk,
+        AppRoutes.settings,
       ])
         GoRoute(path: p, builder: (_, s) => stub(s.uri.toString())),
     ],

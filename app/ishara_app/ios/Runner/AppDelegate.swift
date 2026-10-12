@@ -12,5 +12,17 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    // Talk keeps the screen on while it is visible (S7-5); no package needed.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "IsharaScreen") {
+      FlutterMethodChannel(name: "ishara/screen", binaryMessenger: registrar.messenger())
+        .setMethodCallHandler { call, result in
+          if call.method == "keepOn" {
+            UIApplication.shared.isIdleTimerDisabled = (call.arguments as? Bool) ?? false
+            result(nil)
+          } else {
+            result(FlutterMethodNotImplemented)
+          }
+        }
+    }
   }
 }

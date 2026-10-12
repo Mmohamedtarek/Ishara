@@ -17,6 +17,7 @@ import 'package:ishara_app/core/theme/ishara_tokens.dart';
 import 'package:ishara_app/core/ui/ishara_tab_bar.dart';
 
 import 'support/fake_glove.dart';
+import 'support/fake_talk.dart';
 
 /// A screen by key: the real onboarding screens (`screen-…`) or a skeleton
 /// still waiting for its step (`skeleton-…`).
@@ -55,6 +56,9 @@ Future<GoRouter> _pumpApp(
         authRepositoryProvider.overrideWithValue(
           FakeAuthRepository(delay: Duration.zero),
         ),
+        // Talk's glove → text without the model isolate (its own tests run
+        // the real pipeline)
+        ...TalkFakes().overrides,
       ],
       child: const IsharaApp(),
     ),

@@ -49,9 +49,18 @@ class RecognitionTick {
   final Float64List smoothed;
 }
 
+/// What Talk reads from recognition: the Decider's events and failures.
+abstract interface class RecognitionFeed {
+  /// Decider events, in order.
+  Stream<RecognitionEvent> get events;
+
+  /// Recognizer failures (the UI shows that recognition stopped).
+  Stream<Failure> get errors;
+}
+
 /// Glove → recognizer → events. Knows nothing about which glove source is
 /// active. Resets on (re)connect and on every new `#CAL` (AI-SPEC §2, §5).
-class RecognitionService {
+class RecognitionService implements RecognitionFeed {
   new({required this._source, required this._engine, required this.labels}) {
     _subs
       ..add(_source.statusChanges.listen(_onStatus))
@@ -80,13 +89,13 @@ class RecognitionService {
   bool _wasReady = false;
   int _slowRuns = 0;
 
-  /// Decider events, in order.
+  @override
   Stream<RecognitionEvent> get events => _events.stream;
 
   /// Every model run.
   Stream<RecognitionTick> get ticks => _ticks.stream;
 
-  /// Recognizer failures (the UI shows that recognition stopped).
+  @override
   Stream<Failure> get errors => _errors.stream;
 
   /// Batches whose model time exceeded the 20 ms budget.

@@ -12,6 +12,7 @@ import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/features/talk/presentation/talk_screen.dart';
 
 import '../support/fake_speech.dart';
+import '../support/fake_talk.dart';
 import '../support/screen_harness.dart';
 
 class _Talk {
@@ -24,6 +25,7 @@ class _Talk {
 
   final FakeSpeechToText stt;
   final FakeMicPermissions perms;
+  final talk = TalkFakes();
 
   Future<Harness> pump(
     WidgetTester t, {
@@ -42,6 +44,7 @@ class _Talk {
       overrides: [
         speechToTextProvider.overrideWithValue(stt),
         micPermissionsProvider.overrideWithValue(perms),
+        ...talk.overrides,
         if (feed != null)
           conversationProvider.overrideWithValue(AsyncData(feed)),
       ],

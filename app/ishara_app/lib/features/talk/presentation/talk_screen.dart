@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/core/avatar/avatar_host.dart';
+import 'package:ishara_app/core/device/keep_screen_on.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/ishara_icon.dart';
 import 'package:ishara_app/core/ui/onboarding_ui.dart';
 import 'package:ishara_app/core/ui/toast.dart';
+import 'package:ishara_app/features/talk/application/talk_glove_controller.dart';
 import 'package:ishara_app/features/talk/application/talk_speech_controller.dart';
+import 'package:ishara_app/features/talk/presentation/glove_chip.dart';
+import 'package:ishara_app/features/talk/presentation/me_zone.dart';
 import 'package:ishara_app/features/talk/presentation/mic_card.dart';
+import 'package:ishara_app/features/talk/presentation/mock_panel.dart';
 import 'package:ishara_app/features/talk/presentation/talk_avatar_overlay.dart';
 import 'package:ishara_app/features/talk/presentation/talk_feed.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
-/// Prototype `#s-talk`. Step 7a: speech → sign (top bar, mic card, avatar
-/// card with the caption, feed). The glove chip and the user's zone (live
-/// box, Speak / Type / Clear, quick phrases) come with glove → text (7b).
+/// Prototype `#s-talk`: the glove chip and toggles, the mic card (speech →
+/// sign), the avatar with its caption, the feed, and the user's zone (glove
+/// → text, Speak / Type / Clear, quick phrases). The screen stays on while
+/// Talk is visible and the app is in the foreground (S7-5).
 class TalkScreen extends ConsumerStatefulWidget {
   const new({super.key});
 
@@ -22,21 +28,59 @@ class TalkScreen extends ConsumerStatefulWidget {
 }
 
 class _TalkScreenState extends ConsumerState<TalkScreen> {
+  /// `.feed { min-height: 72px }`.
+  static const _feedMin = 72.0;
+
+  /// A smaller avatar stage shows nothing useful (the caption alone would
+  /// fill it), so it is left out.
+  static const _minStage = 120.0;
+
   late final AppLifecycleListener _life;
+  bool _foreground = true;
+  bool _visible = false;
+  bool? _screenOn;
+
+  /// Kept: [dispose] can't use `ref` (the widget is unmounting).
+  late final KeepScreenOn _keepOn = ref.read(keepScreenOnProvider);
+  late final TalkGlove _glove = ref.read(talkGloveProvider.notifier);
 
   @override
   void initState() {
     super.initState();
-    // Back from the phone's settings: a microphone permission given there
-    // clears the mic card's notice.
     _life = AppLifecycleListener(
+      onStateChange: (s) {
+        _foreground = s == AppLifecycleState.resumed;
+        _syncScreen();
+      },
+      // Back from the phone's settings: a microphone permission given there
+      // clears the mic card's notice.
       onResume: () => ref.read(talkSpeechProvider.notifier).recheck(),
     );
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Another tab hides Talk without disposing it: its tickers stop.
+    _visible = TickerMode.valuesOf(context).enabled;
+    _syncScreen();
+  }
+
+  /// S7-5: on only while Talk is visible and the app is in the foreground.
+  void _syncScreen() {
+    final on = _visible && _foreground;
+    _glove.setActive(active: _visible);
+    if (on == _screenOn) return;
+    _screenOn = on;
+    _keepOn.set(on: on).ignore();
+  }
+
+  @override
   void dispose() {
     _life.dispose();
+    if (_screenOn ?? false) _keepOn.set(on: false).ignore();
+    // Talk is gone: the glove's words are not Talk's any more.
+    _glove.setActive(active: false);
     super.dispose();
   }
 
@@ -47,6 +91,8 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     final privacy = ref.watch(
       talkSpeechProvider.select((s) => s.privacyNotice),
     );
+    // glove → text runs while Talk exists
+    ref.listen(talkGloveProvider, (_, _) {});
     return Scaffold(
       key: const ValueKey('screen-talk'),
       backgroundColor: c.bg,
@@ -61,23 +107,40 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const MicCard(),
-                  if (privacy) const _PrivacyLine(),
-                  // .av-card: margin-top 8; avatar slot
-                  // clamp(168px, 27vh, 268px)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: SizedBox(
-                      height: (size.height * .27).clamp(168, 268).toDouble(),
-                      child: const AvatarStage(overlay: TalkAvatarOverlay()),
-                    ),
-                  ),
-                ],
+                children: [const MicCard(), if (privacy) const _PrivacyLine()],
               ),
             ),
-            // .feed: flex 1, min height 72
-            const Expanded(child: TalkFeed()),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  // .av-card: margin-top 8; avatar clamp(168px, 27vh, 268px).
+                  // The feed keeps its 72 px (.feed min-height): when notices
+                  // or the keyboard take room, the avatar gives it up first,
+                  // and below [_minStage] it isn't shown at all.
+                  final want = (size.height * .27).clamp(168, 268).toDouble();
+                  final room = box.maxHeight - 8 - _feedMin;
+                  final stage = want < room ? want : room;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (stage >= _minStage)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                          child: SizedBox(
+                            height: stage,
+                            child: const AvatarStage(
+                              overlay: TalkAvatarOverlay(),
+                            ),
+                          ),
+                        ),
+                      // .feed: flex 1
+                      const Expanded(child: TalkFeed()),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const MeZone(),
           ],
         ),
       ),
@@ -85,8 +148,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   }
 }
 
-/// `header.top` of Talk (padding-bottom 4): the face-to-face toggle and the
-/// language toggle. The glove chip at its start comes with step 7b.
+/// `header.top` of Talk (padding-bottom 4): the glove chip, the developer
+/// panel (debug / profile, mock glove only), the face-to-face toggle and the
+/// language toggle.
 class _TopBar extends ConsumerWidget {
   const new();
 
@@ -100,7 +164,15 @@ class _TopBar extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
         child: Row(
           children: [
-            const Spacer(),
+            // the chip takes the free width (its text ellipsizes if needed)
+            const Expanded(
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: GloveChip(),
+              ),
+            ),
+            const MockPanelButton(),
+            const SizedBox(width: 8),
             IconCircleButton(
               key: const ValueKey('talk-f2f'),
               icon: 'flip',

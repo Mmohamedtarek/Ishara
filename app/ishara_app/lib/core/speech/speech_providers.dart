@@ -1,5 +1,7 @@
+import 'package:flutter/widgets.dart';
 import 'package:ishara_app/core/speech/mic_permissions.dart';
 import 'package:ishara_app/core/speech/speech_to_text.dart';
+import 'package:ishara_app/core/speech/text_to_speech.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'speech_providers.g.dart';
@@ -15,3 +17,16 @@ SpeechToText speechToText(Ref ref) {
 /// The microphone permission (tests override it with a fake).
 @Riverpod(keepAlive: true)
 MicPermissions micPermissions(Ref ref) => const PlatformMicPermissions();
+
+/// The phone's voice (tests override it with a fake).
+@Riverpod(keepAlive: true)
+TextToSpeech textToSpeech(Ref ref) {
+  final tts = PlatformTextToSpeech(
+    phoneLocales: () => [
+      for (final l in WidgetsBinding.instance.platformDispatcher.locales)
+        l.toLanguageTag(),
+    ],
+  );
+  ref.onDispose(tts.stop);
+  return tts;
+}

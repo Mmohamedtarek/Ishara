@@ -184,12 +184,20 @@ STEP7_DRAFTS = {
     "micLabel": ("Tap and speak", "دوس واتكلم", "D18: screen reader, mic button (prototype aria-label)", None),
     "privacySpeech": ("Speech to text uses your phone's speech recognizer. On some phones it sends the other person's voice to Google or Apple to turn it into text. Your signs and sentences stay on your phone.", "تحويل الكلام لنص بيستخدم خاصية التعرّف على الكلام في موبايلك. في بعض الموبايلات بيبعت صوت الشخص التاني لجوجل أو أبل عشان يحوّله لنص. إشاراتك وجملك بيفضلوا على موبايلك.", "D19: Q-T3 privacy line", None),
     "clearLabel": ("Clear and move to the conversation", "امسح وانقل للمحادثة", "D22: screen reader, Clear (Q-T2)", None),
+    # D16's {language}, as listed with D16 on the approved drafts page
+    "langNameEn": ("English", "إنجليزي", "D16 value: the English voice", None),
+    "langNameAr": ("Arabic", "عربي", "D16 value: the Arabic voice", None),
 }
 
 # Step 7 texts written after the D1-D23 approval. D24 approved by the user
 # on 2026-10-13 (DECISIONS S7-16). New drafts get "DRAFT" until approved.
 STEP7_NEW_DRAFTS = {
     "sttTryShortSentence": ("Try saying it in a short sentence.", "جرّب تقولها في جملة قصيرة.", "D24: under D9 when nothing was heard (the phone's recognizer drops very short words said alone)", None),
+}
+
+# Step 7b drafts, NOT approved yet (app/tools/out/step7/drafts.html).
+STEP7B_DRAFTS = {
+    "typeAddLabel": ("Add", "ضيف", "D25: screen reader, the Type box's send button (prototype aria-label)", None),
 }
 
 STR = r'"((?:[^"\\]|\\.)*)"'
@@ -308,6 +316,13 @@ def main() -> int:
             return 1
         out_en[key], out_ar[key] = e, a
         out_en["@" + key] = {"description": f"approved new text (step 7, 2026-10-13): {why}"}
+
+    for key, (e, a, why, ph) in STEP7B_DRAFTS.items():
+        if key in out_en:
+            print(f"error: step 7b draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        out_en["@" + key] = {"description": f"DRAFT (step 7b, not approved yet): {why}"}
 
     OUT.mkdir(parents=True, exist_ok=True)
     for name, data in (("app_en.arb", out_en), ("app_ar.arb", out_ar)):
