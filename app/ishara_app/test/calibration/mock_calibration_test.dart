@@ -116,17 +116,21 @@ void main() {
       expect(find.text('—'), findsNothing);
       expect(find.textContaining(RegExp(r'^\d+%$')), findsNWidgets(5));
 
-      // TURN: the rotation really sweeps (the glove needs 30° of range).
+      // TURN: the rotation shows turn.csv's real ±42° sweep (the glove
+      // needs 30° of range), read on every batch of samples.
       await tapCapture();
       final rotations = <double>[];
+      void read() => rotations.add(ctl().hand.rotation!);
+      ctl().samplesSeen.addListener(read);
       for (var ms = 0; ms < 3000; ms += 100) {
         await t.pump(const Duration(milliseconds: 100));
-        rotations.add(ctl().hand.rotation!);
       }
-      final range =
-          rotations.reduce((a, b) => a > b ? a : b) -
-          rotations.reduce((a, b) => a < b ? a : b);
-      expect(range, greaterThanOrEqualTo(30));
+      ctl().samplesSeen.removeListener(read);
+      final lo = rotations.reduce((a, b) => a < b ? a : b);
+      final hi = rotations.reduce((a, b) => a > b ? a : b);
+      expect(lo, closeTo(-42, 3));
+      expect(hi, closeTo(42, 3));
+      expect(hi - lo, greaterThanOrEqualTo(30));
 
       // CAL SAVE with the person's #CAL, then Ready.
       await t.pump(const Duration(milliseconds: 300));

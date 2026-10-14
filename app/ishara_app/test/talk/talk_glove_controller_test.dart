@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
@@ -396,6 +398,34 @@ void main() {
       r.feed.confirm('water');
       expect(r.words.last, ('water', LiveWordState.confirmed));
     });
+  });
+
+  test('Talk closed while it is still starting: no state change after '
+      'dispose (emulator, onboarding_test)', () async {
+    final fakes = TalkFakes();
+    final glove = FakeGloveSource();
+    final timeout = Completer<Duration>();
+    final c = ProviderContainer(
+      overrides: [
+        keyValueStoreProvider.overrideWithValue(MemoryKeyValueStore()),
+        gloveSourceProvider.overrideWithValue(glove),
+        glovePermissionsProvider.overrideWithValue(FakeGlovePermissions()),
+        recognitionFeedProvider.overrideWithValue(AsyncData(fakes.feed)),
+        textToSpeechProvider.overrideWithValue(fakes.tts),
+        // the slow part of the start, as on a device
+        conversationTimeoutProvider.overrideWith((_) => timeout.future),
+      ],
+    );
+    final sub = c.listen(talkGloveProvider, (_, _) {});
+    await _wait(20);
+    sub.close();
+    c.dispose();
+    // the start goes on after Talk is gone: it must not touch the state
+    timeout.complete(const Duration(seconds: 3));
+    await _wait(20);
+    expect(fakes.tts.languages, isEmpty);
+    await fakes.feed.dispose();
+    await glove.dispose();
   });
 
   test('the "me" message carries the clock time', () async {

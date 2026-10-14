@@ -59,6 +59,14 @@ class LiveHand {
   /// from now on (the firmware judges each step's capture on its own).
   void restartStillWindow() => _gyro.clear();
 
+  /// TURN starts: the roll filter starts again from the next sample's accel
+  /// roll. On a real hand that is the value the converged filter already
+  /// holds (the hand is held still when TURN starts). The mock glove jumps
+  /// from `rest.csv` (≈ −93°) to `turn.csv` (0°) with no gyro motion; a
+  /// continuing filter needs about 1 s (α 0.98 at 50 Hz) to catch up, which
+  /// showed −50° … +20° for a ±42° sweep.
+  void restartRoll() => _roll = null;
+
   void add(GloveSample s) {
     final v = s.values;
     _latest = v;

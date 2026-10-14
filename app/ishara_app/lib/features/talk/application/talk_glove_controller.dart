@@ -213,13 +213,17 @@ class TalkGlove extends _$TalkGlove {
       await ref.read(recognitionFeedProvider.future);
     } on Object catch (e, st) {
       _log.warn('start_failed', {'error': '$e', 'stack': '$st'});
+      // Talk may be gone by now (the loads take a while on a device)
+      if (!ref.mounted) return;
       state = state.copyWith(recognitionFailed: true);
     }
+    if (!ref.mounted) return;
     await _setVoice(_language);
   }
 
   Future<void> _setVoice(SpokenLanguage language) async {
     final ok = await ref.read(textToSpeechProvider).setLanguage(language);
+    if (!ref.mounted) return;
     state = state.copyWith(voiceMissing: !ok);
   }
 

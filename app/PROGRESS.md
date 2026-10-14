@@ -477,3 +477,17 @@ Answers: S7-16…S7-25 (DECISIONS). Checklist, each traced to its source:
 
 **Recognizer biasing (S7-27, option a), 2026-10-13:** `app/third_party/speech_to_text/` = speech_to_text 7.5.0 (BSD-3) with an Android patch (`ISHARA.md`, `ISHARA.patch`, every change marked `// Ishara:`): `contextualPhrases` → `EXTRA_BIASING_STRINGS` (Android 13+), and the intent cache now includes the on-device flag and the phrases (the upstream gap suspected after `862b203`). Used through `dependency_overrides`; outside `app/ishara_app`, so the app's format / analyze rules don't apply to upstream code. Talk passes every variant of the avatar's signs in the spoken language (biasing only: matching stays exact, sign rule 7). Tests: the channel gets `contextualPhrases` (no key when empty); EN / AR phrase sets. Not compiled here (no Android SDK): CI's Android job builds it. Whether it helps single short words is for the phone test (the recognizer returned no text for them).
 **D25** approved (S7-26).
+
+## Before step 8: fixes (2026-10-14, Linux laptop, emulator `ishara_api36`)
+
+| # | Item | Status |
+|---|---|---|
+| 0.1 | `onboarding_test.dart` waited for the step-6 `skeleton-talk`: now waits for `talk-mic-card` and checks the glove chip ("Glove connected" + %, active source mock, device `Ishara-M0CK`, phase ready) | ✓ emulator: both tests pass (Talk at 19.9 s) |
+| 0.1 | Found by that run: `TalkGlove._start` wrote state after Talk was disposed (`UnmountedRefException` after the first test, so the guest test never ran). Fixed (`ref.mounted`), unit test fails without the fix | ✓ |
+| 0.1 | CLAUDE.md review protocol: every step ends with all of `integration_test/` on an emulator or phone, results here | ✓ (rule 4) |
+| 0.1 | README troubleshooting: Kotlin "Conflicting overloads" in `SpeechToTextPlugin.kt` → delete `build/speech_to_text` | ✓ |
+| 0.2 | TURN drawing capped at ±33°, number shows the real angle | ✓ widget test (20° → 20°, ±42° → ±33°, label ±42°) |
+| 0.2 | Live roll vs turn.csv (±42°) | ✗ before: rest.csv (≈ −93°) before TURN pulled the first second of the sweep down (−50° … +20° on the emulator). Cause and fix: DECISIONS 2026-10-14. ✓ after: unit test (persons A, B; 0 / 37 / 100 / 411 rest samples before TURN) min −41.8°, max +41.1° … +41.3°, within ±3°; 6 of 8 fail without the fix. `mock_calibration_test` (real mock glove, controller, screen) now checks −42° / +42° ± 3° on every sample batch; both persons fail without the fix |
+
+Tests: analyze 0 issues, format 0 changed; talk + calibration + glove + architecture: 216 passed.
+

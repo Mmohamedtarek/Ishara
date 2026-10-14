@@ -57,7 +57,8 @@ Emulator `ishara_api36` for development and mock integration tests; the user's U
 1. Before coding: checklist of the step's requirements, each traced to its source (file + section).
 2. After coding: `flutter analyze` (zero issues, very_good_analysis), `dart format`, all related tests. Fix until green.
 3. Review the diff line by line (bugs, edge cases, null/async, leaks of streams/controllers/WebView, RTL, dark mode, missing translations, hard-coded labels, accessibility, security), then run `/code-review` and fix what it finds.
-4. UI steps: screenshot each new/changed screen (EN/AR × light/dark) next to the prototype; list every difference; fix or ask.
-5. Record results in `app/PROGRESS.md` (built, checklist ✓/✗, test counts, coverage, screenshots, open questions) and decisions with reasons in `app/DECISIONS.md`.
-6. Never call a step done without evidence. Say plainly what failed or was skipped.
-7. Commit the step (don't push), show the summary, and wait before the next step.
+4. At the end of every step: run all of `integration_test/` on an Android emulator or a phone (they aren't in CI) and record each file's result in `app/PROGRESS.md`.
+5. UI steps: screenshot each new/changed screen (EN/AR × light/dark) next to the prototype; list every difference; fix or ask.
+6. Record results in `app/PROGRESS.md` (built, checklist ✓/✗, test counts, coverage, screenshots, open questions) and decisions with reasons in `app/DECISIONS.md`.
+7. Never call a step done without evidence. Say plainly what failed or was skipped.
+8. Commit the step (don't push), show the summary, and wait before the next step.

@@ -4,7 +4,11 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ishara_app/core/glove/frame_decoder.dart';
 import 'package:ishara_app/core/glove/live_hand.dart';
+import 'package:ishara_app/core/glove/mock/mock_feed.dart';
+import 'package:ishara_app/core/glove/mock/recording.dart';
 import 'package:ishara_app/core/recognition/calibration.dart';
+
+import '../support/kit.dart';
 
 var _seq = 0;
 GloveSample _s({
@@ -110,4 +114,50 @@ void main() {
     expect(h.fingers, [.25, .5, .75, 1.0, null]);
     expect(h.rotation, closeTo(-10, .05));
   });
+
+  // Kit v3.2.3: calibration/turn.csv is a symmetric ±42° sweep (roll =
+  // atan2(ay, az), gyro X turning with it, the raw gyro bias included). The
+  // app's live roll, from the start of the TURN step, must show it. Before
+  // TURN the mock glove plays rest.csv (≈ −93° roll), as on the device.
+  for (final person in MockPerson.values) {
+    for (final restSamples in [0, 37, 100, 411]) {
+      test("person ${person.dir}: TURN shows turn.csv's ±42° "
+          '(after $restSamples rest samples)', () async {
+        final lib = MockLibrary(readAsset);
+        Future<Recording> rec(String f) => lib.load('${person.dir}/$f');
+        final open = await rec('calibration/open.csv');
+        final rest = await rec('rest.csv');
+        final turn = await rec('calibration/turn.csv');
+        var seq = 0;
+        GloveSample at(Recording r, int i) =>
+            GloveSample(seq++, Int16List.fromList(r.sample(i % r.length)));
+
+        // OPEN, captured on the phone (bias and neutral roll)
+        final hand = LiveHand()..restartStillWindow();
+        final cap = StepCapture(hand);
+        for (var i = 0; i < 100; i++) {
+          final s = at(open, i);
+          hand.add(s);
+          cap.add(s);
+        }
+        cap.applyAsOpen();
+        for (var i = 0; i < restSamples; i++) {
+          hand.add(at(rest, i));
+        }
+        // TURN starts (CalibrationController.capture)
+        hand
+          ..restartStillWindow()
+          ..restartRoll();
+        final seen = <double>[];
+        for (var i = 0; i < 150; i++) {
+          hand.add(at(turn, i));
+          seen.add(hand.rotation!);
+        }
+        final lo = seen.reduce(math.min);
+        final hi = seen.reduce(math.max);
+        expect(lo, closeTo(-42, 3));
+        expect(hi, closeTo(42, 3));
+      });
+    }
+  }
 }

@@ -71,6 +71,13 @@ Run a job's commands locally before pushing: the *Tests* commands above; `cd AI/
 Python commands (in a Python 3.12 venv with `requirements.txt`); `cd firmware/ishara-firmware && pio run -e devkit -e xiao -e wokwi`.
 `data/` and `ishara_rf.joblib` are not in git; the AI job doesn't need them.
 
+## Troubleshooting
+
+- **Kotlin "Conflicting overloads" / "Redeclaration" in `SpeechToTextPlugin.kt`** on the first Android build after
+  pulling the `speech_to_text` override (`app/third_party/speech_to_text/`, S7-27): Gradle still has the pub-cache
+  copy of the plugin built in `build/speech_to_text/`, next to the patched one. Delete that folder and build again:
+  `rm -rf app/ishara_app/build/speech_to_text`. CI starts clean and doesn't hit it.
+
 ## Updating the AI models (new kit from the AI team)
 
 1. Replace `app/Ishara-Mobile-Kit/` with the new kit.

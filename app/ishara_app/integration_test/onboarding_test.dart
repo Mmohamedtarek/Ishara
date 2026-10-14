@@ -14,6 +14,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:ishara_app/app.dart';
+import 'package:ishara_app/core/glove/glove_providers.dart';
+import 'package:ishara_app/core/glove/glove_source.dart';
 import 'package:ishara_app/core/profile/onboarding_store.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/router/app_router.dart';
@@ -59,6 +61,25 @@ void main() {
     await t.pump(const Duration(milliseconds: 200));
     await t.tap(f);
     await t.pump(const Duration(milliseconds: 200));
+  }
+
+  /// The real Talk screen shows the glove that was just paired: the mock
+  /// glove (debug default), connected, with its battery.
+  Future<void> expectMockGloveChip(WidgetTester t) async {
+    final chip = find.byKey(const ValueKey('talk-glove-chip'));
+    await waitFor(
+      t,
+      find.descendant(of: chip, matching: find.text('Glove connected')),
+    );
+    expect(
+      find.descendant(of: chip, matching: find.textContaining('%')),
+      findsOneWidget,
+    );
+    final container = ProviderScope.containerOf(t.element(chip));
+    expect(container.read(activeGloveKindProvider), GloveSourceKind.mock);
+    final glove = container.read(gloveSourceProvider).status;
+    expect(glove.phase, GlovePhase.ready);
+    expect(glove.device?.name, 'Ishara-M0CK');
   }
 
   testWidgets('onboarding: account, setup, pair, calibrate, ready, talk', (
@@ -130,7 +151,8 @@ void main() {
     expect(find.text("You're all set"), findsOneWidget);
     await t.pump(const Duration(seconds: 1));
     await tapKey(t, 'ready-talk');
-    await waitFor(t, find.byKey(const ValueKey('skeleton-talk')));
+    await waitFor(t, find.byKey(const ValueKey('talk-mic-card')));
+    await expectMockGloveChip(t);
     mark('talk');
 
     final saved = OnboardingStore(store);
@@ -189,7 +211,8 @@ void main() {
     await waitFor(t, find.byKey(const ValueKey('screen-ready')));
     await linger(t, _pace * 2);
     await tapKey(t, 'ready-talk');
-    await waitFor(t, find.byKey(const ValueKey('skeleton-talk')));
+    await waitFor(t, find.byKey(const ValueKey('talk-mic-card')));
+    await expectMockGloveChip(t);
     await linger(t);
 
     final saved = OnboardingStore(store);

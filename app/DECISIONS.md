@@ -170,6 +170,14 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | S7-28 | The 7b Talk goldens (idle, signing, face to face listening, mic blocked, glove words, no glove, no calibration) approved; rendered on the Linux runner (run 38313837906). |
 | S7-27 | Recognizer biasing: option a. A copy of `speech_to_text` 7.5.0 (BSD-3) in the repo with a small Android patch passing the active language's sign words as `EXTRA_BIASING_STRINGS` (Android 13+); the app uses it through `dependency_overrides`. |
 
+## Step 8: Learn (2026-10-14)
+| ID | Decision |
+|---|---|
+| S8-1 | Practice step when the glove can't be used (no glove, not calibrated, link lost, `#MPU FAIL`): the practice pane shows the step 6/7 state text with its action (Connect → Pair, Calibrate now → Calibrate, one automatic reconnect after a drop, as in Talk); a drop during the 8 s window cancels that attempt without counting it. A "Continue without practice" link skips the step: 0 XP, the sign isn't learned, and the step is left out of accuracy (accuracy = right ÷ steps attempted). |
+| S8-2 | Each quiz / practice result is logged when its step ends: closing a mission halfway keeps what was earned. Only `missionDone` (medal, streak, daily +30) needs the whole mission. |
+| S8-3 | Unlock (Q-L2 "finish the module above") = every sign of the module passed at least once, in practice **or** in its quiz step (users without a glove can unlock by watching). The module's progress bar shows this unlock progress. "Signs learned" stays as Q-L2 (passed in practice, or in a quiz for watch-only signs) and is shown on its own in the stats. |
+| S8-4 | Daily challenge: +30 XP when it reaches its result screen, at any accuracy, once per local day. Played again that day: the normal quiz / practice XP, no +30; the tile shows it's done today. |
+
 ## Backend
 | ID | Decision |
 |---|---|
@@ -279,3 +287,5 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | 2026-10-13 | Glove → text acts only while Talk is visible: on another tab (Learn's practice uses the same recognizer) or after Talk is gone, Decider events are not shown or spoken, and faded words are dropped (their confirm / cancel would be missed). | Found while building 7b; /code-review. |
 | 2026-10-13 | The LIVE dot blinks only while the glove streams ("LIVE" with no glove is untrue; the prototype blinks always). When notices, the privacy line or the keyboard take room, the avatar card gives up height first so the feed keeps its 72 px (`.feed` min-height); below 120 px it isn't shown. | 7b layout; an always-running animation and an overflow found by the tests. |
 | 2026-10-13 | The developer panel reaches the mock glove only through `MockControls` in `lib/core/glove/mock/` (null with the real glove), so only `lib/core/glove/` knows which source is active (architecture test). D16's `{language}` uses "English" / "Arabic", «إنجليزي» / «عربي», as listed with D16 on the approved drafts page. D25 "Add" / «ضيف» (the Type box's send button, screen reader) is a draft. | CLAUDE.md design rule; drafts page. |
+| 2026-10-14 | Calibrate TURN: the live roll filter starts again from the accel roll when TURN starts (`LiveHand.restartRoll`). The hand drawing turns at most ±33° (the prototype's maximum); the number shows the real angle. | Cause of the emulator's −50° … +20° for turn.csv's ±42° sweep: the mock glove plays `rest.csv` (≈ −93° roll, A and B) until TURN, then jumps to `turn.csv` (0°) with no gyro motion. The complementary filter (α 0.98 at 50 Hz, ≈ 1 s time constant) only drifts toward the accel roll, so the first second of the sweep was pulled toward −93°. Bias, sign and neutral roll were right (fresh filter: −41.8° / +41.1° A, −41.8° / +41.3° B). On a real hand the roll is continuous and the restart gives the value the filter already holds. |
+| 2026-10-14 | `TalkGlove` checks `ref.mounted` after each await of its start. | Emulator `onboarding_test`: Talk was disposed (test end) while its start awaited the recognizer; the late state write threw `UnmountedRefException`. |

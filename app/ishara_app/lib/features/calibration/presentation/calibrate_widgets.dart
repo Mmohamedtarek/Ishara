@@ -41,6 +41,9 @@ class HandCard extends StatelessWidget {
   /// Samples are arriving (the LIVE badge blinks).
   final bool live;
 
+  /// The hand drawing turns at most this far (prototype maximum).
+  static const maxDrawnTurnDeg = 33.0;
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -81,8 +84,12 @@ class HandCard extends StatelessWidget {
           Row(
             children: [
               Transform.rotate(
+                // the prototype's drawing peaks at ±33° (setYaw 34 with
+                // its easing); the number below keeps the real angle
                 angle: turning && rot != null
-                    ? rot.clamp(-45.0, 45.0) * math.pi / 180
+                    ? rot.clamp(-maxDrawnTurnDeg, maxDrawnTurnDeg) *
+                          math.pi /
+                          180
                     : 0,
                 alignment: const Alignment(.04, .84), // 52 % 92 %
                 child: SizedBox(
