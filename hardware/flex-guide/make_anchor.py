@@ -1,13 +1,11 @@
 """
 Base holder (anchor) for the connector end of a flex sensor on the Ishara glove. Units: mm.
-X = across the hand, Y = along the sensor (finger side at -Y, wires leave at +Y), Z = height.
+X = across the hand, Y = along the sensor, Z = height.
 
-  body:    14 (W) x 20 (L) x 5.5 (H), rounded, chamfered top, on a 24 x 16 x 1.5 sewing flange
-  slot:    7.0 x 1.0 for the sensor's stiff end, y = -10 .. -2, floor at z = 1.5, flared entry
-  pocket:  9.0 x 3.2 for the 2 crimp pins, the solder joints and heat shrink, y = -2 .. +10,
-           open at the back so the wires leave
-  window:  6 x 7 opening in the roof over the pocket, to check the joints and fill with hot glue
-  holes:   4 x 1.2 mm in the flange, for sewing it to the glove
+  body:    14 (W) x 20 (L) x 5.5 (H), rounded corners, chamfered top
+  pocket:  8.5 x 3.2 through the whole length, centred, for the sensor's end, the 2 crimp pins,
+           the solder joints and heat shrink; 0.5 mm flared entries at both ends
+  holes:   4 x 1.2 mm vertical holes in the side walls, for sewing it to the glove (_sew version)
 """
 import sys
 import numpy as np
@@ -16,13 +14,10 @@ from manifold3d import CrossSection, Manifold
 
 W, L, H = 14.0, 20.0, 5.5
 CORNER_R, TOP_CHAMFER = 1.5, 0.6
-FL_W, FL_L, FL_H, FL_R = 24.0, 16.0, 1.5, 3.0
-SLOT_W, SLOT_H, SLOT_Z = 7.0, 1.0, 1.5
-SPLIT_Y = -2.0                                   # slot ends, pocket starts
-POCKET_W, POCKET_Z0, POCKET_Z1 = 9.0, 1.0, 4.2
-WIN_W, WIN_Y0, WIN_Y1 = 6.0, 0.0, 7.0
+POCKET_W, POCKET_H = 8.5, 3.2
+POCKET_Z = (H - POCKET_H) / 2
 FLARE, FLARE_D = 0.5, 0.8
-HOLE_D, HOLE_X, HOLE_Y = 1.2, 9.5, 5.0
+HOLE_D = 1.2
 
 
 def rrect(w, l, r):
@@ -38,25 +33,28 @@ def body():
     lower = Manifold.extrude(rrect(W, L, CORNER_R), H - TOP_CHAMFER)
     top = Manifold.extrude(rrect(W - 2 * TOP_CHAMFER, L - 2 * TOP_CHAMFER, CORNER_R - TOP_CHAMFER / 2), 0.01) \
         .translate([0, 0, H - 0.01])
-    flange = Manifold.extrude(rrect(FL_W, FL_L, FL_R), FL_H)
-    return Manifold.batch_hull([lower, top]) + flange
+    return Manifold.batch_hull([lower, top])
 
 
-def cuts():
-    face = -L / 2
-    c = box(-SLOT_W / 2, SLOT_W / 2, face - 1, SPLIT_Y + 0.5, SLOT_Z, SLOT_Z + SLOT_H)
-    outer = box(-SLOT_W / 2 - FLARE, SLOT_W / 2 + FLARE, face - 0.005, face + 0.005,
-                SLOT_Z - FLARE, SLOT_Z + SLOT_H + FLARE)
-    inner = box(-SLOT_W / 2, SLOT_W / 2, face + FLARE_D - 0.005, face + FLARE_D + 0.005,
-                SLOT_Z, SLOT_Z + SLOT_H)
-    c = c + Manifold.batch_hull([outer, inner]) + box(-SLOT_W / 2 - FLARE, SLOT_W / 2 + FLARE, face, face - 1,
-                                                      SLOT_Z - FLARE, SLOT_Z + SLOT_H + FLARE)
-    c = c + box(-POCKET_W / 2, POCKET_W / 2, SPLIT_Y, L / 2 + 1, POCKET_Z0, POCKET_Z1)
-    c = c + box(-WIN_W / 2, WIN_W / 2, WIN_Y0, WIN_Y1, POCKET_Z1 - 0.1, H + 1)
+def pocket():
+    z0, z1 = POCKET_Z, POCKET_Z + POCKET_H
+    c = box(-POCKET_W / 2, POCKET_W / 2, -L / 2 - 1, L / 2 + 1, z0, z1)
+    for sign in (-1, 1):
+        face = sign * L / 2
+        outer = box(-POCKET_W / 2 - FLARE, POCKET_W / 2 + FLARE, face - 0.005, face + 0.005, z0 - FLARE, z1 + FLARE)
+        inner = box(-POCKET_W / 2, POCKET_W / 2, face - sign * FLARE_D - 0.005, face - sign * FLARE_D + 0.005, z0, z1)
+        cap = box(-POCKET_W / 2 - FLARE, POCKET_W / 2 + FLARE, face, face + sign * 1.0, z0 - FLARE, z1 + FLARE)
+        c = c + Manifold.batch_hull([outer, inner]) + cap
+    return c
+
+
+def holes():
+    out = Manifold()
+    x = (W / 2 + POCKET_W / 2) / 2                  # middle of each side wall
     for sx in (-1, 1):
         for sy in (-1, 1):
-            c = c + Manifold.cylinder(FL_H + 2, HOLE_D / 2, HOLE_D / 2, 32).translate([sx * HOLE_X, sy * HOLE_Y, -1])
-    return c
+            out = out + Manifold.cylinder(H + 2, HOLE_D / 2, HOLE_D / 2, 32).translate([sx * x, sy * (L / 2 - 3), -1])
+    return out
 
 
 def save(m, path):
@@ -71,6 +69,10 @@ def save(m, path):
 
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "."
-    name = f"{out}/ishara_flex_anchor_14x20x5.5.stl"
-    t = save(body() - cuts(), name)
-    print(name, "size", np.round(t.bounds[1] - t.bounds[0], 2), "volume", round(t.volume, 1), "mm3")
+    for sew in (True, False):
+        m = body() - pocket()
+        if sew:
+            m = m - holes()
+        name = f"{out}/ishara_flex_anchor_14x20x5.5{'_sew' if sew else ''}.stl"
+        t = save(m, name)
+        print(name, "size", np.round(t.bounds[1] - t.bounds[0], 2), "volume", round(t.volume, 1), "mm3")

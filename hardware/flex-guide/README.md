@@ -17,20 +17,20 @@ A 3D-printed guide that holds a flex sensor on the back of a finger while lettin
 
 # Anchor (base holder at the pins)
 
-Holds the sensor's connector end fixed on the back of the hand, before the knuckle, so the sensor slides in the finger guides while its pins don't move. One per finger.
+Holds the sensor's connector end fixed on the back of the hand, before the knuckle, so the sensor slides in the finger guides while its pins don't move. One per finger. Same width as the finger guides.
 
 | | |
 |---|---|
-| Body | 14 mm wide × 20 mm long × 5.5 mm high, on a 24 × 16 × 1.5 mm flange |
-| Slot (finger side, 8 mm) | 7.0 × 1.0 mm for the sensor's stiff end, flared entry |
-| Pin pocket (wire side, 12 mm) | 9.0 × 3.2 mm for the 2 crimp pins, solder joints and heat shrink, open at the back for the wires |
-| Window | 6 × 7 mm in the roof over the pocket: check the joints don't touch, then fill the pocket with hot glue so bending pulls on the holder, not on the pins |
-| Holes | 4 × 1.2 mm in the flange, for sewing it to the glove |
+| Body | 14 mm wide × 20 mm long × 5.5 mm high, rounded corners |
+| Opening | 8.5 × 3.2 mm through the whole length, the same at both ends, flared 0.5 mm at the entries. The sensor's end, the 2 crimp pins, the solder joints and heat shrink sit inside; the wires leave at the back |
+| `_sew` version | 4 × 1.2 mm holes in the side walls, for sewing it to the glove (about 0.8 mm of wall either side of each hole) |
 
 ![anchor preview](anchor_preview.png)
 
-The pin pocket size is from the sensor's typical crimp size, not measured on our sensors; measure the end with its solder joints and heat shrink before printing, and change `POCKET_W` / `POCKET_Z1` if needed.
+To lock the pins, fill the opening with hot glue from the wire end once the sensor is in and tested, so bending pulls on the holder, not on the pins.
 
-**Printing:** flat on the flange, no support (the widest bridge is 9 mm), 100 % infill. 5 plus 2 spares.
+The opening size is from the sensor's typical crimp size, not measured on our sensors; measure the end with its solder joints and heat shrink before printing, and change `POCKET_W` / `POCKET_H` if needed.
+
+**Printing:** standing on an end face (opening vertical), no support, 100 % infill. 5 plus 2 spares.
 
 **Regenerate:** `python make_anchor.py .`
