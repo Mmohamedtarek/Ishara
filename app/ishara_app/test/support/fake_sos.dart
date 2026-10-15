@@ -13,6 +13,7 @@ class FakeLocation implements LocationSource, LocationPermissions {
     this.access = LocationAccess.granted,
     this.freshDelay = Duration.zero,
     this.freshNever = false,
+    this.lastNever = false,
   });
 
   Fix? fresh;
@@ -22,6 +23,9 @@ class FakeLocation implements LocationSource, LocationPermissions {
 
   /// The fresh fix never comes (the 10 s limit must end it).
   bool freshNever;
+
+  /// The last known position never comes either (a stalled platform call).
+  bool lastNever;
   int requests = 0;
   final calls = <String>[];
 
@@ -37,6 +41,7 @@ class FakeLocation implements LocationSource, LocationPermissions {
   @override
   Future<Fix?> lastKnown() async {
     calls.add('last');
+    if (lastNever) return await Completer<Fix?>().future;
     return access == LocationAccess.granted ? last : null;
   }
 

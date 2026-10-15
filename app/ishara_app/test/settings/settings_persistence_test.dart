@@ -1,13 +1,19 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ishara_app/core/avatar/avatar_cast.dart';
+import 'package:ishara_app/core/avatar/avatar_controller.dart';
+import 'package:ishara_app/core/avatar/avatar_library.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/avatar/sign_speed.dart';
+import 'package:ishara_app/core/avatar/webview_avatar_page.dart';
 import 'package:ishara_app/core/config/app_rules.dart';
 import 'package:ishara_app/core/conversation/conversation_providers.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
+import 'package:ishara_app/core/packs/sign_language.dart';
 import 'package:ishara_app/core/phrases/phrases_providers.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/settings/app_settings.dart';
@@ -17,6 +23,7 @@ import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/features/settings/application/data_export.dart';
 import 'package:ishara_app/features/settings/domain/tap_counter.dart';
 
+import '../support/fake_avatar_page.dart';
 import '../support/fake_talk.dart';
 
 ProviderContainer _c(MemoryKeyValueStore kv) {
@@ -31,6 +38,8 @@ ProviderContainer _c(MemoryKeyValueStore kv) {
 }
 
 void main() {
+  _characterTests();
+
   test('every setting persists (S6-2 pattern, versioned) and comes back '
       'after a restart', () async {
     final kv = MemoryKeyValueStore();
@@ -164,3 +173,52 @@ String _rules(String region, String numbers) =>
     '"emergency": {"region": "$region", "numbers": $numbers}}';
 
 final _refProvider = Provider<Ref>((ref) => ref);
+
+void _characterTests() {
+  test('saving a character switches the avatar already running (the name '
+      'and the model never disagree); the same one again: no second '
+      'greeting', () async {
+    final castJson = jsonDecode(
+      File(avatarCastAsset).readAsStringSync(),
+    ) as Map<String, Object?>;
+    // two characters on offer (Sara is hidden in v1, RB-1)
+    ((castJson['characters']! as Map<String, Object?>)['sara']!
+            as Map<String, Object?>)
+        .remove('hidden');
+    final cast = AvatarCast.parse(jsonEncode(castJson));
+    final page = FakePage();
+    final avatar = AvatarController(
+      page: page,
+      library: AvatarLibrary.parse(
+        File('assets/packs/asl/avatar/library.json').readAsStringSync(),
+        language: SignLanguage.asl,
+      ),
+      libraryUrl: 'l',
+      castUrl: 'c',
+      cast: cast,
+    );
+    final c = ProviderContainer(
+      overrides: [
+        keyValueStoreProvider.overrideWithValue(MemoryKeyValueStore()),
+        avatarCastProvider.overrideWithValue(AsyncData(cast)),
+        avatarRuntimeProvider.overrideWithValue(
+          AsyncData(AvatarRuntime(avatar, UnavailableAvatarSurface())),
+        ),
+      ],
+    );
+    addTearDown(() async {
+      c.dispose();
+      await avatar.dispose();
+    });
+    page.post('loaded');
+    await Future<void>.delayed(Duration.zero);
+    List<Object?> switches() => [
+      for (final s in page.sent)
+        if (s['cmd'] == 'setCharacter') s['character'],
+    ];
+    await c.read(savedCharacterProvider.notifier).save('sara');
+    expect(switches(), ['sara']);
+    await c.read(savedCharacterProvider.notifier).save('sara');
+    expect(switches(), ['sara'], reason: 'already showing her');
+  });
+}

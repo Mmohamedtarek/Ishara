@@ -228,8 +228,12 @@ class LocalConversationRepository implements ConversationRepository {
         if (m.conversationKey == key) m,
     ];
     if (removed.isEmpty) return const [];
+    // The newest conversation gone: the next message never joins an older
+    // one (it may have been cleared before, S9-4).
+    final newest = identical(removed.last, _messages.last);
     _messages.removeWhere((m) => m.conversationKey == key);
     await _save();
+    if (newest) await startNewConversation();
     return removed;
   }
 

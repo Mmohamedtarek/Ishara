@@ -110,13 +110,13 @@ void main() {
       ('auth-email', 'mona@example.com'),
       ('auth-password', 'secret123'),
     ]) {
-      await t.enterText(
-        find.descendant(
-          of: find.byKey(ValueKey(key)),
-          matching: find.byType(TextField),
-        ),
-        text,
+      final field = find.descendant(
+        of: find.byKey(ValueKey(key)),
+        matching: find.byType(TextField),
       );
+      // the page transition is slower on a phone than on the emulator
+      await waitFor(t, field);
+      await t.enterText(field, text);
     }
     await tapKey(t, 'auth-submit');
     await waitFor(t, find.byKey(const ValueKey('screen-setup')));

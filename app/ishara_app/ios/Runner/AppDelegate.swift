@@ -36,7 +36,7 @@ import UIKit
           switch call.method {
           case "pickPhone":
             guard let self = self, self.pickResult == nil,
-              let root = self.window?.rootViewController
+              let root = self.presenter()
             else {
               result(nil)
               return
@@ -55,6 +55,18 @@ import UIKit
           }
         }
     }
+  }
+
+  /// The app uses scenes (SceneDelegate), so the app delegate's own window
+  /// is nil: present from the active scene's key window, on top of whatever
+  /// it already shows.
+  private func presenter() -> UIViewController? {
+    let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+    let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+    let window = scene?.windows.first { $0.isKeyWindow } ?? scene?.windows.first
+    var top = window?.rootViewController
+    while let shown = top?.presentedViewController { top = shown }
+    return top
   }
 
   func contactPicker(_ picker: CNContactPickerViewController, didSelect property: CNContactProperty) {

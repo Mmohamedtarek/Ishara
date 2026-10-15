@@ -291,6 +291,8 @@ class TalkSpeech extends _$TalkSpeech {
 
   Future<void> _play(List<SignSegment> segments) async {
     final seq = await _sequencerReady();
+    // Talk closed meanwhile: nothing to sign (_sign still saves the sentence)
+    if (!ref.mounted) return;
     // S9-1: a heard sentence starts signing
     if (segments.isNotEmpty) ref.read(vibrateProvider).short();
     state = state.copyWith(sentence: segments, active: () => null);

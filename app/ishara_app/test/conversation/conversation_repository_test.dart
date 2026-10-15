@@ -189,6 +189,23 @@ void main() {
       await repo.dispose();
     });
 
+    test('A, Clear, B; deleting B: the next message starts a new '
+        'conversation, never joins the cleared A', () async {
+      final repo = LocalConversationRepository(
+        MemoryKeyValueStore(),
+        gap: _gap,
+      );
+      await repo.add(at(t0, 'a'));
+      await repo.startNewConversation();
+      await repo.add(at(t0.add(const Duration(minutes: 1)), 'b'));
+      await repo.deleteConversation(repo.messages.last.conversationKey);
+      await repo.add(at(t0.add(const Duration(minutes: 2)), 'c'));
+      final keys = repo.messages.map((x) => x.conversationKey).toList();
+      expect(keys, hasLength(2));
+      expect(keys[1], isNot(keys[0]));
+      await repo.dispose();
+    });
+
     test('delete a conversation, then Undo puts it back in order', () async {
       final repo = LocalConversationRepository(
         MemoryKeyValueStore(),

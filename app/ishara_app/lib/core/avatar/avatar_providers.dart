@@ -37,8 +37,16 @@ class SavedCharacter extends _$SavedCharacter {
   String? build() =>
       ref.watch(settingsStoreProvider).getString(SettingsStore.kCharacter);
 
+  /// Saves [id] and switches the avatar that is already running, so the
+  /// name shown and the character signing never disagree.
   Future<void> save(String id) async {
     state = id;
+    final running = ref.read(avatarRuntimeProvider).value?.controller;
+    // ids resolve through the cast (a hidden one shows the default)
+    final shown = ref.read(avatarCastProvider).value?.byId(id).id ?? id;
+    if (running != null && running.character != shown) {
+      running.setCharacter(id);
+    }
     await ref
         .read(settingsStoreProvider)
         .setString(SettingsStore.kCharacter, id);

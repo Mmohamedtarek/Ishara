@@ -52,6 +52,13 @@ Future<void> main() async {
   try {
     // app_rules.json: data the feed and SOS need from the first message
     await container.read(appRulesProvider.future);
+  } on Object catch (e, st) {
+    log.failure(
+      'rules_load',
+      UnexpectedFailure('app_rules.json', cause: e, stackTrace: st),
+    );
+  }
+  try {
     await container.read(avatarCastProvider.future);
   } on Object catch (e, st) {
     log.failure(

@@ -96,6 +96,21 @@ void main() {
       });
     });
 
+    test('a stalled last-known lookup ends too: none after about 13 s, so '
+        'SMS never stays busy', () {
+      fakeAsync((async) {
+        final f = FakeLocation()
+          ..freshNever = true
+          ..lastNever = true;
+        SosLocation? got;
+        SosLocator.locate(f).then((w) => got = w).ignore();
+        async.elapse(const Duration(seconds: 12));
+        expect(got, isNull);
+        async.elapse(const Duration(seconds: 2));
+        expect(got!.kind, FixKind.none);
+      });
+    });
+
     test('nothing at all (no permission): none, never an error', () async {
       final w = await SosLocator.locate(
         FakeLocation(fresh: _fix, last: _fix, access: LocationAccess.denied),
@@ -128,6 +143,11 @@ void main() {
         1,
       );
       expect(SosLocator.ageMinutes(const Duration(seconds: 89)), 1);
+      expect(
+        SosLocator.ageMinutes(const Duration(seconds: 20)),
+        1,
+        reason: 'never "about 0 minutes ago"',
+      );
       expect(SosLocator.ageMinutes(const Duration(seconds: -5)), 0);
     });
   });
@@ -142,14 +162,25 @@ void main() {
 
     test('with a location: link, ±accuracy, the fix time', () {
       final w = SosLocation(FixKind.fresh, _fix);
+      final now = DateTime(2026, 10, 14, 18, 3);
       expect(
-        sosMessage(en, w, 'en'),
+        sosMessage(en, w, 'en', now: now),
         'I need help. My location: $_link (±12 m, 18:02)',
       );
       expect(
-        sosMessage(ar, w, 'ar'),
+        sosMessage(ar, w, 'ar', now: now),
         'محتاج مساعدة. مكاني: $_link (±12 م، 18:02)',
       );
+    });
+
+    test('a fix from another day carries its date (never reads as '
+        "today's)", () {
+      final w = SosLocation(FixKind.lastKnown, _fix);
+      final now = DateTime(2026, 10, 15, 9);
+      final m = sosMessage(en, w, 'en', now: now);
+      expect(m, 'I need help. My location: $_link (±12 m, Oct 14, 18:02)');
+      expect(sosMessage(ar, w, 'ar', now: now), contains('18:02'));
+      expect(sosMessage(ar, w, 'ar', now: now), contains('14'));
     });
 
     test('without one', () {

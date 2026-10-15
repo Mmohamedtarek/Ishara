@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
 
@@ -61,6 +62,9 @@ class SosLocation {
 abstract final class SosLocator {
   static const freshLimit = Duration(seconds: 10);
 
+  /// The last known position is the phone's cache: it answers at once.
+  static const lastKnownLimit = Duration(seconds: 2);
+
   static Future<SosLocation> locate(LocationSource source) async {
     try {
       final fresh = await source
@@ -71,7 +75,8 @@ abstract final class SosLocator {
       // no permission, location off, timeout: try the last known one
     }
     try {
-      final last = await source.lastKnown();
+      // a stalled platform call never keeps the SMS button waiting
+      final last = await source.lastKnown().timeout(lastKnownLimit);
       if (last != null) return SosLocation(FixKind.lastKnown, last);
     } on Object {
       // nothing more to try
@@ -92,5 +97,5 @@ abstract final class SosLocator {
 
   /// The age in whole minutes, rounded (for "about 4 minutes ago").
   static int ageMinutes(Duration age) =>
-      age.isNegative ? 0 : (age.inSeconds / 60).round();
+      age.isNegative ? 0 : math.max(1, (age.inSeconds / 60).round());
 }
