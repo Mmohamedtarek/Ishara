@@ -151,12 +151,32 @@ class PhoneSosLauncher implements SosLauncher {
     }
   }
 
-  @override
-  Future<bool> sms(List<String> recipients, String body) =>
-      _open(smsUri(recipients, body), kind: 'sms');
+  static bool get _android => defaultTargetPlatform == TargetPlatform.android;
+
+  /// Android: the app's channel opens the default SMS app / dialer directly
+  /// (S9-6: a plain sms: / tel: link brings up the "Open with" chooser when
+  /// WhatsApp, Truecaller… also take it). Elsewhere: url_launcher.
+  static Future<bool> _channelOpen(
+    String method,
+    Map<String, Object> args,
+  ) async {
+    try {
+      return await _channel.invokeMethod<bool>(method, args) ?? false;
+    } on Object catch (e) {
+      Log('sos').info('${method}_failed', {'error': e.runtimeType.toString()});
+      return false;
+    }
+  }
 
   @override
-  Future<bool> dial(String number) => _open(telUri(number), kind: 'dial');
+  Future<bool> sms(List<String> recipients, String body) => _android
+      ? _channelOpen('sms', {'to': recipients, 'body': body})
+      : _open(smsUri(recipients, body), kind: 'sms');
+
+  @override
+  Future<bool> dial(String number) => _android
+      ? _channelOpen('dial', {'number': number})
+      : _open(telUri(number), kind: 'dial');
 
   @override
   Future<bool> hasWhatsApp() async {

@@ -4,7 +4,10 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.provider.ContactsContract
+import android.provider.Telephony
+import android.telecom.TelecomManager
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -41,6 +44,30 @@ class MainActivity : FlutterActivity() {
                     "hasWhatsApp" -> result.success(
                         listOf("com.whatsapp", "com.whatsapp.w4b").any { installed(it) },
                     )
+                    // SOS (S9-6): straight to the phone's default SMS app /
+                    // dialer, never Android's "Open with" chooser (a plain
+                    // sms: / tel: link also matches WhatsApp, Truecaller…).
+                    // Only opens them filled in: nothing is sent or called.
+                    "sms" -> {
+                        val to = call.argument<List<String>>("to").orEmpty()
+                        val intent = Intent(
+                            Intent.ACTION_SENDTO,
+                            Uri.parse("smsto:" + to.joinToString(",")),
+                        ).putExtra("sms_body", call.argument<String>("body") ?: "")
+                        result.success(
+                            open(intent, Telephony.Sms.getDefaultSmsPackage(this)),
+                        )
+                    }
+                    "dial" -> {
+                        val number = call.argument<String>("number") ?: ""
+                        val telecom = getSystemService(TelecomManager::class.java)
+                        result.success(
+                            open(
+                                Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null)),
+                                telecom?.defaultDialerPackage,
+                            ),
+                        )
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -59,6 +86,25 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    /** [intent] in the default app [pkg]; without one, whatever handles it. */
+    private fun open(intent: Intent, pkg: String?): Boolean {
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (pkg != null) {
+            try {
+                startActivity(Intent(intent).setPackage(pkg))
+                return true
+            } catch (e: ActivityNotFoundException) {
+                // the default app can't take it: fall through
+            }
+        }
+        return try {
+            startActivity(intent)
+            true
+        } catch (e: ActivityNotFoundException) {
+            false
+        }
     }
 
     private fun installed(name: String): Boolean = try {

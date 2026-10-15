@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator_android/geolocator_android.dart';
 import 'package:geolocator_platform_interface/geolocator_platform_interface.dart';
@@ -85,4 +86,36 @@ void main() {
     await const PhoneLocation().offerAccuracy();
     expect(geo.calls, ['current forceLocationManager=false']);
   });
+
+  test(
+    'Android: SMS and Call open the default SMS app / dialer through '
+    'the channel (no "Open with" chooser), filled in, nothing sent',
+    () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final calls = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(const MethodChannel('ishara/contacts'), (
+            c,
+          ) async {
+            calls.add(c);
+            return true;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+              const MethodChannel('ishara/contacts'),
+              null,
+            ),
+      );
+      const l = PhoneSosLauncher();
+      expect(await l.sms(['+201012345678', '+201123456789'], 'help'), isTrue);
+      expect(await l.dial('123'), isTrue);
+      expect([for (final c in calls) c.method], ['sms', 'dial']);
+      expect(calls[0].arguments, {
+        'to': ['+201012345678', '+201123456789'],
+        'body': 'help',
+      });
+      expect(calls[1].arguments, {'number': '123'});
+    },
+  );
 }

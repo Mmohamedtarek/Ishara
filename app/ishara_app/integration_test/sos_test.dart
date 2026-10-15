@@ -1,6 +1,6 @@
-// On the emulator, with app/tools/sos_watch.sh running beside it (it grants
-// location while in use, sets the fix with `adb emu geo fix`, and records
-// what Android opened):
+// On the emulator or a phone, with app/tools/sos_watch.sh running beside it
+// (it grants location while in use, sets the fix with `adb emu geo fix` on
+// the emulator, and records what Android opened):
 //   flutter test integration_test/sos_test.dart -d <device> > sos.log &
 //   app/tools/sos_watch.sh sos.log
 // The real SOS path: real location, real SMS / dialer intents. The SMS app
@@ -90,12 +90,19 @@ void main() {
     debugPrint('SOS location: $where');
     // this check is about the SMS app and the dialer, not the fix (the real
     // fix is checked on the phone): a fresh or a last-known one will do
-    expect(
-      where,
-      anyOf(startsWith('Your location'), startsWith('Last known location')),
-    );
-    expect(find.byKey(const ValueKey('sos-whatsapp')), findsNothing);
-    debugPrint('SOS whatsapp: not installed, no button');
+    // --dart-define=SOS_EXPECT=none: location switched off on the phone
+    if (const String.fromEnvironment('SOS_EXPECT') == 'none') {
+      expect(where, startsWith("Couldn't get your location"));
+    } else {
+      expect(
+        where,
+        anyOf(startsWith('Your location'), startsWith('Last known location')),
+      );
+    }
+    // WhatsApp's button shows only when it is installed (the emulator has
+    // none; a phone may): never tapped here, the numbers may be real
+    final wa = find.byKey(const ValueKey('sos-whatsapp')).evaluate().isNotEmpty;
+    debugPrint('SOS whatsapp: ${wa ? 'button shown, not tapped' : 'none'}');
 
     debugPrint('SOS open sms');
     await t.tap(find.byKey(const ValueKey('sos-sms')));

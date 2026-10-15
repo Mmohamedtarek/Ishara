@@ -48,8 +48,11 @@ look() { # $1 = name
   adb shell dumpsys activity activities |
     grep -m3 -E "topResumedActivity|mResumedActivity|ResumedActivity" > "$OUT/$1_top.txt" || true
   adb shell dumpsys activity recents | grep -m4 -E "Intent \{|realActivity" > "$OUT/$1_intent.txt" || true
-  adb exec-out screencap -p > "$OUT/$1.png"
+  adb shell screencap -p /sdcard/ishara_$1.png && adb pull -q /sdcard/ishara_$1.png "$OUT/$1.png"
+  adb shell rm -f /sdcard/ishara_$1.png
   echo "$1: $(cat "$OUT/$1_top.txt" | head -1)"
+  # an "Open with" chooser would keep the app behind it: close it
+  if grep -q ResolverActivity "$OUT/$1_top.txt"; then adb shell input keyevent KEYCODE_BACK; fi
   sleep 2
   adb shell am start -n $PKG/.MainActivity > /dev/null
 }
