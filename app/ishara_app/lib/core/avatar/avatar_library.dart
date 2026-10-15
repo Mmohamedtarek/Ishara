@@ -19,6 +19,7 @@ class AvatarLibrary {
     this._lastFrame,
     this.previewPairs,
     this.greeting,
+    this.celebrate,
   );
 
   /// Parses and checks [json]; throws [ParseFailure] if anything is off.
@@ -71,12 +72,18 @@ class AvatarLibrary {
         (greeting is! String || !last.containsKey(greeting))) {
       _fail('greeting must name a sign of the library');
     }
+    final celebrate = root['celebrate'];
+    if (celebrate != null &&
+        (celebrate is! String || !last.containsKey(celebrate))) {
+      _fail('celebrate must name a sign of the library');
+    }
     return AvatarLibrary._(
       language,
       Set.unmodifiable(shapes),
       Map.unmodifiable(last),
       List.unmodifiable(pairs),
       greeting as String?,
+      celebrate as String?,
     );
   }
 
@@ -123,6 +130,9 @@ class AvatarLibrary {
 
   /// The sign the engine waves after a character loads (null = none).
   final String? greeting;
+
+  /// The sign the avatar plays once on Learn's result screen (null = none).
+  final String? celebrate;
 
   /// The labels the engine can perform.
   Set<String> get labels => _lastFrame.keys.toSet();

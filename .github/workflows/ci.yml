@@ -59,6 +59,9 @@ jobs:
       - name: Tests with coverage
         run: flutter test --coverage
 
+      - name: Learn days in Egypt's time zone (real daylight-saving switches)
+        run: TZ=Africa/Cairo flutter test test/learn/domain/egypt_time_zone_test.dart
+
       - name: Coverage gate (>= 90 % on lib/core and domain layers)
         run: python3 ../tools/coverage_check.py coverage/lcov.info --min 90 lib/core 'lib/features/*/domain'
 

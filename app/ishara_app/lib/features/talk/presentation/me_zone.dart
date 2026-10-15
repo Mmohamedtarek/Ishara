@@ -9,12 +9,12 @@ import 'package:ishara_app/core/profile/onboarding_store.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
+import 'package:ishara_app/core/ui/blink.dart';
 import 'package:ishara_app/core/ui/dashed_box.dart';
 import 'package:ishara_app/core/ui/ishara_icon.dart';
 import 'package:ishara_app/core/ui/onboarding_ui.dart';
 import 'package:ishara_app/core/ui/toast.dart';
 import 'package:ishara_app/features/talk/application/talk_glove_controller.dart';
-import 'package:ishara_app/features/talk/presentation/mic_card.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
 /// `.me-zone`: "You · live from your glove" + LIVE, the live box, the type

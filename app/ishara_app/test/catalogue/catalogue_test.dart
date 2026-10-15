@@ -443,4 +443,119 @@ void main() {
     expect(cat.byLabel('come')!.description, contains('one quick arc'));
     expect(cat.byLabel('come')!.description, isNot(contains('beckon')));
   });
+
+  group('Learn data (Q-L1)', () {
+    test('the shipped modules: Q-L1, in order, every sign once', () {
+      final c = cat;
+      expect(
+        [for (final m in c.modules) (m.id, m.signs.join(','), m.watchOnly)],
+        [
+          ('start', 'hello,thanks,please,yes,no', false),
+          ('numbers', 'one,two,three,four,five', false),
+          ('people', 'me,you,iloveyou,come,call', false),
+          ('needs', 'water,drink,hungry,sorry,bye', false),
+          ('watch', 'coffee,doctor,home,family,help', true),
+        ],
+      );
+      // the watch-only module holds the signs the glove can't sign
+      for (final l in c.modules.last.signs) {
+        expect(c.byLabel(l)!.glove, isFalse, reason: l);
+      }
+    });
+
+    test('tile icons: the prototype\'s where it has one, else "hand"', () {
+      final c = cat;
+      const proto = {
+        'hello': 'wave',
+        'thanks': 'heart',
+        'please': 'pray',
+        'yes': 'yes',
+        'no': 'no',
+        'help': 'help',
+        'sorry': 'sorry',
+        'water': 'drop',
+        'coffee': 'coffee',
+        'doctor': 'doctor',
+        'home': 'home',
+        'family': 'family',
+        'iloveyou': 'heart',
+      };
+      for (final s in c.signs) {
+        expect(s.icon, proto[s.label] ?? 'hand', reason: s.label);
+      }
+    });
+
+    test('bad module data is refused', () {
+      final base = jsonDecode(readText(_catalogue)) as Map<String, dynamic>;
+      for (final bad in <Object?>[
+        null,
+        {'modules': <Object?>[]},
+        {
+          'modules': [
+            {
+              'signs': ['hello'],
+            },
+          ],
+        },
+        {
+          'modules': [
+            {
+              'id': 'a',
+              'signs': ['hello'],
+            },
+            {
+              'id': 'a',
+              'signs': ['yes'],
+            },
+          ],
+        },
+        {
+          'modules': [
+            {'id': 'a', 'signs': <Object?>[]},
+          ],
+        },
+        {
+          'modules': [
+            {
+              'id': 'a',
+              'signs': ['nope'],
+            },
+          ],
+        },
+        {
+          'modules': [
+            {
+              'id': 'a',
+              'signs': ['hello'],
+            },
+            {
+              'id': 'b',
+              'signs': ['hello'],
+            },
+          ],
+        },
+        {
+          'modules': [
+            {
+              'id': 'a',
+              'signs': ['hello'],
+              'watchOnly': 'yes',
+            },
+          ],
+        },
+        {
+          'modules': ['a'],
+        },
+      ]) {
+        expect(
+          () => SignCatalogue.parse(
+            jsonEncode({...base, 'learn': bad}),
+            labels: labels,
+          ),
+          throwsA(isA<ParseFailure>()),
+          reason: '$bad',
+        );
+      }
+    });
+  });
 }

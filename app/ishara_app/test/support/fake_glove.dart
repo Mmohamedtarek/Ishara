@@ -202,7 +202,7 @@ class FakeGloveSource implements GloveSource {
   Future<BatteryEvent> readBattery() async => battery;
 
   @override
-  void cuePractice(String label) {}
+  void cuePractice(String label) => commands.add('practice $label');
 
   @override
   Future<void> dispose() async {

@@ -1465,5 +1465,139 @@
   "typeAddLabel": "Add",
   "@typeAddLabel": {
     "description": "approved new text (step 7b, 2026-10-13): D25: screen reader, the Type box's send button (prototype aria-label)"
+  },
+  "mNumbers": "Numbers",
+  "@mNumbers": {
+    "description": "DRAFT (step 8, not approved): L1: module title (Q-L1)"
+  },
+  "mPeople": "People",
+  "@mPeople": {
+    "description": "DRAFT (step 8, not approved): L2: module title (Q-L1)"
+  },
+  "mNeeds": "Needs",
+  "@mNeeds": {
+    "description": "DRAFT (step 8, not approved): L3: module title (Q-L1)"
+  },
+  "mWatchOnly": "Watch only",
+  "@mWatchOnly": {
+    "description": "DRAFT (step 8, not approved): L4: module title (Q-L1: pick-the-meaning steps only)"
+  },
+  "mDailySigns": "{n} signs · keep your streak",
+  "@mDailySigns": {
+    "description": "DRAFT (step 8, not approved): L5: replaces mDailyS (Q-L2: no '3 minutes')",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyDoneToday": "Done for today · come back tomorrow",
+  "@dailyDoneToday": {
+    "description": "DRAFT (step 8, not approved): L6: daily challenge already played today (S8-4)"
+  },
+  "yourTurnSign": "Sign {w} with your glove.",
+  "@yourTurnSign": {
+    "description": "DRAFT (step 8, not approved): L7: replaces yourTurnSub (no per-finger checking, Q-L3)",
+    "placeholders": {
+      "w": {
+        "type": "String"
+      }
+    }
+  },
+  "goodMatch": "Good, {p}% match",
+  "@goodMatch": {
+    "description": "DRAFT (step 8, not approved): L8: practice passed under 92 % (okMatch without its tip, Q-L3)",
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  },
+  "practiceOther": "Not quite. Watch {name} again and try once more.",
+  "@practiceOther": {
+    "description": "DRAFT (step 8, not approved): L9: another sign was recognized (never named)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "practiceNothing": "The glove didn't catch the sign. Try again.",
+  "@practiceNothing": {
+    "description": "DRAFT (step 8, not approved): L10: 8 s passed with no sign"
+  },
+  "practiceOut": "Out of tries for {w}. Let's move on.",
+  "@practiceOut": {
+    "description": "DRAFT (step 8, not approved): L11: 3 attempts failed (Q-L2)",
+    "placeholders": {
+      "w": {
+        "type": "String"
+      }
+    }
+  },
+  "practiceTry": "Try {n} of {total}",
+  "@practiceTry": {
+    "description": "DRAFT (step 8, not approved): L12: attempt counter",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "skipPractice": "Continue without practice",
+  "@skipPractice": {
+    "description": "DRAFT (step 8, not approved): L13: glove can't be used (S8-1)"
+  },
+  "missionKeepGoing": "Pass every sign to unlock the next module.",
+  "@missionKeepGoing": {
+    "description": "DRAFT (step 8, not approved): L14: result, the module isn't finished (S8-3); missionDoneS only when a module was unlocked"
+  },
+  "missionNice": "Nice work. Keep it up!",
+  "@missionNice": {
+    "description": "DRAFT (step 8, not approved): L15: result, nothing new to unlock (finished before, last module, daily)"
+  },
+  "medalEarned": "Medal earned",
+  "@medalEarned": {
+    "description": "DRAFT (step 8, not approved): L16: screen reader, the medal on the result"
+  },
+  "noMedal": "Reach {p}% accuracy to earn a medal.",
+  "@noMedal": {
+    "description": "DRAFT (step 8, not approved): L17: result without a medal (Q-L2: 80 %)",
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  },
+  "closeLabel": "Close",
+  "@closeLabel": {
+    "description": "DRAFT (step 8, not approved): L18: screen reader, the mission's close button (prototype aria-label)"
+  },
+  "missionStepOf": "Step {n} of {total}",
+  "@missionStepOf": {
+    "description": "DRAFT (step 8, not approved): L19: screen reader, the mission's progress",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "passedOf": "{done} of {total} passed",
+  "@passedOf": {
+    "description": "DRAFT (step 8, not approved): L20: screen reader, a module's progress",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   }
 }

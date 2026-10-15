@@ -16,9 +16,26 @@ part 'reconnect.g.dart';
 @Riverpod(keepAlive: true)
 Future<bool> reconnectPairedGlove(Ref ref) => reconnectToPairedGlove(ref);
 
-/// One attempt to find and connect the paired glove (start-up, and Talk
-/// after the glove drops: S7-19). Never asks for permissions, never throws.
-Future<bool> reconnectToPairedGlove(Ref ref) async {
+/// One attempt to find and connect the paired glove (start-up, Talk and
+/// Learn after the glove drops: S7-19, S8-1). Never asks for permissions,
+/// never throws. Callers while an attempt runs share it: Talk (alive in its
+/// tab) and a mission both react to the same drop, and one scan is enough.
+Future<bool> reconnectToPairedGlove(Ref ref) {
+  final source = ref.read(gloveSourceProvider);
+  final running = _attempts[source];
+  if (running != null) return running;
+  final attempt = _reconnect(ref);
+  _attempts[source] = attempt;
+  return attempt.whenComplete(() => _attempts[source] = null);
+}
+
+final _attempts = Expando<Future<bool>>('reconnect attempts');
+
+/// The attempt running for a glove source, if any (the UI shows
+/// "Reconnecting…" while it runs).
+bool reconnecting(GloveSource source) => _attempts[source] != null;
+
+Future<bool> _reconnect(Ref ref) async {
   final log = Log('reconnect');
   final paired = ref.read(profileControllerProvider).glove;
   if (paired == null) return false;

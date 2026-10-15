@@ -42,13 +42,21 @@ class FakeRecognitionFeed implements RecognitionFeed {
   @override
   Stream<Failure> get errors => _errors.stream;
 
-  void send(DeciderEventKind kind, String label) => _events.add(
-    RecognitionEvent(kind: kind, label: label, step: 0, probability: .9),
-  );
+  void send(DeciderEventKind kind, String label, {double probability = .9}) =>
+      _events.add(
+        RecognitionEvent(
+          kind: kind,
+          label: label,
+          step: 0,
+          probability: probability,
+        ),
+      );
 
-  void word(String label) => send(DeciderEventKind.word, label);
+  void word(String label, {double probability = .9}) =>
+      send(DeciderEventKind.word, label, probability: probability);
   void tentative(String label) => send(DeciderEventKind.tentative, label);
-  void confirm(String label) => send(DeciderEventKind.confirm, label);
+  void confirm(String label, {double probability = .9}) =>
+      send(DeciderEventKind.confirm, label, probability: probability);
   void cancel(String label) => send(DeciderEventKind.cancel, label);
 
   void fail() => _errors.add(const UnexpectedFailure('engine stopped'));

@@ -8,8 +8,8 @@ import 'package:ishara_app/core/glove/glove_providers.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
+import 'package:ishara_app/core/ui/blink.dart';
 import 'package:ishara_app/features/talk/application/talk_glove_controller.dart';
-import 'package:ishara_app/features/talk/presentation/mic_card.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
 /// `#gloveChip` (`.chip`): the glove's real state (Q-K2: `#BAT`). Connected:

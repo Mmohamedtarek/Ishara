@@ -200,6 +200,31 @@ STEP7B_DRAFTS = {
     "typeAddLabel": ("Add", "ضيف", "D25: screen reader, the Type box's send button (prototype aria-label)", None),
 }
 
+# Step 8 (Learn) texts L1-L20 (app/tools/out/step8/drafts.html): DRAFTS,
+# not approved yet. Their ARB descriptions say "DRAFT".
+STEP8_DRAFTS = {
+    "mNumbers": ("Numbers", "الأرقام", "L1: module title (Q-L1)", None),
+    "mPeople": ("People", "الناس", "L2: module title (Q-L1)", None),
+    "mNeeds": ("Needs", "الاحتياجات", "L3: module title (Q-L1)", None),
+    "mWatchOnly": ("Watch only", "مشاهدة بس", "L4: module title (Q-L1: pick-the-meaning steps only)", None),
+    "mDailySigns": ("{n} signs · keep your streak", "{n} إشارات · حافظ على سلسلتك", "L5: replaces mDailyS (Q-L2: no '3 minutes')", {"n": "int"}),
+    "dailyDoneToday": ("Done for today · come back tomorrow", "خلصته النهارده · ارجع بكرة", "L6: daily challenge already played today (S8-4)", None),
+    "yourTurnSign": ("Sign {w} with your glove.", "اعمل إشارة {w} بالجوانتي.", "L7: replaces yourTurnSub (no per-finger checking, Q-L3)", {"w": "String"}),
+    "goodMatch": ("Good, {p}% match", "كويس، تطابق {p}%", "L8: practice passed under 92 % (okMatch without its tip, Q-L3)", {"p": "int"}),
+    "practiceOther": ("Not quite. Watch {name} again and try once more.", "مش بالظبط. اتفرج على {name} تاني وجرّب مرة كمان.", "L9: another sign was recognized (never named)", {"name": "String"}),
+    "practiceNothing": ("The glove didn't catch the sign. Try again.", "الجوانتي ملقطش الإشارة. جرّب تاني.", "L10: 8 s passed with no sign", None),
+    "practiceOut": ("Out of tries for {w}. Let's move on.", "خلصت محاولاتك في {w}. يلا نكمّل.", "L11: 3 attempts failed (Q-L2)", {"w": "String"}),
+    "practiceTry": ("Try {n} of {total}", "محاولة {n} من {total}", "L12: attempt counter", {"n": "int", "total": "int"}),
+    "skipPractice": ("Continue without practice", "كمّل من غير تدريب", "L13: glove can't be used (S8-1)", None),
+    "missionKeepGoing": ("Pass every sign to unlock the next module.", "عدّي كل الإشارات عشان تفتح الوحدة اللي بعدها.", "L14: result, the module isn't finished (S8-3); missionDoneS only when a module was unlocked", None),
+    "missionNice": ("Nice work. Keep it up!", "شغل حلو. كمّل كده!", "L15: result, nothing new to unlock (finished before, last module, daily)", None),
+    "medalEarned": ("Medal earned", "كسبت ميدالية", "L16: screen reader, the medal on the result", None),
+    "noMedal": ("Reach {p}% accuracy to earn a medal.", "وصّل لدقة {p}% عشان تكسب ميدالية.", "L17: result without a medal (Q-L2: 80 %)", {"p": "int"}),
+    "closeLabel": ("Close", "اقفل", "L18: screen reader, the mission's close button (prototype aria-label)", None),
+    "missionStepOf": ("Step {n} of {total}", "خطوة {n} من {total}", "L19: screen reader, the mission's progress", {"n": "int", "total": "int"}),
+    "passedOf": ("{done} of {total} passed", "عدّيت {done} من {total}", "L20: screen reader, a module's progress", {"done": "int", "total": "int"}),
+}
+
 STR = r'"((?:[^"\\]|\\.)*)"'
 # Dart reserved words can't be getter names: such keys get a "Label" suffix.
 DART_RESERVED = {"assert", "break", "case", "catch", "class", "const", "continue", "default", "do", "else",
@@ -323,6 +348,16 @@ def main() -> int:
             return 1
         out_en[key], out_ar[key] = e, a
         out_en["@" + key] = {"description": f"approved new text (step 7b, 2026-10-13): {why}"}
+
+    for key, (e, a, why, ph) in STEP8_DRAFTS.items():
+        if key in out_en:
+            print(f"error: step 8 draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"DRAFT (step 8, not approved): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
 
     OUT.mkdir(parents=True, exist_ok=True)
     for name, data in (("app_en.arb", out_en), ("app_ar.arb", out_ar)):

@@ -491,3 +491,46 @@ Answers: S7-16…S7-25 (DECISIONS). Checklist, each traced to its source:
 
 Tests: analyze 0 issues, format 0 changed; talk + calibration + glove + architecture: 216 passed.
 
+## Step 8: Learn (2026-10-14 → 15, Linux laptop, emulator `ishara_api36`)
+
+Your answers: S8-1 … S8-4 (DECISIONS). Static screens `08-learn` / `08b`: a category list with per-finger % (Q-L3), not the prototype's structure, so not used (Q-D1).
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Real stats only: XP, streak, medals, signs learned, from the log | prompt; Q-L2 | ✓ `LearnProgress.compute` |
+| 2 | 5 modules of Q-L1 in order, progress = signs passed / signs | Q-L1; S8-3 | ✓ `signs.json` `learn.modules`; progress counts practice or quiz |
+| 3 | Locking + the prototype's locked text and toast | Q-L2; S8-3; `renderLearn` | ✓ |
+| 4 | Daily challenge: 5 signs from unlocked modules, +30 once per local day, date seed, no practice for glove: false | Q-L2; S8-4 | ✓ pool = modules unlocked when the day began |
+| 5 | Guest banner | prototype `#guestBanner` | ✓ live from the account |
+| 6 | Watch and pick: user speed, looped; 4 distinct tiles, seeded; right +10; wrong: right tile marked, replay 0.5× | prompt; `renderMissionStep` | ✓ |
+| 7 | Your turn (glove: true only): cuePractice + 8 s, 3 attempts, exact label word/confirm, match % = Q-L4, +15; another sign: neutral text | sign rules 3, 4; Q-L2, Q-L4; DECISIONS 2026-10-09 | ✓ `PracticeCheck` |
+| 8 | Watch-only module: quiz steps only | Q-L1 | ✓ |
+| 9 | Result: XP, accuracy, time, medal ≥ 80 %, Back to Learn, no Share | Q-L2, Q-L6 | ✓ |
+| 10 | Glove states during practice (no glove, no calibration, link lost, #MPU FAIL) + skip | S8-1 | ✓ (also "recognizer stopped", D15) |
+| 11 | Append-only, versioned, exportable activity log, Phase 0 fields; totals never stored | prompt; PHASE0 §5 | ✓ `LocalActivityRepository` (nothing ever dropped) |
+| 12 | Domain in `lib/features/learn/domain/`, pure Dart, ≥ 90 % | prompt; CI gate | ✓ 100 % (259/259) |
+| 13 | Edge cases: midnight, missed day, two missions a day, clock / timezone change, Egypt DST, daily on an unlock day, zero practice steps | prompt | ✓ (DST also on the real tz database: `TZ=Africa/Cairo`, a CI step) |
+| 14 | Shared WebView avatar: play, loop, replay, speed; only avatar: true signs | prompt | ✓ |
+| 15 | Exactly one consumer of recognition events (Talk vs Learn) | DECISIONS 2026-10-13 | ✓ test (fails without Talk's gate) |
+| 16 | Texts: prototype + changes, drafts EN + AR | prompt; Q-L3 | ✓ 20 drafts, `tools/out/step8/drafts.html` |
+
+**Built:** `lib/features/learn/` (domain 8 files, data `activity_repository.dart`, application `learn_providers`, `mission_controller`, `practice_hand`, presentation `learn_screen`, `mission_screen`, `mission_widgets`, `learn_modules_ui`), `lib/core/device/device_id.dart`, `lib/core/avatar/avatar_card_parts.dart`, `lib/core/ui/blink.dart`, `lib/core/ui/hand_drawing.dart` (moved), `signs.json` modules + icons, `library.json` `celebrate`, single-flight reconnect, `tools/step8_compare.py`, `tools/step8_drafts.py`, CI Cairo step.
+
+**Tests (Linux laptop):** analyze 0 issues (`--fatal-infos`); format 0 changed; `flutter test --coverage`: **819 passed, 4 skipped** (the Cairo tests outside Cairo), **6 failed** = the 3 TURN Calibrate goldens × 2 variants changed by fix 0.2 (new images in `tools/out/step8/goldens_review/`, waiting for your OK); `TZ=Africa/Cairo` egypt test 3/3; coverage `lib/core` 93.2 %, `lib/features/*/domain` 100 %. New: domain 46 (+3 Cairo), controller 31, pipeline 4 (real mock glove + recognizer, persons A/B + mutation), Learn screen 10, mission screen 9, Talk/Learn one reader 1, repository + device id 6, catalogue 3, caption box 1, reconnect 1. Mutation-checked: pass on another label, pass on a tentative, Talk's visibility gate, avatar stop, daily day, replay on show, result reframe.
+
+**Integration (emulator `ishara_api36`):** onboarding_test ✓ 2/2; talk_test ✓ 1/1; avatar_test ✓ 1/1 (53.7–56.5 fps); learn_test ✓ 3/3: persons A and B, a whole "Start here": every practice step passed on the first try through the real pipeline (99–100 % match), the deliberate wrong pick replays exactly 2.0× longer (0.5×), +115 XP, 90 %, medal, Numbers unlocked; mutation (please → thanks.csv): please fails after 3 tries, the rest pass.
+
+**Screens:** comparison sheets `tools/out/step8/compare/` (learn, quiz, quiz_wrong, practice_idle, practice_counting, practice_passed, practice_failed, result; prototype | app, EN / AR × light / dark). Differences: real numbers instead of demo ones; 5 Q-L1 modules; pill "Signing" during practice (prototype "Ready" while signing); match ring = arc of the real %, readable % in light; no fake per-finger % or tips (Q-L3); no Share medal (Q-L6); no medal circle under 80 % (+ L17); result lead true to what happened (L14/L15); quiz tiles ~6 px lower. Fixed from the comparison: medal gradient size, result spacing, tile overflow, unreadable match % in light.
+**Video:** `tools/out/step8/device/learn_mission.mp4` (person A, paced, 54 s mission + Learn after), 13 frames checked (`frames_sheet.png`): signs played match the steps, live bars move, countdown, feedback, result, Learn updated.
+
+**Review:** line-by-line + `/code-review` (10 findings, 9 fixed with tests, 1 = commit hygiene): replay after hidden / background; stale "Reconnecting…"; caption height from another screen; guest flag loop with a Firebase-style stream; 10 rebuilds/s while counting (fill animated on screen, state once a second); daily across midnight credited to the wrong day; "today" stale across midnight (timer); second damaged log overwrote the first backup; `Feedback` name clash. Found by tests on the way: provider changes during build (Learn, mission); a mission's sign kept looping into Talk.
+
+**Not committed (waiting for you):** `test/goldens/learn_golden_test.dart` + its images (rendered on this Linux laptop; existing CI goldens match the runner's here, but you asked for the runner's workflow, which needs a push); the 6 TURN Calibrate images. Untracked and left alone: `design/*.stl`, `app/ishara_app/run.txt`, `stt.txt`.
+
+**Open questions**
+1. Approve drafts L1-L20, the 4 module looks and the 12 neutral tile icons (`drafts.html`).
+2. Goldens: render on the runner (push a branch for the workflow) or accept the laptop renders? Also approve the TURN Calibrate before / after.
+3. Streak: today counts up to yesterday until midnight (DECISIONS) — OK? The chip says "1 days" (prototype has only "days" / «يوم»): a singular text?
+4. Connect / Calibrate now from a practice step end on Ready (`go`), leaving the mission (Talk does the same). Return to the mission instead?
+5. Practice loops at 0.8× (prototype), not the user's speed — keep?
+

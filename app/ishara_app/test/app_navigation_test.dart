@@ -1,6 +1,7 @@
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -187,12 +188,20 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('Learn -> mission (no tab bar) -> back to Learn', (t) async {
-    await _pumpApp(t, at: AppRoutes.learn);
-    await _tap(t, 'Start here');
+  testWidgets('Learn -> mission (no tab bar) -> close -> back to Learn', (
+    t,
+  ) async {
+    // earlier tests' asset loads never finish in this test's fake clock
+    rootBundle.clear();
+    addTearDown(rootBundle.clear);
+    await _pumpApp(t, at: AppRoutes.learn, settle: false);
+    await _run(t);
+    await _tapKey(t, 'learn-module-start');
+    await _run(t);
     expect(_screen('mission'), findsOneWidget);
     expect(find.byType(IsharaTabBar), findsNothing);
-    await _tap(t, 'Back to Learn');
+    await _tapKey(t, 'mission-close');
+    await _run(t);
     expect(_screen('learn'), findsOneWidget);
   });
 

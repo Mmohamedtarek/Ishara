@@ -1,9 +1,10 @@
 {
   "language": "asl",
   "version": 1,
-  "note": "Avatar sign library for this pack (engine format, see assets/avatar/engine.js). shapes: curl per finger (thumb..pinky, 0-100), reach = contact distance as a share of the hand length, spread = degrees per finger (+ = toward the thumb side, Q-A6), tip = the finger that touches in an at:'tip' contact (default middle). signs: keyframes per label. The 15 prototype signs are ported unchanged except Q-A3 (I LOVE YOU held still), Q-A4 (love -> iloveyou) and V-3 (WATER at the mouth). previewPairs: signs the preview screen shows side by side (Q-A6: spread). greeting: the sign the avatar waves after a character loads (prototype: hello at 0.8x). Landmark 'ear' (beside the head) takes its depth from the head bone.",
+  "note": "Avatar sign library for this pack (engine format, see assets/avatar/engine.js). shapes: curl per finger (thumb..pinky, 0-100), reach = contact distance as a share of the hand length, spread = degrees per finger (+ = toward the thumb side, Q-A6), tip = the finger that touches in an at:'tip' contact (default middle). signs: keyframes per label. The 15 prototype signs are ported unchanged except Q-A3 (I LOVE YOU held still), Q-A4 (love -> iloveyou) and V-3 (WATER at the mouth). previewPairs: signs the preview screen shows side by side (Q-A6: spread). greeting: the sign the avatar waves after a character loads (prototype: hello at 0.8x). celebrate: the sign played once on Learn's result screen (prototype renderMissionDone: yes at 1x). Landmark 'ear' (beside the head) takes its depth from the head bone.",
   "previewPairs": [["five", "four"], ["two", "no"]],
   "greeting": "hello",
+  "celebrate": "yes",
   "shapes": {
     "relax": {"curl": [18, 22, 26, 30, 34], "reach": 0.9},
     "b": {"curl": [34, 2, 2, 3, 4], "reach": 1},

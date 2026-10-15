@@ -78,6 +78,9 @@ void main() {
       expect(library.previewPairs, [('five', 'four'), ('two', 'no')]);
       expect(library.greeting, 'hello'); // prototype: hello at 0.8x
       expect(_parse(_lib()..remove('greeting')).greeting, isNull);
+      // prototype renderMissionDone: play('yes', 1)
+      expect(library.celebrate, 'yes');
+      expect(_parse(_lib()..remove('celebrate')).celebrate, isNull);
       expect(library.lastFrameTime('hello'), .85);
       expect(() => library.lastFrameTime('x'), throwsArgumentError);
       final j = _lib()..remove('previewPairs');
@@ -304,6 +307,7 @@ void main() {
             _put(j, ['signs', 'help', 'frames', 0, 'L'], 'left'),
         'previewPairs must be a list': (j) => j['previewPairs'] = 'five',
         'greeting must name a sign': (j) => j['greeting'] = 'wave',
+        'celebrate must name a sign': (j) => j['celebrate'] = 'wave',
         'tip must be one of': (j) => _put(j, ['shapes', 'w', 'tip'], 'toe'),
         'thumbTo must be "fingers"': (j) =>
             _put(j, ['shapes', 'w', 'thumbTo'], 'palm'),

@@ -59,4 +59,31 @@ void main() {
     expect(ok, isFalse);
     expect(g.commands.last, 'disconnect');
   });
+
+  test('two callers during one drop share one attempt (Talk and a mission, '
+      'step 8)', () async {
+    final g = FakeGloveSource();
+    final kv = MemoryKeyValueStore();
+    await OnboardingStore(kv)
+        .saveGlove(const PairedGlove(id: 'g1', name: 'Ishara-3FA2'));
+    final c = ProviderContainer(
+      overrides: [
+        gloveSourceProvider.overrideWithValue(g),
+        glovePermissionsProvider.overrideWithValue(FakeGlovePermissions()),
+        keyValueStoreProvider.overrideWithValue(kv),
+      ],
+    );
+    addTearDown(c.dispose);
+    final ref = c.read(_refProvider);
+    final a = reconnectToPairedGlove(ref);
+    final b = reconnectToPairedGlove(ref);
+    expect(reconnecting(g), isTrue);
+    expect(await a, isTrue);
+    expect(await b, isTrue);
+    expect(g.commands, ['scan', 'connect g1']);
+    expect(reconnecting(g), isFalse);
+  });
 }
+
+/// A plain Ref for calling the helper directly.
+final _refProvider = Provider<Ref>((ref) => ref);

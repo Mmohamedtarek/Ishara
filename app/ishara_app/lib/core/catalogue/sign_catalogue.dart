@@ -43,6 +43,9 @@ abstract class CatalogueSign with _$CatalogueSign {
 
     /// Its form was checked against an ASL reference.
     required bool verified,
+
+    /// The Learn tile icon (a prototype icon name).
+    required String icon,
     required Map<SpokenLanguage, SignWords> words,
     required String description,
 
@@ -60,18 +63,36 @@ abstract class CatalogueSign with _$CatalogueSign {
       draft.contains('${l.name}.variants:$variant');
 }
 
+/// One Learn module (Q-L1): its signs, in order. A watch-only module has
+/// pick-the-meaning steps only.
+@immutable
+class CatalogueModule {
+  const new({required this.id, required this.signs, this.watchOnly = false});
+
+  final String id;
+  final List<String> signs;
+  final bool watchOnly;
+}
+
 /// The sign catalogue of one sign language: the only word list in the app.
 /// Learn, Talk, the avatar mapping and speech all read from it.
 class SignCatalogue {
-  new _(this.language, this.signs, this._phrases, this.maxPhraseWords)
-    : _byLabel = {for (final s in signs) s.label: s};
+  new _(
+    this.language,
+    this.signs,
+    this._phrases,
+    this.maxPhraseWords,
+    this.modules,
+  ) : _byLabel = {for (final s in signs) s.label: s};
 
   /// Parses and checks `signs.json` against the model's [labels]:
   /// * every sign label of the model has exactly one entry, with
   ///   `glove: true`; no entry claims `glove: true` without being a model
   ///   label; `rest` / `other` never appear;
   /// * every entry has words for every spoken language;
-  /// * no normalized variant leads to two different signs.
+  /// * no normalized variant leads to two different signs;
+  /// * `learn.modules`: unique ids, at least one sign each, only signs of
+  ///   this catalogue, no sign in two modules.
   factory parse(String jsonText, {required Labels labels}) {
     final Object? root;
     try {
@@ -171,7 +192,48 @@ class SignCatalogue {
       List.unmodifiable(signs),
       phrases,
       maxWords,
+      _parseModules(root['learn'], seen),
     );
+  }
+
+  static List<CatalogueModule> _parseModules(
+    Object? learn,
+    Set<String> labels,
+  ) {
+    Never fail(String why) =>
+        throw ParseFailure('signs.json: learn.$why', source: 'signs.json');
+    if (learn is! Map<String, Object?>) fail('learn must be an object');
+    final raw = learn['modules'];
+    if (raw is! List<Object?> || raw.isEmpty) fail('modules must be a list');
+    final ids = <String>{};
+    final used = <String>{};
+    final modules = <CatalogueModule>[];
+    for (final (i, m) in raw.indexed) {
+      if (m is! Map<String, Object?>) fail('modules[$i] is not an object');
+      final id = m['id'];
+      if (id is! String || id.trim().isEmpty) fail('modules[$i]: no id');
+      if (!ids.add(id)) fail('module "$id" repeats');
+      final signs = m['signs'];
+      if (signs is! List<Object?> ||
+          signs.isEmpty ||
+          signs.any((s) => s is! String)) {
+        fail('module "$id": signs must list labels');
+      }
+      for (final s in signs.cast<String>()) {
+        if (!labels.contains(s)) fail('module "$id": no sign "$s"');
+        if (!used.add(s)) fail('"$s" is in two modules');
+      }
+      final watchOnly = m['watchOnly'] ?? false;
+      if (watchOnly is! bool) fail('module "$id": watchOnly is not a bool');
+      modules.add(
+        CatalogueModule(
+          id: id,
+          signs: List.unmodifiable(signs.cast<String>()),
+          watchOnly: watchOnly,
+        ),
+      );
+    }
+    return List.unmodifiable(modules);
   }
 
   static CatalogueSign _parseSign(Object? s, int i) {
@@ -230,6 +292,7 @@ class SignCatalogue {
       glove: flag('glove'),
       avatar: flag('avatar'),
       verified: flag('verified'),
+      icon: str('icon'),
       words: {for (final l in SpokenLanguage.values) l: words(l)},
       description: str('description'),
       draft: draft is List<Object?>
@@ -245,6 +308,9 @@ class SignCatalogue {
 
   /// Longest variant, in words.
   final int maxPhraseWords;
+
+  /// The Learn modules, in order (Q-L1).
+  final List<CatalogueModule> modules;
 
   CatalogueSign? byLabel(String label) => _byLabel[label];
 
