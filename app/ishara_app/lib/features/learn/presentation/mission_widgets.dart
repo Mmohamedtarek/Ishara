@@ -213,7 +213,10 @@ class _Tile extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           borderRadius: radius,
-          border: Border.all(color: border, width: 1.5),
+          border: Border.all(
+            color: border,
+            width: c.borderWidth > 1 ? c.borderWidth : 1.5,
+          ),
         ),
         child: Material(
           type: MaterialType.transparency,

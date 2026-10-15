@@ -12,6 +12,7 @@ import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/features/talk/presentation/talk_screen.dart';
 
 import '../support/fake_glove.dart';
+import '../support/fake_sos.dart';
 import '../support/fake_speech.dart';
 import '../support/fake_talk.dart';
 import '../support/screen_harness.dart';
@@ -21,6 +22,7 @@ class _Screen {
   final glove = FakeGloveSource();
   final store = MemoryKeyValueStore({'setup.spoken': 'en'});
   bool ble = false;
+  final sos = SosFakes();
   late Harness h;
 
   Future<void> pump(
@@ -37,6 +39,7 @@ class _Screen {
       harness: Harness(glove: glove, store: store),
       overrides: [
         ...talk.overrides,
+        ...sos.overrides,
         if (ble) activeGloveKindProvider.overrideWithValue(GloveSourceKind.ble),
         speechToTextProvider.overrideWithValue(FakeSpeechToText()),
         micPermissionsProvider.overrideWithValue(
@@ -181,6 +184,11 @@ void main() {
     await tapIt(t, _key('talk-quick-sos'));
     expect(s.talk.tts.spoken, ['I need help, please.']);
     expect(find.text('SOS spoken out loud.'), findsOneWidget);
+    // Q-T4 phase 1: the sheet opens at once (no contacts: 123 and Add)
+    expect(_key('sos-sheet'), findsOneWidget);
+    expect(_key('sos-ambulance'), findsOneWidget);
+    expect(_key('sos-add-contact'), findsOneWidget);
+    expect(s.sos.launcher.opened, isEmpty);
     final repo = ProviderScope.containerOf(t.element(find.byType(TalkScreen)))
         .read(conversationRepositoryProvider);
     expect(repo.messages.single.text, 'I need help, please.');
@@ -219,8 +227,9 @@ void main() {
   });
 
   testWidgets('the Mock button: shown in debug with the mock glove '
-      '(S7-24), opens the sheet', (t) async {
+      '(S7-24) and developer mode (S9-3), opens the sheet', (t) async {
     final s = _Screen();
+    await s.store.setBool('settings.developer', value: true);
     await s.pump(t);
     expect(_key('talk-mock'), findsOneWidget);
     await tapIt(t, _key('talk-mock'));
@@ -268,5 +277,13 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('انطق'), findsOneWidget);
+  });
+
+  testWidgets('the Mock button: hidden while developer mode is off (S9-3)', (
+    t,
+  ) async {
+    final s = _Screen();
+    await s.pump(t);
+    expect(_key('talk-mock'), findsNothing);
   });
 }

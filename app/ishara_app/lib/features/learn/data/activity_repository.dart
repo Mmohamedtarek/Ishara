@@ -16,6 +16,9 @@ abstract interface class ActivityRepository {
   Stream<List<ActivityEvent>> get changes;
 
   Future<void> append(ActivityEvent event);
+
+  /// Every stored value by key (Privacy › Export, step 10).
+  Map<String, Object> export();
 }
 
 /// The log in the phone's key-value store (S6-2 pattern): one versioned
@@ -92,7 +95,7 @@ class LocalActivityRepository implements ActivityRepository {
     await _kv.setString(kEvents, jsonEncode(_raw));
   }
 
-  /// Every stored value by key, for the database migration (step 10).
+  @override
   Map<String, Object> export() => {
     if (_kv.getInt(kVersion) case final int v) kVersion: v,
     if (_kv.getString(kEvents) case final String v) kEvents: v,

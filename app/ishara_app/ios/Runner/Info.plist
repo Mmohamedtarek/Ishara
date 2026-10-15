@@ -29,6 +29,15 @@
 	<string>Ishara uses the microphone to hear the person you're talking to and show their words in sign language.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Ishara turns the other person's speech into text so the avatar can sign it.</string>
+	<!-- Step 9, DRAFT (SOS, Q-T4 phase 1): only while in use. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>When you press SOS, Ishara reads your location once so you can send it to your emergency contacts.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>whatsapp</string>
+		<string>sms</string>
+		<string>tel</string>
+	</array>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/core/glove/mock/mock_controls.dart';
 import 'package:ishara_app/core/glove/mock/mock_feed.dart';
 import 'package:ishara_app/core/packs/pack_providers.dart';
+import 'package:ishara_app/core/settings/developer_mode.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 
 /// S7-24: the developer panel. A "Mock" button in Talk's top bar, only in
@@ -14,9 +15,12 @@ import 'package:ishara_app/core/theme/ishara_theme.dart';
 class MockPanelButton extends ConsumerWidget {
   const new({super.key});
 
-  /// Visible here: never in release builds, only with the mock glove.
+  /// Visible here: never in release builds, only with the mock glove, and
+  /// only while developer mode is on (S9-3).
   static bool shown(WidgetRef ref) =>
-      !kReleaseMode && ref.watch(mockControlsProvider) != null;
+      !kReleaseMode &&
+      ref.watch(developerModeProvider) &&
+      ref.watch(mockControlsProvider) != null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/app.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
+import 'package:ishara_app/core/config/app_rules.dart';
 import 'package:ishara_app/core/errors/failure.dart';
 import 'package:ishara_app/core/logging/log.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
@@ -49,6 +50,8 @@ Future<void> main() async {
   // The first screens name the avatar ("Hi, I'm Nour!"): load the (tiny)
   // cast before the first frame so no text shows without the name.
   try {
+    // app_rules.json: data the feed and SOS need from the first message
+    await container.read(appRulesProvider.future);
     await container.read(avatarCastProvider.future);
   } on Object catch (e, st) {
     log.failure(

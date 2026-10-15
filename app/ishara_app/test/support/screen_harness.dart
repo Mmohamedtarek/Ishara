@@ -11,6 +11,7 @@ import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/settings/app_settings.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
+import 'package:ishara_app/features/history/presentation/conversation_screen.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
 import 'fake_glove.dart';
@@ -60,6 +61,12 @@ Future<Harness> pumpScreen(
     initialLocation: '/screen',
     routes: [
       GoRoute(path: '/screen', builder: (_, _) => screen),
+      // History › a conversation (the real page)
+      GoRoute(
+        path: AppRoutes.conversationPath,
+        builder: (_, s) =>
+            ConversationScreen(conversationKey: s.pathParameters['key']!),
+      ),
       for (final p in [
         AppRoutes.welcome,
         AppRoutes.setup,
@@ -68,7 +75,12 @@ Future<Harness> pumpScreen(
         AppRoutes.ready,
         AppRoutes.talk,
         AppRoutes.learn,
+        AppRoutes.history,
         AppRoutes.settings,
+        AppRoutes.avatarStudio,
+        AppRoutes.privacy,
+        AppRoutes.about,
+        AppRoutes.emergencyContacts,
         AppRoutes.authPath,
         AppRoutes.missionPath,
       ])

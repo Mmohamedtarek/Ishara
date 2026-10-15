@@ -12,7 +12,8 @@ import 'package:ishara_app/core/theme/ishara_theme.dart';
 void showToast(BuildContext context, String message) {
   final overlay = Overlay.of(context, rootOverlay: true);
   _current?.remove();
-  final entry = _ToastEntry(message);
+  // the caller's theme: the root overlay may sit above it
+  final entry = _ToastEntry(message, Theme.of(context));
   _current = entry;
   entry.show(overlay);
   unawaited(
@@ -27,19 +28,27 @@ void showToast(BuildContext context, String message) {
 _ToastEntry? _current;
 
 class _ToastEntry {
-  new(this.message);
+  new(this.message, this.theme);
 
   final String message;
+  final ThemeData theme;
   OverlayEntry? _entry;
   final ValueNotifier<bool> _visible = ValueNotifier(false);
   Timer? _timer;
+  bool _removed = false;
 
   void show(OverlayState overlay) {
     _entry = OverlayEntry(
-      builder: (context) => _Toast(message: message, visible: _visible),
+      builder: (context) => Theme(
+        data: theme,
+        child: _Toast(message: message, visible: _visible),
+      ),
     );
     overlay.insert(_entry!);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _visible.value = true);
+    // another toast may replace this one before the frame ends
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_removed) _visible.value = true;
+    });
     _timer = Timer(const Duration(milliseconds: 2400), () {
       _visible.value = false;
       _timer = Timer(const Duration(milliseconds: 350), remove);
@@ -47,6 +56,8 @@ class _ToastEntry {
   }
 
   void remove() {
+    if (_removed) return;
+    _removed = true;
     _timer?.cancel();
     _entry?.remove();
     _entry = null;

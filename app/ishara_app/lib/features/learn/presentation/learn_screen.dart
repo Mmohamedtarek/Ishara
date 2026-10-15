@@ -510,6 +510,7 @@ class _ModuleTile extends StatelessWidget {
           color: hero
               ? (dark ? const Color(0x66B7C0FF) : const Color(0x593446C9))
               : c.line,
+          width: c.borderWidth,
         ),
       ),
       child: Material(

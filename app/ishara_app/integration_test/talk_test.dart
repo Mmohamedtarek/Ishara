@@ -45,6 +45,8 @@ void main() {
       'onboarding.done': true,
       'setup.spoken': 'en',
       'setup.role': 'sign',
+      // the Mock panel shows only in developer mode (S9-3)
+      'settings.developer': true,
     });
     await t.pumpWidget(
       ProviderScope(

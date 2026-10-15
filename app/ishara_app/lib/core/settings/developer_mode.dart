@@ -1,3 +1,5 @@
+import 'package:ishara_app/core/settings/app_settings.dart';
+import 'package:ishara_app/core/settings/settings_store.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'developer_mode.g.dart';
@@ -8,9 +10,15 @@ part 'developer_mode.g.dart';
 @Riverpod(keepAlive: true)
 class DeveloperMode extends _$DeveloperMode {
   @override
-  bool build() => false;
+  bool build() =>
+      ref.watch(settingsStoreProvider).getBool(SettingsStore.kDeveloper) ??
+      false;
 
-  // The switch sets it; a setter would hide that intent.
-  // ignore: use_setters_to_change_properties
-  void set({required bool on}) => state = on;
+  void set({required bool on}) {
+    state = on;
+    ref
+        .read(settingsStoreProvider)
+        .setBool(SettingsStore.kDeveloper, value: on)
+        .ignore();
+  }
 }

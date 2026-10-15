@@ -76,6 +76,25 @@ Future<void> _tapKey(WidgetTester t, String key) async {
   await t.tap(f);
 }
 
+/// Settings is a lazy list: bring the row with [key] on screen (scrolling
+/// up to a built row, or down until it is built).
+Future<void> _scrollTo(WidgetTester t, String key) async {
+  final built = find.byKey(ValueKey(key), skipOffstage: false);
+  if (built.evaluate().isNotEmpty) {
+    await t.ensureVisible(built);
+    await t.pump();
+    return;
+  }
+  await t.scrollUntilVisible(
+    find.byKey(ValueKey(key)),
+    200,
+    scrollable: find.descendant(
+      of: find.byKey(const ValueKey('settings-body')),
+      matching: find.byType(Scrollable),
+    ),
+  );
+}
+
 Future<void> _tap(WidgetTester t, String label) async {
   await t.tap(find.text(label));
   await t.pumpAndSettle();
@@ -205,27 +224,38 @@ void main() {
     expect(_screen('learn'), findsOneWidget);
   });
 
-  testWidgets('Settings exits: calibrate, pair, avatar studio, sign out', (
+  testWidgets('Settings exits: avatar studio, pair, about, sign out', (
     t,
   ) async {
-    final router = await _pumpApp(t, at: AppRoutes.settings);
-    await _tap(t, 'Your avatar');
+    rootBundle.clear();
+    addTearDown(rootBundle.clear);
+    final router = await _pumpApp(t, at: AppRoutes.settings, settle: false);
+    await _run(t);
+    await _tapKey(t, 'settings-avatar');
+    await _run(t);
     expect(_screen('avatar'), findsOneWidget);
-    await _tap(t, 'Save avatar');
+    await _tapKey(t, 'studio-save');
+    await _run(t);
+    expect(_screen('avatar'), findsNothing, reason: 'Save leaves the studio');
     expect(_screen('settings'), findsOneWidget);
-    // Pair and Calibrate animate without end: timed frames, not settle
-    await t.tap(find.text('Pair a new glove'));
+    // Pair animates without end: timed frames, not settle
+    await _scrollTo(t, 'settings-pair');
+    await _tapKey(t, 'settings-pair');
     await _run(t);
     expect(_screen('pair'), findsOneWidget);
     router.pop();
     await _run(t);
-    await t.tap(find.text('Calibrate'));
+    await _scrollTo(t, 'settings-about');
+    await _tapKey(t, 'settings-about');
     await _run(t);
-    expect(_screen('calibrate'), findsOneWidget);
-    router.go(AppRoutes.settings);
+    expect(_screen('about'), findsOneWidget);
+    router.pop();
     await _run(t);
-    await _tap(t, 'Sign out');
+    await _scrollTo(t, 'settings-sign-out');
+    await _tapKey(t, 'settings-sign-out');
+    await _run(t);
     expect(_screen('welcome'), findsOneWidget);
+    await t.pump(const Duration(seconds: 3)); // the toast
   });
 
   testWidgets('Arabic switches text and layout to RTL', (t) async {

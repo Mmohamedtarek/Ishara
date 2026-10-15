@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
+import 'package:ishara_app/core/device/haptics.dart';
 import 'package:ishara_app/core/glove/glove_providers.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
 import 'package:ishara_app/core/profile/onboarding_store.dart';
@@ -14,6 +17,7 @@ import 'package:ishara_app/core/ui/dashed_box.dart';
 import 'package:ishara_app/core/ui/ishara_icon.dart';
 import 'package:ishara_app/core/ui/onboarding_ui.dart';
 import 'package:ishara_app/core/ui/toast.dart';
+import 'package:ishara_app/features/sos/presentation/sos_sheet.dart';
 import 'package:ishara_app/features/talk/application/talk_glove_controller.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
@@ -115,7 +119,7 @@ class _MeZoneState extends ConsumerState<MeZone> {
                     key: const ValueKey('talk-clear'),
                     icon: 'trash',
                     semanticLabel: l.clearLabel,
-                    onPressed: n.endSentence,
+                    onPressed: n.clear,
                   ),
                 ],
               ),
@@ -591,8 +595,12 @@ class _QuickPhrases extends ConsumerWidget {
                 semanticLabel: l.sos,
                 sos: true,
                 onTap: () {
+                  // D23 first, at once; the sheet locates in parallel
+                  // (Q-T4 phase 1): nothing waits for the position
+                  ref.read(vibrateProvider).long();
                   n.quickPhrase(l.sosSay).ignore();
                   showToast(context, l.toastSosSpoken);
+                  unawaited(showSosSheet(context));
                 },
               ),
               for (final (i, (label, say)) in phrases.indexed) ...[

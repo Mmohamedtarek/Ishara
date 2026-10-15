@@ -7,6 +7,7 @@ import 'package:ishara_app/core/avatar/avatar_library.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/avatar/sign_speed.dart';
 import 'package:ishara_app/core/avatar/webview_avatar_page.dart';
+import 'package:ishara_app/core/config/app_rules.dart';
 import 'package:ishara_app/core/conversation/conversation_providers.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
 import 'package:ishara_app/core/packs/pack_providers.dart';
@@ -20,6 +21,7 @@ import 'package:ishara_app/features/talk/application/talk_speech_controller.dart
 
 import '../support/fake_avatar_page.dart';
 import '../support/fake_speech.dart';
+import '../support/fake_talk.dart';
 import '../support/kit.dart';
 
 /// A page that is up and ends every sign as soon as it starts.
@@ -66,13 +68,14 @@ class _Rig {
     String spoken = 'en',
     String role = 'sign',
     bool avatarUp = true,
+    bool endsSigns = true,
     bool catalogueFails = false,
   }) async {
     final library = AvatarLibrary.parse(
       readText('assets/packs/asl/avatar/library.json'),
       language: SignLanguage.asl,
     );
-    final page = avatarUp ? _QuickPage() : FakePage();
+    final page = avatarUp && endsSigns ? _QuickPage() : FakePage();
     final avatar = AvatarController(
       page: page,
       library: library,
@@ -87,6 +90,7 @@ class _Rig {
     final p = perms ?? FakeMicPermissions(current: MicPermission.granted);
     final c = ProviderContainer(
       overrides: [
+        appRulesProvider.overrideWithValue(AsyncData(testAppRules)),
         keyValueStoreProvider.overrideWithValue(kv),
         speechToTextProvider.overrideWithValue(stt),
         micPermissionsProvider.overrideWithValue(p),
@@ -125,6 +129,20 @@ Future<void> _until(bool Function() done) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('Talk closing mid-sign: no state write after dispose; the heard '
+      'sentence still reaches the feed', () async {
+    final r = await _Rig.make(heard: ['hello'], endsSigns: false);
+    final repo = r.c.read(conversationRepositoryProvider);
+    await r.talk.tapMic();
+    await _until(() => r.played.isNotEmpty);
+    r.c.dispose(); // the app closes
+    await Future<void>.delayed(Duration.zero);
+    final id = r.page.sent.lastWhere((s) => s['cmd'] == 'play')['id'];
+    r.page.post('signEnded', {'id': id});
+    await _until(() => repo.messages.isNotEmpty);
+    expect(repo.messages.single.text, 'hello');
+  });
 
   group('speech → sign (sign rule 7: exact, longest phrase first)', () {
     test('EN: signs in order, unknown words keep the ready pose, the '
@@ -398,6 +416,7 @@ void main() {
     final pages = <_QuickPage>[];
     final c = ProviderContainer(
       overrides: [
+        appRulesProvider.overrideWithValue(AsyncData(testAppRules)),
         keyValueStoreProvider.overrideWithValue(
           MemoryKeyValueStore({'setup.spoken': 'en'}),
         ),

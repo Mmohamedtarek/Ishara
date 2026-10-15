@@ -8,6 +8,7 @@ import 'package:ishara_app/features/avatar_studio/presentation/avatar_studio_scr
 import 'package:ishara_app/features/calibration/presentation/calibrate_screen.dart';
 import 'package:ishara_app/features/calibration/presentation/ready_screen.dart';
 import 'package:ishara_app/features/dev/presentation/sign_preview_screen.dart';
+import 'package:ishara_app/features/history/presentation/conversation_screen.dart';
 import 'package:ishara_app/features/history/presentation/history_screen.dart';
 import 'package:ishara_app/features/learn/presentation/learn_screen.dart';
 import 'package:ishara_app/features/learn/presentation/mission_screen.dart';
@@ -16,7 +17,10 @@ import 'package:ishara_app/features/onboarding/presentation/setup_screen.dart';
 import 'package:ishara_app/features/onboarding/presentation/splash_screen.dart';
 import 'package:ishara_app/features/onboarding/presentation/welcome_screen.dart';
 import 'package:ishara_app/features/pair/presentation/pair_screen.dart';
+import 'package:ishara_app/features/settings/presentation/about_screen.dart';
+import 'package:ishara_app/features/settings/presentation/privacy_screen.dart';
 import 'package:ishara_app/features/settings/presentation/settings_screen.dart';
+import 'package:ishara_app/features/sos/presentation/emergency_contacts_screen.dart';
 import 'package:ishara_app/features/talk/presentation/talk_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -66,6 +70,13 @@ GoRouter buildRouter({String initialLocation = AppRoutes.splash}) => GoRouter(
       entrance: ScreenEntrance.pop,
     ),
     _route(AppRoutes.avatarStudio, (_) => const AvatarStudioScreen()),
+    _route(
+      AppRoutes.conversationPath,
+      (s) => ConversationScreen(conversationKey: s.pathParameters['key']!),
+    ),
+    _route(AppRoutes.privacy, (_) => const PrivacyScreen()),
+    _route(AppRoutes.about, (_) => const AboutScreen()),
+    _route(AppRoutes.emergencyContacts, (_) => const EmergencyContactsScreen()),
     // Developer tool: no entry point in release builds.
     if (!kReleaseMode)
       _route(AppRoutes.signPreview, (_) => const SignPreviewScreen()),

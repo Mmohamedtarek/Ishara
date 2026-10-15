@@ -345,10 +345,6 @@
       }
     }
   },
-  "histLead": "Saved on your phone only. Star a sentence to make it a quick phrase.",
-  "@histLead": {
-    "description": "prototype I18N.histLead"
-  },
   "histTitle": "History",
   "@histTitle": {
     "description": "prototype I18N.histTitle"
@@ -635,10 +631,6 @@
   "@sContrastS": {
     "description": "prototype I18N.sContrastS"
   },
-  "searchPh": "Search a word or a place",
-  "@searchPh": {
-    "description": "prototype I18N.searchPh"
-  },
   "secAccess": "Accessibility",
   "@secAccess": {
     "description": "prototype I18N.secAccess"
@@ -650,10 +642,6 @@
   "secApp": "App",
   "@secApp": {
     "description": "prototype I18N.secApp"
-  },
-  "secAvatar": "Avatar & voice",
-  "@secAvatar": {
-    "description": "prototype I18N.secAvatar"
   },
   "secGlove": "Glove",
   "@secGlove": {
@@ -690,10 +678,6 @@
         "type": "String"
       }
     }
-  },
-  "signedInAs": "Signed in · progress syncs automatically",
-  "@signedInAs": {
-    "description": "prototype I18N.signedInAs"
   },
   "signIn": "Sign in",
   "@signIn": {
@@ -743,10 +727,6 @@
   "sPair": "Pair a new glove",
   "@sPair": {
     "description": "prototype I18N.sPair"
-  },
-  "sPairS": "Add a second glove or replace this one",
-  "@sPairS": {
-    "description": "prototype I18N.sPairS"
   },
   "speak": "Speak",
   "@speak": {
@@ -801,14 +781,6 @@
   "@sTextS": {
     "description": "prototype I18N.sTextS"
   },
-  "sTheme": "Dark mode",
-  "@sTheme": {
-    "description": "prototype I18N.sTheme"
-  },
-  "sThemeS": "Switch on for a dark look",
-  "@sThemeS": {
-    "description": "prototype I18N.sThemeS"
-  },
   "stPair": "Glove",
   "@stPair": {
     "description": "prototype I18N.stPair"
@@ -816,14 +788,6 @@
   "stSetup": "Setup",
   "@stSetup": {
     "description": "prototype I18N.stSetup"
-  },
-  "sVib": "Vibrate on every message",
-  "@sVib": {
-    "description": "prototype I18N.sVib"
-  },
-  "sVibS": "Short pulse for replies, long for SOS",
-  "@sVibS": {
-    "description": "prototype I18N.sVibS"
   },
   "sVoice": "Voice",
   "@sVoice": {
@@ -920,10 +884,6 @@
   "toastSpeed": "Sign speed",
   "@toastSpeed": {
     "description": "prototype I18N.toastSpeed"
-  },
-  "toastStar": "Added to quick phrases",
-  "@toastStar": {
-    "description": "prototype I18N.toastStar"
   },
   "type": "Type",
   "@type": {
@@ -1608,5 +1568,432 @@
         "type": "int"
       }
     }
+  },
+  "histLeadPhone": "Saved on this phone only. Star a sentence to keep it in Starred.",
+  "@histLeadPhone": {
+    "description": "DRAFT (step 9, not approved): H1: replaces histLead"
+  },
+  "searchWordPh": "Search a word",
+  "@searchWordPh": {
+    "description": "DRAFT (step 9, not approved): H2: replaces searchPh"
+  },
+  "messagesCount": "{n, plural, =1{1 message} other{{n} messages}}",
+  "@messagesCount": {
+    "description": "DRAFT (step 9, not approved): H3: a conversation's size",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "histYesterday": "Yesterday",
+  "@histYesterday": {
+    "description": "DRAFT (step 9, not approved): H4: title day marker"
+  },
+  "histTitleAt": "{day}, {time}",
+  "@histTitleAt": {
+    "description": "DRAFT (step 9, not approved): H5: conversation title (Q-B4: date and time)",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "histEmpty": "No conversations yet. What you sign and hear in Talk shows up here.",
+  "@histEmpty": {
+    "description": "DRAFT (step 9, not approved): H6: empty History"
+  },
+  "starredEmpty": "Nothing starred yet. Open a conversation and tap the star next to a sentence.",
+  "@starredEmpty": {
+    "description": "DRAFT (step 9, not approved): H7: empty Starred"
+  },
+  "searchEmpty": "Nothing matches “{q}”.",
+  "@searchEmpty": {
+    "description": "DRAFT (step 9, not approved): H8: no search results",
+    "placeholders": {
+      "q": {
+        "type": "String"
+      }
+    }
+  },
+  "toastStarred": "Added to Starred",
+  "@toastStarred": {
+    "description": "DRAFT (step 9, not approved): H9: replaces toastStar"
+  },
+  "toastUnstarred": "Removed from Starred",
+  "@toastUnstarred": {
+    "description": "DRAFT (step 9, not approved): H10"
+  },
+  "starLabel": "Star",
+  "@starLabel": {
+    "description": "DRAFT (step 9, not approved): H11: screen reader, star a sentence"
+  },
+  "unstarLabel": "Unstar",
+  "@unstarLabel": {
+    "description": "DRAFT (step 9, not approved): H12: screen reader, unstar"
+  },
+  "deleteConversation": "Delete conversation",
+  "@deleteConversation": {
+    "description": "DRAFT (step 9, not approved): H13"
+  },
+  "toastConvDeleted": "Conversation deleted",
+  "@toastConvDeleted": {
+    "description": "DRAFT (step 9, not approved): H14: with Undo"
+  },
+  "undo": "Undo",
+  "@undo": {
+    "description": "DRAFT (step 9, not approved): H15"
+  },
+  "guestStarredNote": "Guest mode: your starred phrases stay on this phone only.",
+  "@guestStarredNote": {
+    "description": "DRAFT (step 9, not approved): H16: guest state"
+  },
+  "speakPhraseLabel": "Speak “{text}”",
+  "@speakPhraseLabel": {
+    "description": "DRAFT (step 9, not approved): H17: screen reader, a saved phrase",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "signedInAsEmail": "Signed in as {email}",
+  "@signedInAsEmail": {
+    "description": "DRAFT (step 9, not approved): S3: replaces signedInAs",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "gloveNone": "No glove paired",
+  "@gloveNone": {
+    "description": "DRAFT (step 9, not approved): S4: Settings › Glove, nothing paired"
+  },
+  "pairReplaceS": "Connect another glove instead of this one",
+  "@pairReplaceS": {
+    "description": "DRAFT (step 9, not approved): S5: replaces sPairS"
+  },
+  "gloveFirmware": "Firmware {fw}",
+  "@gloveFirmware": {
+    "description": "DRAFT (step 9, not approved): S4b: the glove's firmware (INFO fw)",
+    "placeholders": {
+      "fw": {
+        "type": "String"
+      }
+    }
+  },
+  "secAvatarOnly": "Avatar",
+  "@secAvatarOnly": {
+    "description": "DRAFT (step 9, not approved): S6: replaces secAvatar (no voice row)"
+  },
+  "avatarSpeedS": "Sign speed {speed}x",
+  "@avatarSpeedS": {
+    "description": "DRAFT (step 9, not approved): S7: replaces sAvatarS",
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "vibrateTitle": "Vibrate",
+  "@vibrateTitle": {
+    "description": "DRAFT (step 9, not approved): S8: replaces sVib (S9-1)"
+  },
+  "vibrateS": "Short pulse for words and replies, long for SOS",
+  "@vibrateS": {
+    "description": "DRAFT (step 9, not approved): S9: replaces sVibS (S9-1)"
+  },
+  "appearance": "Appearance",
+  "@appearance": {
+    "description": "DRAFT (step 9, not approved): S10: replaces sTheme (Q-D3)"
+  },
+  "themeSystem": "System",
+  "@themeSystem": {
+    "description": "DRAFT (step 9, not approved): S11"
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "DRAFT (step 9, not approved): S12"
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "DRAFT (step 9, not approved): S13"
+  },
+  "emergencyContacts": "Emergency contacts",
+  "@emergencyContacts": {
+    "description": "DRAFT (step 9, not approved): S14: Settings row and screen title (Q-T4)"
+  },
+  "emergencyNone": "Not set · SOS can send them your location",
+  "@emergencyNone": {
+    "description": "DRAFT (step 9, not approved): S15"
+  },
+  "emergencyCount": "{n, plural, =1{1 contact} other{{n} contacts}}",
+  "@emergencyCount": {
+    "description": "DRAFT (step 9, not approved): S16",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "aboutVersion": "Version {version}",
+  "@aboutVersion": {
+    "description": "DRAFT (step 9, not approved): S17: replaces sAboutS",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "devModeOn": "Developer mode on",
+  "@devModeOn": {
+    "description": "DRAFT (step 9, not approved): S18: 7 taps on the version"
+  },
+  "devModeOff": "Developer mode off",
+  "@devModeOff": {
+    "description": "DRAFT (step 9, not approved): S19"
+  },
+  "privacyIntro": "Ishara works on your phone. Here is what it keeps and where.",
+  "@privacyIntro": {
+    "description": "DRAFT (step 9, not approved): P1"
+  },
+  "privacyGlove": "Your signs are recognized on this phone. Glove data never leaves it.",
+  "@privacyGlove": {
+    "description": "DRAFT (step 9, not approved): P2"
+  },
+  "privacyStored": "Your conversations and your Learn progress stay on this phone.",
+  "@privacyStored": {
+    "description": "DRAFT (step 9, not approved): P3"
+  },
+  "privacyPhrases": "Starred phrases stay on this phone too. A later version will keep them in your account when you're signed in.",
+  "@privacyPhrases": {
+    "description": "DRAFT (step 9, not approved): P4: Q-B4, sync comes with step 10"
+  },
+  "privacyLocation": "Your location is read only when you press SOS, to put it in the message you choose to send. It is never tracked, stored or uploaded.",
+  "@privacyLocation": {
+    "description": "DRAFT (step 9, not approved): P5: Q-T4 phase 1"
+  },
+  "privacyContacts": "Emergency contacts stay on this phone and are never sent anywhere.",
+  "@privacyContacts": {
+    "description": "DRAFT (step 9, not approved): P6"
+  },
+  "exportData": "Export my data",
+  "@exportData": {
+    "description": "DRAFT (step 9, not approved): P7"
+  },
+  "exportDataS": "A file with your conversations, starred phrases and Learn progress",
+  "@exportDataS": {
+    "description": "DRAFT (step 9, not approved): P8"
+  },
+  "clearHistory": "Clear history",
+  "@clearHistory": {
+    "description": "DRAFT (step 9, not approved): P9"
+  },
+  "clearHistoryS": "Deletes your conversations on this phone. Starred phrases stay.",
+  "@clearHistoryS": {
+    "description": "DRAFT (step 9, not approved): P10"
+  },
+  "clearHistoryTitle": "Clear all conversations?",
+  "@clearHistoryTitle": {
+    "description": "DRAFT (step 9, not approved): P11: confirmation"
+  },
+  "clearAction": "Clear",
+  "@clearAction": {
+    "description": "DRAFT (step 9, not approved): P12"
+  },
+  "cancelAction": "Cancel",
+  "@cancelAction": {
+    "description": "DRAFT (step 9, not approved): P13"
+  },
+  "toastHistoryCleared": "History cleared",
+  "@toastHistoryCleared": {
+    "description": "DRAFT (step 9, not approved): P14"
+  },
+  "licences": "Open-source licences",
+  "@licences": {
+    "description": "DRAFT (step 9, not approved): P15"
+  },
+  "discardTitle": "Discard your changes?",
+  "@discardTitle": {
+    "description": "DRAFT (step 9, not approved): A1: leaving without Save"
+  },
+  "discardBody": "Your avatar changes aren't saved.",
+  "@discardBody": {
+    "description": "DRAFT (step 9, not approved): A2"
+  },
+  "discardAction": "Discard",
+  "@discardAction": {
+    "description": "DRAFT (step 9, not approved): A3"
+  },
+  "keepEditing": "Keep editing",
+  "@keepEditing": {
+    "description": "DRAFT (step 9, not approved): A4"
+  },
+  "emergencyLead": "Up to 3 people. From SOS you can send them your location by SMS or WhatsApp, or call them.",
+  "@emergencyLead": {
+    "description": "DRAFT (step 9, not approved): E1"
+  },
+  "addContact": "Add contact",
+  "@addContact": {
+    "description": "DRAFT (step 9, not approved): E2"
+  },
+  "pickFromContacts": "Choose from your contacts",
+  "@pickFromContacts": {
+    "description": "DRAFT (step 9, not approved): E3: system picker, no permission"
+  },
+  "contactName": "Name",
+  "@contactName": {
+    "description": "DRAFT (step 9, not approved): E4"
+  },
+  "contactPhone": "Phone number",
+  "@contactPhone": {
+    "description": "DRAFT (step 9, not approved): E5"
+  },
+  "contactPhoneHint": "01x xxxx xxxx or +…",
+  "@contactPhoneHint": {
+    "description": "DRAFT (step 9, not approved): E6"
+  },
+  "contactPhoneInvalid": "Enter an Egyptian number (01…) or an international one starting with +.",
+  "@contactPhoneInvalid": {
+    "description": "DRAFT (step 9, not approved): E7"
+  },
+  "contactNameEmpty": "Enter a name.",
+  "@contactNameEmpty": {
+    "description": "DRAFT (step 9, not approved): E8"
+  },
+  "saveAction": "Save",
+  "@saveAction": {
+    "description": "DRAFT (step 9, not approved): E9"
+  },
+  "removeContact": "Remove",
+  "@removeContact": {
+    "description": "DRAFT (step 9, not approved): E10"
+  },
+  "contactsFull": "You can add up to 3 contacts.",
+  "@contactsFull": {
+    "description": "DRAFT (step 9, not approved): E11"
+  },
+  "locationAskTitle": "Allow location for SOS?",
+  "@locationAskTitle": {
+    "description": "DRAFT (step 9, not approved): E12: asked once, when the first contact is added"
+  },
+  "locationAskBody": "When you press SOS, Ishara reads your location once so you can send it to your contacts. It is never tracked or stored.",
+  "@locationAskBody": {
+    "description": "DRAFT (step 9, not approved): E13"
+  },
+  "notNow": "Not now",
+  "@notNow": {
+    "description": "DRAFT (step 9, not approved): E14"
+  },
+  "sosTitle": "SOS",
+  "@sosTitle": {
+    "description": "DRAFT (step 9, not approved): O1: sheet title"
+  },
+  "sosLocating": "Getting your location…",
+  "@sosLocating": {
+    "description": "DRAFT (step 9, not approved): O2"
+  },
+  "sosLocFresh": "Your location (±{m} m)",
+  "@sosLocFresh": {
+    "description": "DRAFT (step 9, not approved): O3: a fresh fix",
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "sosLocOld": "Last known location, about {n, plural, =1{1 minute} other{{n} minutes}} ago (±{m} m)",
+  "@sosLocOld": {
+    "description": "DRAFT (step 9, not approved): O4: last known, with its age",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "sosLocNone": "Couldn't get your location. You can still send a message or call.",
+  "@sosLocNone": {
+    "description": "DRAFT (step 9, not approved): O5"
+  },
+  "sosLocOff": "Location is off for Ishara.",
+  "@sosLocOff": {
+    "description": "DRAFT (step 9, not approved): O6: permission denied"
+  },
+  "sosSms": "Send location by SMS",
+  "@sosSms": {
+    "description": "DRAFT (step 9, not approved): O7: opens the SMS app, filled in"
+  },
+  "sosSmsNoLoc": "Send SMS",
+  "@sosSmsNoLoc": {
+    "description": "DRAFT (step 9, not approved): O7b: without a location"
+  },
+  "sosWhatsApp": "Send on WhatsApp",
+  "@sosWhatsApp": {
+    "description": "DRAFT (step 9, not approved): O8"
+  },
+  "sosWhatsAppTo": "Send on WhatsApp to {name}",
+  "@sosWhatsAppTo": {
+    "description": "DRAFT (step 9, not approved): O9: one contact",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sosCall": "Call {name}",
+  "@sosCall": {
+    "description": "DRAFT (step 9, not approved): O10: opens the dialer",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sosAmbulance": "Call ambulance {number}",
+  "@sosAmbulance": {
+    "description": "DRAFT (step 9, not approved): O11: opens the dialer",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "sosAddContact": "Add an emergency contact",
+  "@sosAddContact": {
+    "description": "DRAFT (step 9, not approved): O12: no contacts yet"
+  },
+  "sosSendTo": "Send to",
+  "@sosSendTo": {
+    "description": "DRAFT (step 9, not approved): O13: pick one contact for WhatsApp"
+  },
+  "sosMessage": "I need help. My location: {link} (±{m} m, {time})",
+  "@sosMessage": {
+    "description": "DRAFT (step 9, not approved): O14: the message (app language)",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      },
+      "m": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sosMessageNone": "I need help. I couldn't get my location.",
+  "@sosMessageNone": {
+    "description": "DRAFT (step 9, not approved): O15: the message without a location"
+  },
+  "sosNothingSent": "Nothing is sent until you tap Send there.",
+  "@sosNothingSent": {
+    "description": "DRAFT (step 9, not approved): O16: under the actions"
   }
 }

@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
+import 'package:ishara_app/core/config/app_rules.dart';
 import 'package:ishara_app/core/device/keep_screen_on.dart';
 import 'package:ishara_app/core/errors/failure.dart';
 import 'package:ishara_app/core/recognition/decider.dart';
@@ -84,9 +86,16 @@ class TalkFakes {
   Duration timeout = const Duration(seconds: 3);
 
   List<Override> get overrides => [
+    appRulesProvider.overrideWithValue(AsyncData(testAppRules)),
     recognitionFeedProvider.overrideWithValue(AsyncData(feed)),
     conversationTimeoutProvider.overrideWithValue(AsyncData(timeout)),
     textToSpeechProvider.overrideWithValue(tts),
     keepScreenOnProvider.overrideWithValue(screen),
   ];
 }
+
+/// `assets/config/app_rules.json`, read from disk (tests can't wait for the
+/// asset bundle before the first message).
+final AppRules testAppRules = AppRules.parse(
+  File(appRulesAsset).readAsStringSync(),
+);

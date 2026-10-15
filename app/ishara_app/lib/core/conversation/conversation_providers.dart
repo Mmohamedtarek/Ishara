@@ -1,3 +1,4 @@
+import 'package:ishara_app/core/config/app_rules.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -7,7 +8,12 @@ part 'conversation_providers.g.dart';
 /// The Talk conversation, on the phone.
 @Riverpod(keepAlive: true)
 ConversationRepository conversationRepository(Ref ref) {
-  final repo = LocalConversationRepository(ref.watch(keyValueStoreProvider));
+  final rules = ref.watch(appRulesProvider);
+  final repo = LocalConversationRepository(
+    ref.watch(keyValueStoreProvider),
+    // main loads the rules before the first frame
+    gap: () => rules.requireValue.conversationGap,
+  );
   ref.onDispose(repo.dispose);
   return repo;
 }

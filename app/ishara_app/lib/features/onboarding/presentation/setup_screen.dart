@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ishara_app/core/avatar/avatar_providers.dart';
+import 'package:ishara_app/core/avatar/cast_picker.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/profile/onboarding_store.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
@@ -81,6 +83,12 @@ class SetupScreen extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+        // S6-9: the Avatar studio's picker; nothing with one character
+        CastPicker(
+          selected: ref.watch(currentCharacterProvider)?.id,
+          onSelect: (id) =>
+              ref.read(savedCharacterProvider.notifier).save(id).ignore(),
         ),
       ],
       cta: CtaBar(

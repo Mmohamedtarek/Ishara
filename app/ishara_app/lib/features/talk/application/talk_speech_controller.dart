@@ -8,6 +8,7 @@ import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/catalogue/speech_to_sign.dart';
 import 'package:ishara_app/core/conversation/conversation_providers.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
+import 'package:ishara_app/core/device/haptics.dart';
 import 'package:ishara_app/core/errors/failure.dart';
 import 'package:ishara_app/core/logging/log.dart';
 import 'package:ishara_app/core/packs/pack_providers.dart';
@@ -258,19 +259,22 @@ class TalkSpeech extends _$TalkSpeech {
   /// Signs [text] and adds it to the feed when the avatar is done with it
   /// (or stopped: the sentence was still heard).
   Future<void> _sign(String text) async {
+    // taken first: the sentence was heard even if Talk closes mid-sign
+    final conversation = ref.read(conversationRepositoryProvider);
     try {
       final catalogue = await ref.read(signCatalogueProvider.future);
       final segments = SpeechToSign.match(text, catalogue, _language);
       await _play(segments);
-      await ref
-          .read(conversationRepositoryProvider)
-          .add(TalkMessage(side: MessageSide.them, text: text, at: _now()));
+      await conversation.add(
+        TalkMessage(side: MessageSide.them, text: text, at: _now()),
+      );
     } on Object catch (e, st) {
       // The catalogue or the avatar couldn't load: say so, never guess.
       _log.failure(
         'sign_failed',
         UnexpectedFailure('speech → sign', cause: e, stackTrace: st),
       );
+      if (!ref.mounted) return;
       state = state.copyWith(
         notice: MicNotice.failed,
         active: () => null,
@@ -287,11 +291,17 @@ class TalkSpeech extends _$TalkSpeech {
 
   Future<void> _play(List<SignSegment> segments) async {
     final seq = await _sequencerReady();
+    // S9-1: a heard sentence starts signing
+    if (segments.isNotEmpty) ref.read(vibrateProvider).short();
     state = state.copyWith(sentence: segments, active: () => null);
-    void follow() => state = state.copyWith(
-      active: () => seq.current.value,
-      signing: seq.current.value != null,
-    );
+    void follow() {
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        active: () => seq.current.value,
+        signing: seq.current.value != null,
+      );
+    }
+
     seq.current.addListener(follow);
     try {
       final outcome = await seq.play(
@@ -305,7 +315,7 @@ class TalkSpeech extends _$TalkSpeech {
       });
     } finally {
       seq.current.removeListener(follow);
-      if (seq.current.value == null) {
+      if (ref.mounted && seq.current.value == null) {
         state = state.copyWith(active: () => null, signing: false);
       }
     }

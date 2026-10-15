@@ -3,6 +3,7 @@ import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ishara_app/core/avatar/sign_speed.dart';
+import 'package:ishara_app/core/device/haptics.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
 import 'package:ishara_app/features/learn/application/learn_providers.dart';
 import 'package:ishara_app/features/learn/application/mission_controller.dart';
@@ -52,10 +53,17 @@ void _run(
   String id = 'start',
   LearnRig? rig,
   bool connect = true,
+  List<String>? haptics,
 }) {
   fakeAsync((async) {
     final r = rig ?? LearnRig();
-    final c = ProviderContainer(overrides: r.overrides);
+    final c = ProviderContainer(
+      overrides: [
+        ...r.overrides,
+        if (haptics != null)
+          hapticsProvider.overrideWithValue(_Haptics(haptics)),
+      ],
+    );
     if (connect) {
       r.glove.connect(r.glove.found.single).ignore();
       async.flushMicrotasks();
@@ -289,6 +297,24 @@ void main() {
         expect(m.s.practice!.phase, PracticePhase.passed);
       });
     });
+  });
+
+  test('Vibrate on (S9-1): a short pulse when a practice step passes', () {
+    final pulses = <String>[];
+    final rig = LearnRig()
+      ..kv.setBool('settings.vibrate', value: true).ignore();
+    _run(
+      (m) {
+        m
+          ..answer()
+          ..ctl.next()
+          ..sign('hello');
+        expect(m.s.practice!.phase, PracticePhase.passed);
+        expect(pulses, ['short']);
+      },
+      rig: rig,
+      haptics: pulses,
+    );
   });
 
   group('the glove during practice (S8-1)', () {
@@ -584,4 +610,13 @@ void main() {
       c.dispose();
     }, initialTime: DateTime(2026, 10, 14, 23, 30));
   });
+}
+
+class _Haptics implements Haptics {
+  new(this.pulses);
+  final List<String> pulses;
+  @override
+  Future<void> short() async => pulses.add('short');
+  @override
+  Future<void> long() async => pulses.add('long');
 }

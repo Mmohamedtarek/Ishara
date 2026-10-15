@@ -7,6 +7,7 @@ import 'package:ishara_app/core/avatar/avatar_controller.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/avatar/sign_speed.dart';
 import 'package:ishara_app/core/device/device_id.dart';
+import 'package:ishara_app/core/device/haptics.dart';
 import 'package:ishara_app/core/glove/glove_providers.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
 import 'package:ishara_app/core/logging/log.dart';
@@ -426,6 +427,7 @@ class MissionController extends _$MissionController {
     if (passed) {
       _timer?.cancel();
       _practiceEnded(passed: true);
+      ref.read(vibrateProvider).short(); // S9-1
     }
     _publish();
   }

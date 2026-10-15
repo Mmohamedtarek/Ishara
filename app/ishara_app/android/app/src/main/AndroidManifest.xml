@@ -7,9 +7,11 @@
         android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission
-        android:name="android.permission.ACCESS_FINE_LOCATION"
-        android:maxSdkVersion="30" />
+    <!-- Location while the app is in use only: SOS reads it when the user
+         presses SOS (Q-T4 phase 1), and Android 11 and older need it for any
+         BLE scan. Never in the background (no ACCESS_BACKGROUND_LOCATION). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- RxAndroidBle (inside flutter_reactive_ble) asks for location on every
          Android from 6 on; the glove scan never needs it from Android 12 on
          (neverForLocation above), so those entries are removed. -->
@@ -81,6 +83,28 @@
              (flutter_tts). -->
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <!-- SOS (Q-T4 phase 1): the SMS app and the dialer open filled in
+             (the app never sends anything itself); WhatsApp is offered only
+             when installed; the system contact picker (no contacts
+             permission). -->
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="smsto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+            <data android:scheme="tel" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+        <intent>
+            <action android:name="android.intent.action.PICK" />
+            <data android:mimeType="vnd.android.cursor.dir/phone_v2" />
         </intent>
     </queries>
 </manifest>

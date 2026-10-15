@@ -690,7 +690,10 @@ class OptCard extends StatelessWidget {
         color: bg,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(IsharaRadii.card),
-          side: BorderSide(color: border, width: 1.5),
+          side: BorderSide(
+            color: border,
+            width: c.borderWidth > 1 ? c.borderWidth : 1.5,
+          ),
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(IsharaRadii.card),
@@ -843,7 +846,7 @@ class InfoRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.glass,
         borderRadius: BorderRadius.circular(IsharaRadii.row),
-        border: Border.all(color: c.line),
+        border: Border.all(color: c.line, width: c.borderWidth),
         boxShadow: _dark(context)
             ? null
             : const [
@@ -914,7 +917,7 @@ class NoticeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: c.glass,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: c.line),
+          border: Border.all(color: c.line, width: c.borderWidth),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

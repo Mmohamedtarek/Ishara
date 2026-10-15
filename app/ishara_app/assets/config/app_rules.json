@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "note": "App rules that are data, not code. conversationGapMinutes: Talk starts a new conversation after this long with no message (S9-4). emergency: numbers the SOS sheet can dial, per region (Q-T4 phase 1); region = the one SOS uses.",
+  "conversationGapMinutes": 10,
+  "emergency": {
+    "region": "EG",
+    "numbers": {
+      "EG": {"ambulance": "123", "police": "122"}
+    }
+  }
+}

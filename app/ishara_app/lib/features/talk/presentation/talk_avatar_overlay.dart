@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/core/avatar/avatar_card_parts.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/avatar/sign_speed.dart';
+import 'package:ishara_app/core/settings/app_settings.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/ishara_icon.dart';
 import 'package:ishara_app/core/ui/toast.dart';
@@ -102,6 +103,15 @@ class _Caption extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final t = context.text;
     final ar = Localizations.localeOf(context).languageCode == 'ar';
+    if (!ref.watch(appSettingsControllerProvider.select((s) => s.subtitles))) {
+      // S9-2: subtitles off: no caption, the avatar takes the full height
+      final runtime = ref.watch(avatarRuntimeProvider).value;
+      return ReportHeight(
+        key: const ValueKey('talk-caption-off'),
+        onHeight: (h) => runtime?.controller.reframe(captionHeight: h),
+        child: const SizedBox(width: double.infinity, height: 0),
+      );
+    }
     final s = ref.watch(talkSpeechProvider);
     final character = ref.watch(currentCharacterProvider);
     final name = character?.name(arabic: ar) ?? '';

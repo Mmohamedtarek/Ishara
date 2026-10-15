@@ -33,6 +33,16 @@ abstract final class AppRoutes {
   static String pairBack(int screens) => '$pair?back=$screens';
   static String calibrateBack(int screens) => '$calibrate?back=$screens';
 
+  /// History › a conversation (S9-5).
+  static const conversationPath = '/history/conversation/:key';
+  static String conversation(String key) =>
+      '/history/conversation/${Uri.encodeComponent(key)}';
+
+  /// Settings sub-screens.
+  static const privacy = '/settings/privacy';
+  static const about = '/settings/about';
+  static const emergencyContacts = '/settings/emergency';
+
   static String mission(String moduleId) =>
       '/mission/${Uri.encodeComponent(moduleId)}';
 

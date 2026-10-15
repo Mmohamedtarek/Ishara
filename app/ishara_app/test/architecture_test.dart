@@ -58,4 +58,37 @@ void main() {
     }
     expect(offenders, isEmpty);
   });
+
+  test("no sample history in lib/ (the prototype's demo conversations and "
+      'starred phrases, step 9)', () {
+    // the prototype's HIST / STARS texts (EN and AR) and their ARB keys
+    const fakes = [
+      'Clinic visit',
+      'Coffee shop',
+      'University office',
+      'I want to book an appointment',
+      'Where is the pharmacy?',
+      'Please write it down for me',
+      'Used 6 times',
+      'زيارة العيادة',
+      'الصيدلية',
+    ];
+    final keys = RegExp(r'\b(h[1-4]s?|st[1-3]s?)\b');
+    final offenders = <String>[];
+    for (final f in _dartFiles('lib')) {
+      final src = f.readAsStringSync();
+      for (final text in fakes) {
+        if (src.contains(text)) offenders.add('${f.path}: "$text"');
+      }
+      for (final m in RegExp(r'\bl\.(\w+)').allMatches(src)) {
+        if (keys.hasMatch(m.group(1)!)) offenders.add('${f.path}: l.${m[1]}');
+      }
+    }
+    expect(offenders, isEmpty);
+    // and the ARB files never carry them
+    final arb = File('lib/l10n/app_en.arb').readAsStringSync();
+    for (final k in ['"h1"', '"h2s"', '"st1"', '"st3s"']) {
+      expect(arb.contains(k), isFalse, reason: k);
+    }
+  });
 }

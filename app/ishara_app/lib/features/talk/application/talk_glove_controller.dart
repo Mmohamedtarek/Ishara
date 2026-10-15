@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/conversation/conversation_providers.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
+import 'package:ishara_app/core/device/haptics.dart';
 import 'package:ishara_app/core/glove/glove_providers.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
 import 'package:ishara_app/core/logging/log.dart';
@@ -273,6 +274,7 @@ class TalkGlove extends _$TalkGlove {
       case DeciderEventKind.word:
         _add(e.label, words.spoken, words.spoken, LiveWordState.confirmed);
         _say(words.spoken);
+        ref.read(vibrateProvider).short(); // S9-1: a glove word
       case DeciderEventKind.confirm:
         final i = _lastPending(e.label);
         if (i == null) {
@@ -285,6 +287,7 @@ class TalkGlove extends _$TalkGlove {
           _replace(i, state.words[i].copyWith(state: LiveWordState.confirmed));
         }
         _say(words.spoken);
+        ref.read(vibrateProvider).short(); // S9-1: a glove word
       case DeciderEventKind.cancel:
         final i = _lastPending(e.label);
         if (i == null) return; // confirmed by the user's tap: kept (S7-9)
@@ -367,6 +370,7 @@ class TalkGlove extends _$TalkGlove {
     _replace(i, w.copyWith(state: LiveWordState.confirmed, byUser: true));
     _log.info('user_confirm', {'label': w.label});
     _say(w.spoken);
+    ref.read(vibrateProvider).short(); // S9-1: a glove word
   }
 
   /// Q-T2: typed words join the sentence and are spoken when sent.
@@ -412,6 +416,13 @@ class TalkGlove extends _$TalkGlove {
             at: _now(),
           ),
         );
+  }
+
+  /// Talk's Clear (Q-T2): the sentence goes to the feed, and the next
+  /// message starts a new conversation (S9-4).
+  Future<void> clear() async {
+    await endSentence();
+    await ref.read(conversationRepositoryProvider).startNewConversation();
   }
 
   /// S7-18: a quick phrase (SOS too: Q-T4): the current sentence goes to

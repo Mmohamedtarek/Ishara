@@ -152,12 +152,16 @@ class ChoicePill extends StatelessWidget {
                     IsharaIcon('check', size: 14, color: fg),
                     const SizedBox(width: 7),
                   ],
-                  Text(
-                    label,
-                    style: t.chip.copyWith(
-                      fontSize: 13.5,
-                      color: fg,
-                      fontFamily: cairo ? IsharaFonts.arabic : null,
+                  // a long label wraps instead of overflowing (narrow
+                  // phones, large text)
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: t.chip.copyWith(
+                        fontSize: 13.5,
+                        color: fg,
+                        fontFamily: cairo ? IsharaFonts.arabic : null,
+                      ),
                     ),
                   ),
                   if (comingSoon) ...[
