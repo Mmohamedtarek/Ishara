@@ -225,13 +225,13 @@ STEP8_TEXTS = {
     "passedOf": ("{done} of {total} passed", "عدّيت {done} من {total}", "L20: screen reader, a module's progress", {"done": "int", "total": "int"}),
 }
 
-# Step 8 review texts: DRAFTS (app/tools/out/step8/drafts.html), the forms the
-# user gave on 2026-10-15 (S8-7). Their ARB descriptions say "DRAFT".
+# Step 8 review texts: L21, the forms the user gave on 2026-10-15 (S8-7),
+# approved with its Arabic 0 form on 2026-10-15 (S8-10).
 STEP8_DRAFTS = {
     "streakDays": (
         "{n, plural, =1{1 day} other{{n} days}}",
         "{n, plural, =0{{n} يوم} =1{يوم واحد} =2{يومين} few{{n} أيام} other{{n} يوم}}",
-        "L21: streak chip (replaces 'N days'); AR 0 is not in the user's list (11+ form used)",
+        "L21: streak chip (replaces 'N days'); AR 0 = «0 يوم» (user, same as 11+)",
         {"n": "int"},
     ),
 }
@@ -375,7 +375,7 @@ def main() -> int:
             print(f"error: step 8 draft key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
-        meta = {"description": f"DRAFT (step 8 review, not approved): {why}"}
+        meta = {"description": f"approved new text (step 8 review, 2026-10-15): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta

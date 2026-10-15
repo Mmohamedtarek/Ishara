@@ -546,4 +546,4 @@ Your answers: S8-1 … S8-4 (DECISIONS). Static screens `08-learn` / `08b`: a ca
 
 **Checks (Linux laptop):** analyze 0 issues, format 0 changed; `flutter test --coverage`: 823 passed, 4 skipped, 8 failed = the Learn goldens' local laptop images (stale chip text, never committed; replaced by the runner's); Cairo 3/3; `lib/core` 93.3 %, domain 100 %. Emulator: onboarding 2/2, talk 1/1, avatar 1/1 (59.8-60 fps), learn 3/3 (with the disconnect → reconnect).
 **Learn goldens:** rendered by the goldens workflow on the runner, run 38727389574 on `step8` (`fbdbb26`), 15 tests × both variants; the runner's 30 images committed (none from the laptop); they also pass locally on Linux (both variants).
-
+**L21 (2026-10-15):** approved with AR 0 = «0 يوم» (S8-10); ARB description and `drafts.html` updated; test covers AR 0.

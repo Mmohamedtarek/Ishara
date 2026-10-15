@@ -182,6 +182,7 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | S8-7 | Streak keeps counting up to yesterday until midnight. The chip is an ICU plural: EN "1 day" / "{n} days"; AR 1 «يوم واحد», 2 «يومين», 3-10 «{n} أيام», 11+ «{n} يوم» (draft L21; AR 0 uses the 11+ form, not in the user's list). |
 | S8-8 | Connect / Calibrate now from a practice step come back to the same step with its attempts reset (Pair returns once a calibrated glove is connected; an uncalibrated one goes on to Calibrate, which returns after Save or Skip). Talk keeps going to Ready. |
 | S8-9 | Practice loops the sign at min(0.8×, the user's speed). |
+| S8-10 | L21 approved (2026-10-15), with the Arabic 0 form «0 يوم» (same as 11+). |
 
 ## Backend
 | ID | Decision |

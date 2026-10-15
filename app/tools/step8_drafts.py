@@ -69,9 +69,8 @@ page = f"""<!doctype html><html><head><meta charset="utf-8"><title>Step 8 drafts
 td,th{{border:1px solid #ccc;padding:6px 8px;vertical-align:middle;text-align:start}}th{{background:#eee}}
 td[dir=rtl]{{font-size:15px}}</style></head><body>
 <h1>Step 8 (Learn): texts</h1>
-<h2>Draft for your approval</h2>
-<p>ICU plural: Arabic 0 is not in your list; it uses the 11+ form («0 يوم»). Examples: EN 1 day, 2 days;
-AR يوم واحد، يومين، 3 أيام … 10 أيام، 11 يوم، 100 يوم.</p>
+<h2>Approved 2026-10-15: L21 (streak chip, ICU plural)</h2>
+<p>EN 1 day, 2 days; AR 0 يوم، يوم واحد، يومين، 3 أيام … 10 أيام، 11 يوم، 100 يوم. Arabic 0 = «0 يوم» (your answer).</p>
 <table><tr><th>ID / key</th><th>English</th><th>Egyptian Arabic</th><th>Where / why</th></tr>
 {drafts}</table>
 <h2>1. Approved 2026-10-15 (L1-L20; L17 Arabic is your wording)</h2>

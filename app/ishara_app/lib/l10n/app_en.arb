@@ -1602,7 +1602,7 @@
   },
   "streakDays": "{n, plural, =1{1 day} other{{n} days}}",
   "@streakDays": {
-    "description": "DRAFT (step 8 review, not approved): L21: streak chip (replaces 'N days'); AR 0 is not in the user's list (11+ form used)",
+    "description": "approved new text (step 8 review, 2026-10-15): L21: streak chip (replaces 'N days'); AR 0 = «0 يوم» (user, same as 11+)",
     "placeholders": {
       "n": {
         "type": "int"
