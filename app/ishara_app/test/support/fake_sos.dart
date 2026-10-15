@@ -72,16 +72,20 @@ class FakeLauncher implements SosLauncher {
   ({String name, String number})? picked;
   final opened = <String>[];
 
+  /// The phone has an SMS app / a phone app (false: nothing opens).
+  bool smsApp = true;
+  bool phoneApp = true;
+
   @override
   Future<bool> sms(List<String> recipients, String body) async {
     opened.add('sms ${recipients.join(',')} | $body');
-    return true;
+    return smsApp;
   }
 
   @override
   Future<bool> dial(String number) async {
     opened.add('dial $number');
-    return true;
+    return phoneApp;
   }
 
   @override

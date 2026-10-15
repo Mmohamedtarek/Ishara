@@ -10,7 +10,7 @@ Usage: python3 app/tools/step9_drafts.py
 import html
 import re
 
-from extract_strings import STEP9_DRAFTS
+from extract_strings import AR_CHANGED, STEP9_DRAFTS, STEP9B_DRAFTS
 from proto_common import REPO
 
 APP = REPO / "app" / "ishara_app"
@@ -30,14 +30,19 @@ def esc(s: str) -> str:
     return html.escape(s)
 
 
+def row(k: str, e: str, a: str, why: str) -> str:
+    return (f"<tr><td><b>{esc(why.split(':')[0])}</b><br><code>{esc(k)}</code></td><td>{esc(e)}</td>"
+            f'<td dir="rtl" lang="ar">{esc(a)}</td><td>{esc(why)}</td></tr>')
+
+
 def group(prefix: str) -> str:
-    rows = [
-        f"<tr><td><b>{esc(why.split(':')[0])}</b><br><code>{esc(k)}</code></td><td>{esc(e)}</td>"
-        f'<td dir="rtl" lang="ar">{esc(a)}</td><td>{esc(why)}</td></tr>'
-        for k, (e, a, why, _ph) in STEP9_DRAFTS.items()
-        if re.match(rf"{prefix}\d", why)
-    ]
-    return "\n".join(rows)
+    return "\n".join(row(k, e, a, why) for k, (e, a, why, _ph) in STEP9_DRAFTS.items()
+                      if re.match(rf"{prefix}\d", why))
+
+
+new_rows = "\n".join(row(k, e, a, why) for k, (e, a, why, _ph) in STEP9B_DRAFTS.items())
+changed_rows = "\n".join(f'<tr><td><code>{esc(k)}</code></td><td dir="rtl" lang="ar">{esc(a)}</td><td>{esc(why)}</td></tr>'
+                          for k, (a, why) in AR_CHANGED.items())
 
 
 plist = (APP / "ios" / "Runner" / "Info.plist").read_text(encoding="utf-8")
@@ -55,10 +60,21 @@ page = f"""<!doctype html><html><head><meta charset="utf-8"><title>Step 9 drafts
 <style>body{{font:14px system-ui,sans-serif;margin:24px;max-width:1100px}}table{{border-collapse:collapse;width:100%;margin-bottom:28px}}
 td,th{{border:1px solid #ccc;padding:6px 8px;vertical-align:middle;text-align:start}}th{{background:#eee}}
 td[dir=rtl]{{font-size:15px}}</style></head><body>
-<h1>Step 9: draft texts ({count}), waiting for your approval</h1>
-<p>Starred is «المعلّمة» everywhere (the prototype's own term). Dates and times use Western digits in
-both languages (09:00, 18:02), as the rest of the app. Placeholders in braces are filled by the app.</p>
+<h1>Step 9: texts</h1>
+<h2>New drafts from the step 9 review ({len(STEP9B_DRAFTS)}), waiting for your approval</h2>
+<p>Your wording, EN and AR. The age: minutes under 1 h, hours under 48 h, then days (ICU plurals); the
+"out of date" line under a last known position older than 1 hour; the SMS / phone app messages with
+"Copy message" (copies the same text the SMS would carry) and its toast.</p>
+<table><tr><th>ID / key</th><th>English</th><th>Egyptian Arabic</th><th>Where / why</th></tr>
+{new_rows}</table>
+<h2>Approved 2026-10-15 ({count}), with your Arabic changes</h2>
+<p>Starred = «المحفوظة» everywhere; «SOS» instead of «استغاثة» in every Arabic text; O6 and S3 as you wrote
+them. Dates and times use Western digits in both languages. Placeholders in braces are filled by the app.</p>
 {sections}
+<h2>Earlier texts changed by the same answers</h2>
+<table><tr><th>Key</th><th>Egyptian Arabic</th><th>Why</th></tr>
+{changed_rows}
+<tr><td><code>toastSosSpoken</code></td><td dir="rtl" lang="ar">اتنطقت رسالة SOS بصوت عالي.</td><td>your wording (step 7 text D2)</td></tr></table>
 <h2>Outside the ARB files</h2>
 <table><tr><th>Where</th><th>Text</th></tr>
 <tr><td>iOS location prompt (Info.plist, English only until the iOS build is localised)</td><td>{esc(ios_prompt)}</td></tr>

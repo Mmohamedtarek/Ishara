@@ -36,6 +36,9 @@ LocationPermissions locationPermissions(Ref ref) => const PhoneLocation();
 @Riverpod(keepAlive: true)
 SosLauncher sosLauncher(Ref ref) => const PhoneSosLauncher();
 
+/// What an SOS tap tried to open.
+enum SosOpen { sms, call }
+
 /// The SOS sheet.
 @immutable
 class SosState {
@@ -45,6 +48,7 @@ class SosState {
     this.whatsApp = false,
     this.ambulance,
     this.locationOff = false,
+    this.openFailed,
   });
 
   /// Null while locating.
@@ -60,6 +64,9 @@ class SosState {
   /// Location is refused or switched off for the app (SOS still works).
   final bool locationOff;
 
+  /// The last SMS / call tap opened no app (none installed, refused).
+  final SosOpen? openFailed;
+
   bool get locating => location == null;
 
   SosState copyWith({
@@ -67,12 +74,14 @@ class SosState {
     List<EmergencyContact>? contacts,
     bool? whatsApp,
     bool? locationOff,
+    SosOpen? Function()? openFailed,
   }) => SosState(
     location: location ?? this.location,
     contacts: contacts ?? this.contacts,
     whatsApp: whatsApp ?? this.whatsApp,
     ambulance: ambulance,
     locationOff: locationOff ?? this.locationOff,
+    openFailed: openFailed == null ? this.openFailed : openFailed(),
   );
 }
 
@@ -110,11 +119,22 @@ class SosController extends _$SosController {
   SosLauncher get _launcher => ref.read(sosLauncherProvider);
 
   /// The SMS app, every contact as a recipient, [message] filled in.
-  Future<bool> sms(String message) =>
-      _launcher.sms([for (final c in state.contacts) c.phone], message);
+  Future<bool> sms(String message) => _opened(
+    SosOpen.sms,
+    _launcher.sms([for (final c in state.contacts) c.phone], message),
+  );
 
   Future<bool> whatsApp(EmergencyContact c, String message) =>
       _launcher.whatsApp(c.phone, message);
 
-  Future<bool> dial(String number) => _launcher.dial(number);
+  Future<bool> dial(String number) =>
+      _opened(SosOpen.call, _launcher.dial(number));
+
+  /// Remembers when nothing opened, so the sheet can say so and offer to
+  /// copy the message (user, step 9 review).
+  Future<bool> _opened(SosOpen what, Future<bool> opening) async {
+    final ok = await opening;
+    if (ref.mounted) state = state.copyWith(openFailed: () => ok ? null : what);
+    return ok;
+  }
 }

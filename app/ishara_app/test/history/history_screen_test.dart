@@ -185,11 +185,11 @@ void main() {
       find.bySemanticsLabel(RegExp(r'^النهارده، 09:00\. رسالتين')),
       findsOneWidget,
     );
-    expect(find.bySemanticsLabel('المعلّمة'), findsOneWidget);
+    expect(find.bySemanticsLabel('المحفوظة'), findsOneWidget);
     // a starred row's own star is reachable (not merged into the row)
     await s.c.read(savedPhrasesRepositoryProvider).star('أنا جعانة');
     await tapIt(t, find.byKey(const ValueKey('seg-1')));
-    expect(find.bySemanticsLabel('شيل العلامة'), findsOneWidget);
+    expect(find.bySemanticsLabel('شيلها من المحفوظة'), findsOneWidget);
     expect(find.bySemanticsLabel('انطق «أنا جعانة»'), findsOneWidget);
     sem.dispose();
   });

@@ -174,7 +174,7 @@ DRAFTS = {
 # the user as written on 2026-10-12 (DECISIONS S7-14).
 STEP7_DRAFTS = {
     "talkToday": ("Today", "النهارده", "D1: feed day marker (step 7 answer 13: no place)", None),
-    "toastSosSpoken": ("SOS spoken out loud.", "اتنطقت الاستغاثة بصوت عالي.", "D2: replaces toastSOS (Q-T4: no SMS)", None),
+    "toastSosSpoken": ("SOS spoken out loud.", "اتنطقت رسالة SOS بصوت عالي.", "D2: replaces toastSOS (Q-T4: no SMS); Arabic «SOS» (user's wording, step 9 review, 2026-10-15)", None),
     "sosSay": ("I need help, please.", "محتاج مساعدة من فضلك.", "D23: what the SOS quick phrase speaks (user, step 7 answer 7)", None),
     "micPermBody": ("Allow Ishara to use the microphone so it can hear the person you're talking to.", "اسمح للتطبيق يستخدم الميكروفون عشان يسمع الشخص اللي بتكلمه.", "D4: mic permission not given", None),
     "micPermBodySettings": ("Turn on the microphone permission for Ishara in your phone's settings.", "شغّل إذن الميكروفون لتطبيق إشارة من إعدادات الموبايل.", "D5: mic permission refused for good", None),
@@ -248,40 +248,58 @@ STEP8_DRAFTS = {
 # Step 9 texts (app/tools/out/step9/drafts.html): DRAFTS until approved.
 # H = History, S = Settings, P = Privacy / About, A = Avatar studio,
 # E = emergency contacts, O = the SOS sheet.
+# Step 9 review (2026-10-15): new texts the user asked for, drafts until
+# approved. key: (en, ar, why, placeholders).
+STEP9B_DRAFTS = {
+    "sosLocOldHours": ("Last known location, about {n, plural, =1{1 hour} other{{n} hours}} ago (±{m} m)", "آخر مكان معروف، من حوالي {n, plural, =1{ساعة} =2{ساعتين} few{{n} ساعات} other{{n} ساعة}} (±{m} م)", "O17: last known, 1 h to 48 h old", {"n": "int", "m": "int"}),
+    "sosLocOldDays": ("Last known location, about {n, plural, =1{1 day} other{{n} days}} ago (±{m} m)", "آخر مكان معروف، من حوالي {n, plural, =1{يوم} =2{يومين} few{{n} أيام} other{{n} يوم}} (±{m} م)", "O18: last known, 48 h or older", {"n": "int", "m": "int"}),
+    "sosLocStale": ("This location may be out of date.", "المكان ده ممكن يكون قديم.", "O19: under a last known position older than 1 hour", None),
+    "sosSmsFailed": ("Couldn't open the SMS app.", "مقدرناش نفتح تطبيق الرسايل.", "O20: no app opened for SMS", None),
+    "sosCallFailed": ("Couldn't open the phone app.", "مقدرناش نفتح تطبيق الاتصال.", "O21: no app opened for a call", None),
+    "sosCopy": ("Copy message", "انسخ الرسالة", "O22: copies the SOS message to paste anywhere", None),
+    "toastCopied": ("Message copied", "الرسالة اتنسخت", "O23: toast after Copy message", None),
+}
+
+# Prototype texts whose Arabic the user changed (key: (ar, why)).
+AR_CHANGED = {
+    "starred": ("المحفوظة", "Starred = «المحفوظة» everywhere (step 9 review, 2026-10-15)"),
+    "sos": ("SOS · محتاج مساعدة", "«SOS» in every Arabic text, as the button (step 9 review, 2026-10-15)"),
+}
+
 STEP9_DRAFTS = {
     # History
-    "histLeadPhone": ("Saved on this phone only. Star a sentence to keep it in Starred.", "متسجّل على الموبايل ده بس. علّم على جملة بنجمة عشان تفضل في المعلّمة.", "H1: replaces histLead", None),
+    "histLeadPhone": ("Saved on this phone only. Star a sentence to keep it in Starred.", "متسجّل على الموبايل ده بس. علّم على جملة بنجمة عشان تفضل في المحفوظة.", "H1: replaces histLead", None),
     "searchWordPh": ("Search a word", "دوّر على كلمة", "H2: replaces searchPh", None),
     "messagesCount": ("{n, plural, =1{1 message} other{{n} messages}}", "{n, plural, =1{رسالة واحدة} =2{رسالتين} few{{n} رسائل} other{{n} رسالة}}", "H3: a conversation's size", {"n": "int"}),
     "histYesterday": ("Yesterday", "امبارح", "H4: title day marker", None),
     "histTitleAt": ("{day}, {time}", "{day}، {time}", "H5: conversation title (Q-B4: date and time)", {"day": "String", "time": "String"}),
     "histEmpty": ("No conversations yet. What you sign and hear in Talk shows up here.", "لسه مفيش محادثات. اللي بتعمله إشارة واللي بتسمعه في المحادثة هيظهر هنا.", "H6: empty History", None),
-    "starredEmpty": ("Nothing starred yet. Open a conversation and tap the star next to a sentence.", "لسه مفيش حاجة معلّمة. افتح محادثة ودوس على النجمة جنب الجملة.", "H7: empty Starred", None),
+    "starredEmpty": ("Nothing starred yet. Open a conversation and tap the star next to a sentence.", "لسه مفيش حاجة محفوظة. افتح محادثة ودوس على النجمة جنب الجملة.", "H7: empty Starred", None),
     "searchEmpty": ("Nothing matches “{q}”.", "مفيش حاجة فيها «{q}».", "H8: no search results", {"q": "String"}),
-    "toastStarred": ("Added to Starred", "اتضافت للمعلّمة", "H9: replaces toastStar", None),
-    "toastUnstarred": ("Removed from Starred", "اتشالت من المعلّمة", "H10", None),
-    "starLabel": ("Star", "علّمها", "H11: screen reader, star a sentence", None),
-    "unstarLabel": ("Unstar", "شيل العلامة", "H12: screen reader, unstar", None),
+    "toastStarred": ("Added to Starred", "اتحفظت", "H9: replaces toastStar", None),
+    "toastUnstarred": ("Removed from Starred", "اتشالت من المحفوظة", "H10", None),
+    "starLabel": ("Star", "احفظها", "H11: screen reader, star a sentence", None),
+    "unstarLabel": ("Unstar", "شيلها من المحفوظة", "H12: screen reader, unstar", None),
     "deleteConversation": ("Delete conversation", "امسح المحادثة", "H13", None),
     "toastConvDeleted": ("Conversation deleted", "المحادثة اتمسحت", "H14: with Undo", None),
     "undo": ("Undo", "تراجع", "H15", None),
-    "guestStarredNote": ("Guest mode: your starred phrases stay on this phone only.", "وضع الزائر: جملك المعلّمة هتفضل على الموبايل ده بس.", "H16: guest state", None),
+    "guestStarredNote": ("Guest mode: your starred phrases stay on this phone only.", "وضع الزائر: جملك المحفوظة هتفضل على الموبايل ده بس.", "H16: guest state", None),
     "speakPhraseLabel": ("Speak “{text}”", "انطق «{text}»", "H17: screen reader, a saved phrase", {"text": "String"}),
     # Settings
-    "signedInAsEmail": ("Signed in as {email}", "مسجّل الدخول باسم {email}", "S3: replaces signedInAs", {"email": "String"}),
+    "signedInAsEmail": ("Signed in as {email}", "داخل بـ {email}", "S3: replaces signedInAs", {"email": "String"}),
     "gloveNone": ("No glove paired", "مفيش جوانتي متوصّل", "S4: Settings › Glove, nothing paired", None),
     "pairReplaceS": ("Connect another glove instead of this one", "وصّل جوانتي تاني بدل ده", "S5: replaces sPairS", None),
     "gloveFirmware": ("Firmware {fw}", "السوفتوير {fw}", "S4b: the glove's firmware (INFO fw)", {"fw": "String"}),
     "secAvatarOnly": ("Avatar", "الأفاتار", "S6: replaces secAvatar (no voice row)", None),
     "avatarSpeedS": ("Sign speed {speed}x", "سرعة الإشارة {speed}x", "S7: replaces sAvatarS", {"speed": "String"}),
     "vibrateTitle": ("Vibrate", "الاهتزاز", "S8: replaces sVib (S9-1)", None),
-    "vibrateS": ("Short pulse for words and replies, long for SOS", "نبضة قصيرة للكلام والردود، وطويلة للاستغاثة", "S9: replaces sVibS (S9-1)", None),
+    "vibrateS": ("Short pulse for words and replies, long for SOS", "نبضة قصيرة للكلام والردود، وطويلة لـ SOS", "S9: replaces sVibS (S9-1)", None),
     "appearance": ("Appearance", "المظهر", "S10: replaces sTheme (Q-D3)", None),
     "themeSystem": ("System", "زي الموبايل", "S11", None),
     "themeLight": ("Light", "فاتح", "S12", None),
     "themeDark": ("Dark", "غامق", "S13", None),
     "emergencyContacts": ("Emergency contacts", "أرقام الطوارئ", "S14: Settings row and screen title (Q-T4)", None),
-    "emergencyNone": ("Not set · SOS can send them your location", "مش متحدّدة · الاستغاثة تقدر تبعتلهم مكانك", "S15", None),
+    "emergencyNone": ("Not set · SOS can send them your location", "مش متحدّدة · من SOS تقدر تبعتلهم مكانك", "S15", None),
     "emergencyCount": ("{n, plural, =1{1 contact} other{{n} contacts}}", "{n, plural, =1{رقم واحد} =2{رقمين} few{{n} أرقام} other{{n} رقم}}", "S16", {"n": "int"}),
     "aboutVersion": ("Version {version}", "الإصدار {version}", "S17: replaces sAboutS", {"version": "String"}),
     "devModeOn": ("Developer mode on", "وضع المطوّرين اشتغل", "S18: 7 taps on the version", None),
@@ -290,13 +308,13 @@ STEP9_DRAFTS = {
     "privacyIntro": ("Ishara works on your phone. Here is what it keeps and where.", "إشارة بيشتغل على موبايلك. ده اللي بيحتفظ بيه ومكانه فين.", "P1", None),
     "privacyGlove": ("Your signs are recognized on this phone. Glove data never leaves it.", "إشاراتك بتتعرف على الموبايل ده. بيانات الجوانتي مش بتخرج منه.", "P2", None),
     "privacyStored": ("Your conversations and your Learn progress stay on this phone.", "محادثاتك وتقدّمك في التعلّم بيفضلوا على الموبايل ده.", "P3", None),
-    "privacyPhrases": ("Starred phrases stay on this phone too. A later version will keep them in your account when you're signed in.", "الجمل المعلّمة بتفضل على الموبايل ده كمان. إصدار جاي هيحفظها في حسابك لما تكون مسجّل دخول.", "P4: Q-B4, sync comes with step 10", None),
-    "privacyLocation": ("Your location is read only when you press SOS, to put it in the message you choose to send. It is never tracked, stored or uploaded.", "مكانك بيتقري بس لما تدوس استغاثة، عشان يتحط في الرسالة اللي تختار تبعتها. مش بيتتبّع ولا بيتحفظ ولا بيترفع.", "P5: Q-T4 phase 1", None),
+    "privacyPhrases": ("Starred phrases stay on this phone too. A later version will keep them in your account when you're signed in.", "الجمل المحفوظة بتفضل على الموبايل ده كمان. إصدار جاي هيحفظها في حسابك لما تكون مسجّل دخول.", "P4: Q-B4, sync comes with step 10", None),
+    "privacyLocation": ("Your location is read only when you press SOS, to put it in the message you choose to send. It is never tracked, stored or uploaded.", "مكانك بيتقري بس لما تدوس SOS، عشان يتحط في الرسالة اللي تختار تبعتها. مش بيتتبّع ولا بيتحفظ ولا بيترفع.", "P5: Q-T4 phase 1", None),
     "privacyContacts": ("Emergency contacts stay on this phone and are never sent anywhere.", "أرقام الطوارئ بتفضل على الموبايل ده ومش بتتبعت لأي مكان.", "P6", None),
     "exportData": ("Export my data", "صدّر بياناتي", "P7", None),
-    "exportDataS": ("A file with your conversations, starred phrases and Learn progress", "ملف فيه محادثاتك وجملك المعلّمة وتقدّمك في التعلّم", "P8", None),
+    "exportDataS": ("A file with your conversations, starred phrases and Learn progress", "ملف فيه محادثاتك وجملك المحفوظة وتقدّمك في التعلّم", "P8", None),
     "clearHistory": ("Clear history", "امسح السجل", "P9", None),
-    "clearHistoryS": ("Deletes your conversations on this phone. Starred phrases stay.", "بيمسح محادثاتك من الموبايل ده. الجمل المعلّمة بتفضل.", "P10", None),
+    "clearHistoryS": ("Deletes your conversations on this phone. Starred phrases stay.", "بيمسح محادثاتك من الموبايل ده. الجمل المحفوظة بتفضل.", "P10", None),
     "clearHistoryTitle": ("Clear all conversations?", "تمسح كل المحادثات؟", "P11: confirmation", None),
     "clearAction": ("Clear", "امسح", "P12", None),
     "cancelAction": ("Cancel", "إلغاء", "P13", None),
@@ -308,7 +326,7 @@ STEP9_DRAFTS = {
     "discardAction": ("Discard", "الغيها", "A3", None),
     "keepEditing": ("Keep editing", "كمّل تعديل", "A4", None),
     # Emergency contacts
-    "emergencyLead": ("Up to 3 people. From SOS you can send them your location by SMS or WhatsApp, or call them.", "لحد 3 أشخاص. من الاستغاثة تقدر تبعتلهم مكانك برسالة أو واتساب، أو تكلّمهم.", "E1", None),
+    "emergencyLead": ("Up to 3 people. From SOS you can send them your location by SMS or WhatsApp, or call them.", "لحد 3 أشخاص. من SOS تقدر تبعتلهم مكانك برسالة أو واتساب، أو تكلّمهم.", "E1", None),
     "addContact": ("Add contact", "ضيف رقم", "E2", None),
     "pickFromContacts": ("Choose from your contacts", "اختار من الأسماء اللي عندك", "E3: system picker, no permission", None),
     "contactName": ("Name", "الاسم", "E4", None),
@@ -319,16 +337,16 @@ STEP9_DRAFTS = {
     "saveAction": ("Save", "احفظ", "E9", None),
     "removeContact": ("Remove", "امسح", "E10", None),
     "contactsFull": ("You can add up to 3 contacts.", "تقدر تضيف لحد 3 أرقام بس.", "E11", None),
-    "locationAskTitle": ("Allow location for SOS?", "تسمح بالموقع للاستغاثة؟", "E12: asked once, when the first contact is added", None),
-    "locationAskBody": ("When you press SOS, Ishara reads your location once so you can send it to your contacts. It is never tracked or stored.", "لما تدوس استغاثة، إشارة بيقرا مكانك مرة واحدة عشان تقدر تبعته للأرقام دي. مش بيتتبّع ولا بيتحفظ.", "E13", None),
+    "locationAskTitle": ("Allow location for SOS?", "تسمح بالموقع لـ SOS؟", "E12: asked once, when the first contact is added", None),
+    "locationAskBody": ("When you press SOS, Ishara reads your location once so you can send it to your contacts. It is never tracked or stored.", "لما تدوس SOS، إشارة بيقرا مكانك مرة واحدة عشان تقدر تبعته للأرقام دي. مش بيتتبّع ولا بيتحفظ.", "E13", None),
     "notNow": ("Not now", "مش دلوقتي", "E14", None),
     # SOS sheet
-    "sosTitle": ("SOS", "استغاثة", "O1: sheet title", None),
+    "sosTitle": ("SOS", "SOS", "O1: sheet title", None),
     "sosLocating": ("Getting your location…", "بنجيب مكانك…", "O2", None),
     "sosLocFresh": ("Your location (±{m} m)", "مكانك (±{m} م)", "O3: a fresh fix", {"m": "int"}),
     "sosLocOld": ("Last known location, about {n, plural, =1{1 minute} other{{n} minutes}} ago (±{m} m)", "آخر مكان معروف، من حوالي {n, plural, =0{أقل من دقيقة} =1{دقيقة} =2{دقيقتين} few{{n} دقايق} other{{n} دقيقة}} (±{m} م)", "O4: last known, with its age", {"n": "int", "m": "int"}),
     "sosLocNone": ("Couldn't get your location. You can still send a message or call.", "مقدرناش نجيب مكانك. لسه تقدر تبعت رسالة أو تتصل.", "O5", None),
-    "sosLocOff": ("Location is off for Ishara.", "الموقع مقفول لإشارة.", "O6: permission denied", None),
+    "sosLocOff": ("Location is off for Ishara.", "إشارة مش مسموحله يستخدم الموقع.", "O6: permission denied", None),
     "sosSms": ("Send location by SMS", "ابعت المكان برسالة", "O7: opens the SMS app, filled in", None),
     "sosSmsNoLoc": ("Send SMS", "ابعت رسالة", "O7b: without a location", None),
     "sosWhatsApp": ("Send on WhatsApp", "ابعت على واتساب", "O8", None),
@@ -392,7 +410,7 @@ def main() -> int:
         print(f"error: en/ar differ after merging quick phrases: {sorted(set(en) ^ set(ar))}", file=sys.stderr)
         return 1
 
-    unknown = set(EXCLUDED) - set(en) - {"micHint"}
+    unknown = (set(EXCLUDED) | set(AR_CHANGED)) - set(en) - {"micHint"}
     if unknown:
         print(f"error: EXCLUDED names unknown keys {sorted(unknown)}", file=sys.stderr)
         return 1
@@ -408,6 +426,9 @@ def main() -> int:
             t = t.replace("Nour", "{name}").replace("نور", "{name}")
             return t
 
+        changed = AR_CHANGED.get(key)
+        if changed:
+            a, f = changed[0], None
         e, a = conv(e), conv(a)
         f = conv(f) if f else None
         if f == a:
@@ -421,6 +442,8 @@ def main() -> int:
         name = key + "Label" if key in DART_RESERVED else key
         out_en[name], out_ar[name] = e, a
         meta = {"description": f"prototype I18N.{key}"}
+        if changed:
+            meta["description"] += f"; Arabic changed: {changed[1]}"
         if ph:
             meta["placeholders"] = ph
         out_en["@" + name] = meta
@@ -491,7 +514,17 @@ def main() -> int:
             print(f"error: step 9 draft key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
-        meta = {"description": f"DRAFT (step 9, not approved): {why}"}
+        meta = {"description": f"approved new text (step 9, 2026-10-15): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
+    for key, (e, a, why, ph) in STEP9B_DRAFTS.items():
+        if key in out_en:
+            print(f"error: step 9 review draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"DRAFT (step 9 review, not approved): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta

@@ -96,6 +96,53 @@ void main() {
       });
     });
 
+    test('age: minutes under 1 h, hours under 48 h, then days; stale over '
+        '1 h (step 9 review)', () {
+      Duration m(int n) => Duration(minutes: n);
+      expect(SosLocator.ageIn(m(59)), (AgeUnit.minutes, 59));
+      expect(SosLocator.ageIn(m(61)), (AgeUnit.hours, 1));
+      expect(SosLocator.ageIn(m(150)), (AgeUnit.hours, 3));
+      expect(SosLocator.ageIn(const Duration(hours: 47)), (AgeUnit.hours, 47));
+      expect(SosLocator.ageIn(const Duration(hours: 48)), (AgeUnit.days, 2));
+      expect(SosLocator.ageIn(const Duration(days: 5)), (AgeUnit.days, 5));
+      expect(SosLocator.stale(m(60)), isFalse);
+      expect(SosLocator.stale(m(61)), isTrue);
+    });
+
+    test('age texts in both languages (ICU plurals; drafts O17 / O18)', () {
+      final en = lookupAppLocalizations(const Locale('en'));
+      final ar = lookupAppLocalizations(const Locale('ar'));
+      expect(
+        en.sosLocOldHours(1, 12),
+        'Last known location, about 1 hour ago (±12 m)',
+      );
+      expect(
+        en.sosLocOldDays(3, 12),
+        'Last known location, about 3 days ago (±12 m)',
+      );
+      expect(
+        [
+          for (final n in [1, 2, 3, 11]) ar.sosLocOldHours(n, 12),
+        ],
+        [
+          'آخر مكان معروف، من حوالي ساعة (±12 م)',
+          'آخر مكان معروف، من حوالي ساعتين (±12 م)',
+          'آخر مكان معروف، من حوالي 3 ساعات (±12 م)',
+          'آخر مكان معروف، من حوالي 11 ساعة (±12 م)',
+        ],
+      );
+      expect(
+        [
+          for (final n in [2, 3, 11]) ar.sosLocOldDays(n, 12),
+        ],
+        [
+          'آخر مكان معروف، من حوالي يومين (±12 م)',
+          'آخر مكان معروف، من حوالي 3 أيام (±12 م)',
+          'آخر مكان معروف، من حوالي 11 يوم (±12 م)',
+        ],
+      );
+    });
+
     test('a stalled last-known lookup ends too: none after about 13 s, so '
         'SMS never stays busy', () {
       fakeAsync((async) {

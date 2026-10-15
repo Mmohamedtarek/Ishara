@@ -165,6 +165,79 @@ void main() {
       find.text('Last known location, about 4 minutes ago (±12 m)'),
       findsOneWidget,
     );
+    expect(_key('sos-location-stale'), findsNothing, reason: 'under 1 hour');
+  });
+
+  _sosTest('a last known position 3 hours old: told in hours, with "may be '
+      'out of date"', (t) async {
+    final s = _Talk(
+      contacts: [_nour],
+      location: FakeLocation(last: _fixAgo(const Duration(hours: 3))),
+    );
+    await s.pressSos(t);
+    expect(
+      find.text('Last known location, about 3 hours ago (±12 m)'),
+      findsOneWidget,
+    );
+    expect(find.text('This location may be out of date.'), findsOneWidget);
+  });
+
+  _sosTest('3 days old: told in days', (t) async {
+    final s = _Talk(
+      contacts: [_nour],
+      location: FakeLocation(last: _fixAgo(const Duration(days: 3))),
+    );
+    await s.pressSos(t);
+    expect(
+      find.text('Last known location, about 3 days ago (±12 m)'),
+      findsOneWidget,
+    );
+    expect(_key('sos-location-stale'), findsOneWidget);
+  });
+
+  _sosTest('no SMS app: says so and offers Copy message (the SMS text, '
+      'with a toast)', (t) async {
+    final s = _Talk(
+      contacts: [_nour],
+      location: FakeLocation(fresh: _fixAgo(Duration.zero)),
+    )..sos.launcher.smsApp = false;
+    String? copied;
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await s.pressSos(t);
+    expect(_key('sos-open-failed'), findsNothing);
+    await tapIt(t, _key('sos-sms'));
+    expect(find.text("Couldn't open the SMS app."), findsOneWidget);
+    await tapIt(t, _key('sos-copy'));
+    expect(copied, startsWith('I need help. My location: https://maps.'));
+    expect(find.text('Message copied'), findsOneWidget);
+  });
+
+  _sosTest('no phone app: says so; a call that opens clears it', (t) async {
+    final s = _Talk(
+      contacts: [_nour],
+      location: FakeLocation(fresh: _fixAgo(Duration.zero)),
+    )..sos.launcher.phoneApp = false;
+    await s.pressSos(t);
+    await tapIt(t, _key('sos-ambulance'));
+    expect(find.text("Couldn't open the phone app."), findsOneWidget);
+    expect(_key('sos-copy'), findsOneWidget);
+    s.sos.launcher.phoneApp = true;
+    await tapIt(t, _key('sos-call-0'));
+    expect(_key('sos-open-failed'), findsNothing);
   });
 
   _sosTest('WhatsApp missing: no WhatsApp button', (t) async {

@@ -31,6 +31,9 @@ abstract interface class LocationSource {
   Future<Fix?> lastKnown();
 }
 
+/// The unit a last known position's age is told in.
+enum AgeUnit { minutes, hours, days }
+
 /// How the position was found.
 enum FixKind {
   /// Measured now.
@@ -98,4 +101,19 @@ abstract final class SosLocator {
   /// The age in whole minutes, rounded (for "about 4 minutes ago").
   static int ageMinutes(Duration age) =>
       age.isNegative ? 0 : math.max(1, (age.inSeconds / 60).round());
+
+  /// How the age is told: minutes under 1 hour, hours under 48 hours, then
+  /// days (user, step 9 review), each rounded, at least 1.
+  static (AgeUnit, int) ageIn(Duration age) {
+    if (age < const Duration(hours: 1)) {
+      return (AgeUnit.minutes, ageMinutes(age));
+    }
+    if (age < const Duration(hours: 48)) {
+      return (AgeUnit.hours, math.max(1, (age.inMinutes / 60).round()));
+    }
+    return (AgeUnit.days, math.max(2, (age.inHours / 24).round()));
+  }
+
+  /// A last known position older than 1 hour may be out of date.
+  static bool stale(Duration age) => age > const Duration(hours: 1);
 }

@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/ishara_icon.dart';
 import 'package:ishara_app/core/ui/onboarding_ui.dart';
+import 'package:ishara_app/core/ui/toast.dart';
 import 'package:ishara_app/features/sos/application/sos_controller.dart';
 import 'package:ishara_app/features/sos/application/sos_message.dart';
 import 'package:ishara_app/features/sos/data/emergency_contacts_repository.dart';
@@ -38,15 +40,29 @@ class SosSheet extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     final where = s.location;
     final message = where == null ? null : sosMessage(l, where, locale);
+    final age = where?.kind == FixKind.lastKnown
+        ? where!.age(clock.now())
+        : null;
     final status = switch (where) {
       null => l.sosLocating,
       SosLocation(kind: FixKind.fresh, :final fix?) => l.sosLocFresh(
         SosLocator.accuracy(fix),
       ),
-      SosLocation(kind: FixKind.lastKnown, :final fix?) => l.sosLocOld(
-        SosLocator.ageMinutes(where.age(clock.now())!),
-        SosLocator.accuracy(fix),
-      ),
+      SosLocation(kind: FixKind.lastKnown, :final fix?) =>
+        switch (SosLocator.ageIn(age!)) {
+          (AgeUnit.minutes, final n) => l.sosLocOld(
+            n,
+            SosLocator.accuracy(fix),
+          ),
+          (AgeUnit.hours, final n) => l.sosLocOldHours(
+            n,
+            SosLocator.accuracy(fix),
+          ),
+          (AgeUnit.days, final n) => l.sosLocOldDays(
+            n,
+            SosLocator.accuracy(fix),
+          ),
+        },
       _ => l.sosLocNone,
     };
     final contacts = s.contacts;
@@ -144,6 +160,19 @@ class SosSheet extends ConsumerWidget {
               ],
             ),
           ),
+          if (age != null && SosLocator.stale(age)) ...[
+            const SizedBox(height: 4),
+            Text(
+              l.sosLocStale,
+              key: const ValueKey('sos-location-stale'),
+              textAlign: TextAlign.center,
+              style: t.rowSubtitle.copyWith(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: c.amber,
+              ),
+            ),
+          ],
           if (s.locationOff) ...[
             const SizedBox(height: 4),
             Text(
@@ -157,6 +186,36 @@ class SosSheet extends ConsumerWidget {
           for (final (i, b) in buttons.indexed) ...[
             if (i > 0) const SizedBox(height: 10),
             b,
+          ],
+          if (s.openFailed case final failed?) ...[
+            const SizedBox(height: 12),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                failed == SosOpen.sms ? l.sosSmsFailed : l.sosCallFailed,
+                key: const ValueKey('sos-open-failed'),
+                textAlign: TextAlign.center,
+                style: t.rowSubtitle.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: c.danger,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // the same message the SMS would carry, to paste in any app
+            IsharaButton(
+              key: const ValueKey('sos-copy'),
+              label: l.sosCopy,
+              kind: IsharaButtonKind.ghost,
+              busy: message == null,
+              onPressed: message == null
+                  ? null
+                  : () async {
+                      await Clipboard.setData(ClipboardData(text: message));
+                      if (context.mounted) showToast(context, l.toastCopied);
+                    },
+            ),
           ],
           if (contacts.isNotEmpty) ...[
             const SizedBox(height: 12),

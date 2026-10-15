@@ -722,7 +722,7 @@
   },
   "sos": "SOS · I need help",
   "@sos": {
-    "description": "prototype I18N.sos"
+    "description": "prototype I18N.sos; Arabic changed: «SOS» in every Arabic text, as the button (step 9 review, 2026-10-15)"
   },
   "sPair": "Pair a new glove",
   "@sPair": {
@@ -758,7 +758,7 @@
   },
   "starred": "Starred",
   "@starred": {
-    "description": "prototype I18N.starred"
+    "description": "prototype I18N.starred; Arabic changed: Starred = «المحفوظة» everywhere (step 9 review, 2026-10-15)"
   },
   "stCal": "Calibrate",
   "@stCal": {
@@ -1326,7 +1326,7 @@
   },
   "toastSosSpoken": "SOS spoken out loud.",
   "@toastSosSpoken": {
-    "description": "approved new text (step 7, 2026-10-12): D2: replaces toastSOS (Q-T4: no SMS)"
+    "description": "approved new text (step 7, 2026-10-12): D2: replaces toastSOS (Q-T4: no SMS); Arabic «SOS» (user's wording, step 9 review, 2026-10-15)"
   },
   "sosSay": "I need help, please.",
   "@sosSay": {
@@ -1571,15 +1571,15 @@
   },
   "histLeadPhone": "Saved on this phone only. Star a sentence to keep it in Starred.",
   "@histLeadPhone": {
-    "description": "DRAFT (step 9, not approved): H1: replaces histLead"
+    "description": "approved new text (step 9, 2026-10-15): H1: replaces histLead"
   },
   "searchWordPh": "Search a word",
   "@searchWordPh": {
-    "description": "DRAFT (step 9, not approved): H2: replaces searchPh"
+    "description": "approved new text (step 9, 2026-10-15): H2: replaces searchPh"
   },
   "messagesCount": "{n, plural, =1{1 message} other{{n} messages}}",
   "@messagesCount": {
-    "description": "DRAFT (step 9, not approved): H3: a conversation's size",
+    "description": "approved new text (step 9, 2026-10-15): H3: a conversation's size",
     "placeholders": {
       "n": {
         "type": "int"
@@ -1588,11 +1588,11 @@
   },
   "histYesterday": "Yesterday",
   "@histYesterday": {
-    "description": "DRAFT (step 9, not approved): H4: title day marker"
+    "description": "approved new text (step 9, 2026-10-15): H4: title day marker"
   },
   "histTitleAt": "{day}, {time}",
   "@histTitleAt": {
-    "description": "DRAFT (step 9, not approved): H5: conversation title (Q-B4: date and time)",
+    "description": "approved new text (step 9, 2026-10-15): H5: conversation title (Q-B4: date and time)",
     "placeholders": {
       "day": {
         "type": "String"
@@ -1604,15 +1604,15 @@
   },
   "histEmpty": "No conversations yet. What you sign and hear in Talk shows up here.",
   "@histEmpty": {
-    "description": "DRAFT (step 9, not approved): H6: empty History"
+    "description": "approved new text (step 9, 2026-10-15): H6: empty History"
   },
   "starredEmpty": "Nothing starred yet. Open a conversation and tap the star next to a sentence.",
   "@starredEmpty": {
-    "description": "DRAFT (step 9, not approved): H7: empty Starred"
+    "description": "approved new text (step 9, 2026-10-15): H7: empty Starred"
   },
   "searchEmpty": "Nothing matches “{q}”.",
   "@searchEmpty": {
-    "description": "DRAFT (step 9, not approved): H8: no search results",
+    "description": "approved new text (step 9, 2026-10-15): H8: no search results",
     "placeholders": {
       "q": {
         "type": "String"
@@ -1621,39 +1621,39 @@
   },
   "toastStarred": "Added to Starred",
   "@toastStarred": {
-    "description": "DRAFT (step 9, not approved): H9: replaces toastStar"
+    "description": "approved new text (step 9, 2026-10-15): H9: replaces toastStar"
   },
   "toastUnstarred": "Removed from Starred",
   "@toastUnstarred": {
-    "description": "DRAFT (step 9, not approved): H10"
+    "description": "approved new text (step 9, 2026-10-15): H10"
   },
   "starLabel": "Star",
   "@starLabel": {
-    "description": "DRAFT (step 9, not approved): H11: screen reader, star a sentence"
+    "description": "approved new text (step 9, 2026-10-15): H11: screen reader, star a sentence"
   },
   "unstarLabel": "Unstar",
   "@unstarLabel": {
-    "description": "DRAFT (step 9, not approved): H12: screen reader, unstar"
+    "description": "approved new text (step 9, 2026-10-15): H12: screen reader, unstar"
   },
   "deleteConversation": "Delete conversation",
   "@deleteConversation": {
-    "description": "DRAFT (step 9, not approved): H13"
+    "description": "approved new text (step 9, 2026-10-15): H13"
   },
   "toastConvDeleted": "Conversation deleted",
   "@toastConvDeleted": {
-    "description": "DRAFT (step 9, not approved): H14: with Undo"
+    "description": "approved new text (step 9, 2026-10-15): H14: with Undo"
   },
   "undo": "Undo",
   "@undo": {
-    "description": "DRAFT (step 9, not approved): H15"
+    "description": "approved new text (step 9, 2026-10-15): H15"
   },
   "guestStarredNote": "Guest mode: your starred phrases stay on this phone only.",
   "@guestStarredNote": {
-    "description": "DRAFT (step 9, not approved): H16: guest state"
+    "description": "approved new text (step 9, 2026-10-15): H16: guest state"
   },
   "speakPhraseLabel": "Speak “{text}”",
   "@speakPhraseLabel": {
-    "description": "DRAFT (step 9, not approved): H17: screen reader, a saved phrase",
+    "description": "approved new text (step 9, 2026-10-15): H17: screen reader, a saved phrase",
     "placeholders": {
       "text": {
         "type": "String"
@@ -1662,7 +1662,7 @@
   },
   "signedInAsEmail": "Signed in as {email}",
   "@signedInAsEmail": {
-    "description": "DRAFT (step 9, not approved): S3: replaces signedInAs",
+    "description": "approved new text (step 9, 2026-10-15): S3: replaces signedInAs",
     "placeholders": {
       "email": {
         "type": "String"
@@ -1671,15 +1671,15 @@
   },
   "gloveNone": "No glove paired",
   "@gloveNone": {
-    "description": "DRAFT (step 9, not approved): S4: Settings › Glove, nothing paired"
+    "description": "approved new text (step 9, 2026-10-15): S4: Settings › Glove, nothing paired"
   },
   "pairReplaceS": "Connect another glove instead of this one",
   "@pairReplaceS": {
-    "description": "DRAFT (step 9, not approved): S5: replaces sPairS"
+    "description": "approved new text (step 9, 2026-10-15): S5: replaces sPairS"
   },
   "gloveFirmware": "Firmware {fw}",
   "@gloveFirmware": {
-    "description": "DRAFT (step 9, not approved): S4b: the glove's firmware (INFO fw)",
+    "description": "approved new text (step 9, 2026-10-15): S4b: the glove's firmware (INFO fw)",
     "placeholders": {
       "fw": {
         "type": "String"
@@ -1688,11 +1688,11 @@
   },
   "secAvatarOnly": "Avatar",
   "@secAvatarOnly": {
-    "description": "DRAFT (step 9, not approved): S6: replaces secAvatar (no voice row)"
+    "description": "approved new text (step 9, 2026-10-15): S6: replaces secAvatar (no voice row)"
   },
   "avatarSpeedS": "Sign speed {speed}x",
   "@avatarSpeedS": {
-    "description": "DRAFT (step 9, not approved): S7: replaces sAvatarS",
+    "description": "approved new text (step 9, 2026-10-15): S7: replaces sAvatarS",
     "placeholders": {
       "speed": {
         "type": "String"
@@ -1701,39 +1701,39 @@
   },
   "vibrateTitle": "Vibrate",
   "@vibrateTitle": {
-    "description": "DRAFT (step 9, not approved): S8: replaces sVib (S9-1)"
+    "description": "approved new text (step 9, 2026-10-15): S8: replaces sVib (S9-1)"
   },
   "vibrateS": "Short pulse for words and replies, long for SOS",
   "@vibrateS": {
-    "description": "DRAFT (step 9, not approved): S9: replaces sVibS (S9-1)"
+    "description": "approved new text (step 9, 2026-10-15): S9: replaces sVibS (S9-1)"
   },
   "appearance": "Appearance",
   "@appearance": {
-    "description": "DRAFT (step 9, not approved): S10: replaces sTheme (Q-D3)"
+    "description": "approved new text (step 9, 2026-10-15): S10: replaces sTheme (Q-D3)"
   },
   "themeSystem": "System",
   "@themeSystem": {
-    "description": "DRAFT (step 9, not approved): S11"
+    "description": "approved new text (step 9, 2026-10-15): S11"
   },
   "themeLight": "Light",
   "@themeLight": {
-    "description": "DRAFT (step 9, not approved): S12"
+    "description": "approved new text (step 9, 2026-10-15): S12"
   },
   "themeDark": "Dark",
   "@themeDark": {
-    "description": "DRAFT (step 9, not approved): S13"
+    "description": "approved new text (step 9, 2026-10-15): S13"
   },
   "emergencyContacts": "Emergency contacts",
   "@emergencyContacts": {
-    "description": "DRAFT (step 9, not approved): S14: Settings row and screen title (Q-T4)"
+    "description": "approved new text (step 9, 2026-10-15): S14: Settings row and screen title (Q-T4)"
   },
   "emergencyNone": "Not set · SOS can send them your location",
   "@emergencyNone": {
-    "description": "DRAFT (step 9, not approved): S15"
+    "description": "approved new text (step 9, 2026-10-15): S15"
   },
   "emergencyCount": "{n, plural, =1{1 contact} other{{n} contacts}}",
   "@emergencyCount": {
-    "description": "DRAFT (step 9, not approved): S16",
+    "description": "approved new text (step 9, 2026-10-15): S16",
     "placeholders": {
       "n": {
         "type": "int"
@@ -1742,7 +1742,7 @@
   },
   "aboutVersion": "Version {version}",
   "@aboutVersion": {
-    "description": "DRAFT (step 9, not approved): S17: replaces sAboutS",
+    "description": "approved new text (step 9, 2026-10-15): S17: replaces sAboutS",
     "placeholders": {
       "version": {
         "type": "String"
@@ -1751,155 +1751,155 @@
   },
   "devModeOn": "Developer mode on",
   "@devModeOn": {
-    "description": "DRAFT (step 9, not approved): S18: 7 taps on the version"
+    "description": "approved new text (step 9, 2026-10-15): S18: 7 taps on the version"
   },
   "devModeOff": "Developer mode off",
   "@devModeOff": {
-    "description": "DRAFT (step 9, not approved): S19"
+    "description": "approved new text (step 9, 2026-10-15): S19"
   },
   "privacyIntro": "Ishara works on your phone. Here is what it keeps and where.",
   "@privacyIntro": {
-    "description": "DRAFT (step 9, not approved): P1"
+    "description": "approved new text (step 9, 2026-10-15): P1"
   },
   "privacyGlove": "Your signs are recognized on this phone. Glove data never leaves it.",
   "@privacyGlove": {
-    "description": "DRAFT (step 9, not approved): P2"
+    "description": "approved new text (step 9, 2026-10-15): P2"
   },
   "privacyStored": "Your conversations and your Learn progress stay on this phone.",
   "@privacyStored": {
-    "description": "DRAFT (step 9, not approved): P3"
+    "description": "approved new text (step 9, 2026-10-15): P3"
   },
   "privacyPhrases": "Starred phrases stay on this phone too. A later version will keep them in your account when you're signed in.",
   "@privacyPhrases": {
-    "description": "DRAFT (step 9, not approved): P4: Q-B4, sync comes with step 10"
+    "description": "approved new text (step 9, 2026-10-15): P4: Q-B4, sync comes with step 10"
   },
   "privacyLocation": "Your location is read only when you press SOS, to put it in the message you choose to send. It is never tracked, stored or uploaded.",
   "@privacyLocation": {
-    "description": "DRAFT (step 9, not approved): P5: Q-T4 phase 1"
+    "description": "approved new text (step 9, 2026-10-15): P5: Q-T4 phase 1"
   },
   "privacyContacts": "Emergency contacts stay on this phone and are never sent anywhere.",
   "@privacyContacts": {
-    "description": "DRAFT (step 9, not approved): P6"
+    "description": "approved new text (step 9, 2026-10-15): P6"
   },
   "exportData": "Export my data",
   "@exportData": {
-    "description": "DRAFT (step 9, not approved): P7"
+    "description": "approved new text (step 9, 2026-10-15): P7"
   },
   "exportDataS": "A file with your conversations, starred phrases and Learn progress",
   "@exportDataS": {
-    "description": "DRAFT (step 9, not approved): P8"
+    "description": "approved new text (step 9, 2026-10-15): P8"
   },
   "clearHistory": "Clear history",
   "@clearHistory": {
-    "description": "DRAFT (step 9, not approved): P9"
+    "description": "approved new text (step 9, 2026-10-15): P9"
   },
   "clearHistoryS": "Deletes your conversations on this phone. Starred phrases stay.",
   "@clearHistoryS": {
-    "description": "DRAFT (step 9, not approved): P10"
+    "description": "approved new text (step 9, 2026-10-15): P10"
   },
   "clearHistoryTitle": "Clear all conversations?",
   "@clearHistoryTitle": {
-    "description": "DRAFT (step 9, not approved): P11: confirmation"
+    "description": "approved new text (step 9, 2026-10-15): P11: confirmation"
   },
   "clearAction": "Clear",
   "@clearAction": {
-    "description": "DRAFT (step 9, not approved): P12"
+    "description": "approved new text (step 9, 2026-10-15): P12"
   },
   "cancelAction": "Cancel",
   "@cancelAction": {
-    "description": "DRAFT (step 9, not approved): P13"
+    "description": "approved new text (step 9, 2026-10-15): P13"
   },
   "toastHistoryCleared": "History cleared",
   "@toastHistoryCleared": {
-    "description": "DRAFT (step 9, not approved): P14"
+    "description": "approved new text (step 9, 2026-10-15): P14"
   },
   "licences": "Open-source licences",
   "@licences": {
-    "description": "DRAFT (step 9, not approved): P15"
+    "description": "approved new text (step 9, 2026-10-15): P15"
   },
   "discardTitle": "Discard your changes?",
   "@discardTitle": {
-    "description": "DRAFT (step 9, not approved): A1: leaving without Save"
+    "description": "approved new text (step 9, 2026-10-15): A1: leaving without Save"
   },
   "discardBody": "Your avatar changes aren't saved.",
   "@discardBody": {
-    "description": "DRAFT (step 9, not approved): A2"
+    "description": "approved new text (step 9, 2026-10-15): A2"
   },
   "discardAction": "Discard",
   "@discardAction": {
-    "description": "DRAFT (step 9, not approved): A3"
+    "description": "approved new text (step 9, 2026-10-15): A3"
   },
   "keepEditing": "Keep editing",
   "@keepEditing": {
-    "description": "DRAFT (step 9, not approved): A4"
+    "description": "approved new text (step 9, 2026-10-15): A4"
   },
   "emergencyLead": "Up to 3 people. From SOS you can send them your location by SMS or WhatsApp, or call them.",
   "@emergencyLead": {
-    "description": "DRAFT (step 9, not approved): E1"
+    "description": "approved new text (step 9, 2026-10-15): E1"
   },
   "addContact": "Add contact",
   "@addContact": {
-    "description": "DRAFT (step 9, not approved): E2"
+    "description": "approved new text (step 9, 2026-10-15): E2"
   },
   "pickFromContacts": "Choose from your contacts",
   "@pickFromContacts": {
-    "description": "DRAFT (step 9, not approved): E3: system picker, no permission"
+    "description": "approved new text (step 9, 2026-10-15): E3: system picker, no permission"
   },
   "contactName": "Name",
   "@contactName": {
-    "description": "DRAFT (step 9, not approved): E4"
+    "description": "approved new text (step 9, 2026-10-15): E4"
   },
   "contactPhone": "Phone number",
   "@contactPhone": {
-    "description": "DRAFT (step 9, not approved): E5"
+    "description": "approved new text (step 9, 2026-10-15): E5"
   },
   "contactPhoneHint": "01x xxxx xxxx or +…",
   "@contactPhoneHint": {
-    "description": "DRAFT (step 9, not approved): E6"
+    "description": "approved new text (step 9, 2026-10-15): E6"
   },
   "contactPhoneInvalid": "Enter an Egyptian number (01…) or an international one starting with +.",
   "@contactPhoneInvalid": {
-    "description": "DRAFT (step 9, not approved): E7"
+    "description": "approved new text (step 9, 2026-10-15): E7"
   },
   "contactNameEmpty": "Enter a name.",
   "@contactNameEmpty": {
-    "description": "DRAFT (step 9, not approved): E8"
+    "description": "approved new text (step 9, 2026-10-15): E8"
   },
   "saveAction": "Save",
   "@saveAction": {
-    "description": "DRAFT (step 9, not approved): E9"
+    "description": "approved new text (step 9, 2026-10-15): E9"
   },
   "removeContact": "Remove",
   "@removeContact": {
-    "description": "DRAFT (step 9, not approved): E10"
+    "description": "approved new text (step 9, 2026-10-15): E10"
   },
   "contactsFull": "You can add up to 3 contacts.",
   "@contactsFull": {
-    "description": "DRAFT (step 9, not approved): E11"
+    "description": "approved new text (step 9, 2026-10-15): E11"
   },
   "locationAskTitle": "Allow location for SOS?",
   "@locationAskTitle": {
-    "description": "DRAFT (step 9, not approved): E12: asked once, when the first contact is added"
+    "description": "approved new text (step 9, 2026-10-15): E12: asked once, when the first contact is added"
   },
   "locationAskBody": "When you press SOS, Ishara reads your location once so you can send it to your contacts. It is never tracked or stored.",
   "@locationAskBody": {
-    "description": "DRAFT (step 9, not approved): E13"
+    "description": "approved new text (step 9, 2026-10-15): E13"
   },
   "notNow": "Not now",
   "@notNow": {
-    "description": "DRAFT (step 9, not approved): E14"
+    "description": "approved new text (step 9, 2026-10-15): E14"
   },
   "sosTitle": "SOS",
   "@sosTitle": {
-    "description": "DRAFT (step 9, not approved): O1: sheet title"
+    "description": "approved new text (step 9, 2026-10-15): O1: sheet title"
   },
   "sosLocating": "Getting your location…",
   "@sosLocating": {
-    "description": "DRAFT (step 9, not approved): O2"
+    "description": "approved new text (step 9, 2026-10-15): O2"
   },
   "sosLocFresh": "Your location (±{m} m)",
   "@sosLocFresh": {
-    "description": "DRAFT (step 9, not approved): O3: a fresh fix",
+    "description": "approved new text (step 9, 2026-10-15): O3: a fresh fix",
     "placeholders": {
       "m": {
         "type": "int"
@@ -1908,7 +1908,7 @@
   },
   "sosLocOld": "Last known location, about {n, plural, =1{1 minute} other{{n} minutes}} ago (±{m} m)",
   "@sosLocOld": {
-    "description": "DRAFT (step 9, not approved): O4: last known, with its age",
+    "description": "approved new text (step 9, 2026-10-15): O4: last known, with its age",
     "placeholders": {
       "n": {
         "type": "int"
@@ -1920,27 +1920,27 @@
   },
   "sosLocNone": "Couldn't get your location. You can still send a message or call.",
   "@sosLocNone": {
-    "description": "DRAFT (step 9, not approved): O5"
+    "description": "approved new text (step 9, 2026-10-15): O5"
   },
   "sosLocOff": "Location is off for Ishara.",
   "@sosLocOff": {
-    "description": "DRAFT (step 9, not approved): O6: permission denied"
+    "description": "approved new text (step 9, 2026-10-15): O6: permission denied"
   },
   "sosSms": "Send location by SMS",
   "@sosSms": {
-    "description": "DRAFT (step 9, not approved): O7: opens the SMS app, filled in"
+    "description": "approved new text (step 9, 2026-10-15): O7: opens the SMS app, filled in"
   },
   "sosSmsNoLoc": "Send SMS",
   "@sosSmsNoLoc": {
-    "description": "DRAFT (step 9, not approved): O7b: without a location"
+    "description": "approved new text (step 9, 2026-10-15): O7b: without a location"
   },
   "sosWhatsApp": "Send on WhatsApp",
   "@sosWhatsApp": {
-    "description": "DRAFT (step 9, not approved): O8"
+    "description": "approved new text (step 9, 2026-10-15): O8"
   },
   "sosWhatsAppTo": "Send on WhatsApp to {name}",
   "@sosWhatsAppTo": {
-    "description": "DRAFT (step 9, not approved): O9: one contact",
+    "description": "approved new text (step 9, 2026-10-15): O9: one contact",
     "placeholders": {
       "name": {
         "type": "String"
@@ -1949,7 +1949,7 @@
   },
   "sosCall": "Call {name}",
   "@sosCall": {
-    "description": "DRAFT (step 9, not approved): O10: opens the dialer",
+    "description": "approved new text (step 9, 2026-10-15): O10: opens the dialer",
     "placeholders": {
       "name": {
         "type": "String"
@@ -1958,7 +1958,7 @@
   },
   "sosAmbulance": "Call ambulance {number}",
   "@sosAmbulance": {
-    "description": "DRAFT (step 9, not approved): O11: opens the dialer",
+    "description": "approved new text (step 9, 2026-10-15): O11: opens the dialer",
     "placeholders": {
       "number": {
         "type": "String"
@@ -1967,15 +1967,15 @@
   },
   "sosAddContact": "Add an emergency contact",
   "@sosAddContact": {
-    "description": "DRAFT (step 9, not approved): O12: no contacts yet"
+    "description": "approved new text (step 9, 2026-10-15): O12: no contacts yet"
   },
   "sosSendTo": "Send to",
   "@sosSendTo": {
-    "description": "DRAFT (step 9, not approved): O13: pick one contact for WhatsApp"
+    "description": "approved new text (step 9, 2026-10-15): O13: pick one contact for WhatsApp"
   },
   "sosMessage": "I need help. My location: {link} (±{m} m, {time})",
   "@sosMessage": {
-    "description": "DRAFT (step 9, not approved): O14: the message (app language)",
+    "description": "approved new text (step 9, 2026-10-15): O14: the message (app language)",
     "placeholders": {
       "link": {
         "type": "String"
@@ -1990,10 +1990,54 @@
   },
   "sosMessageNone": "I need help. I couldn't get my location.",
   "@sosMessageNone": {
-    "description": "DRAFT (step 9, not approved): O15: the message without a location"
+    "description": "approved new text (step 9, 2026-10-15): O15: the message without a location"
   },
   "sosNothingSent": "Nothing is sent until you tap Send there.",
   "@sosNothingSent": {
-    "description": "DRAFT (step 9, not approved): O16: under the actions"
+    "description": "approved new text (step 9, 2026-10-15): O16: under the actions"
+  },
+  "sosLocOldHours": "Last known location, about {n, plural, =1{1 hour} other{{n} hours}} ago (±{m} m)",
+  "@sosLocOldHours": {
+    "description": "DRAFT (step 9 review, not approved): O17: last known, 1 h to 48 h old",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "sosLocOldDays": "Last known location, about {n, plural, =1{1 day} other{{n} days}} ago (±{m} m)",
+  "@sosLocOldDays": {
+    "description": "DRAFT (step 9 review, not approved): O18: last known, 48 h or older",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "sosLocStale": "This location may be out of date.",
+  "@sosLocStale": {
+    "description": "DRAFT (step 9 review, not approved): O19: under a last known position older than 1 hour"
+  },
+  "sosSmsFailed": "Couldn't open the SMS app.",
+  "@sosSmsFailed": {
+    "description": "DRAFT (step 9 review, not approved): O20: no app opened for SMS"
+  },
+  "sosCallFailed": "Couldn't open the phone app.",
+  "@sosCallFailed": {
+    "description": "DRAFT (step 9 review, not approved): O21: no app opened for a call"
+  },
+  "sosCopy": "Copy message",
+  "@sosCopy": {
+    "description": "DRAFT (step 9 review, not approved): O22: copies the SOS message to paste anywhere"
+  },
+  "toastCopied": "Message copied",
+  "@toastCopied": {
+    "description": "DRAFT (step 9 review, not approved): O23: toast after Copy message"
   }
 }
