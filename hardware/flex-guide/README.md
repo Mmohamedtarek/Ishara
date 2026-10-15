@@ -21,16 +21,15 @@ Holds the sensor's connector end fixed on the back of the hand, before the knuck
 
 | | X (width) | Y (length) | Z (height) |
 |---|---|---|---|
-| Body | 10 | 20 | 5.5 |
-| Opening, through the whole length, the same at both ends | 7.5 | 20 | 3.2 (z = 1.15 to 4.35) |
-| Opening at the end faces (flared over 0.8 mm) | 8.1 | | 3.8 |
-| Side walls / floor / roof | 1.25 each | | 1.15 / 1.15 |
+| Body | 13.5 | 20 | 5.5 |
+| Opening, through the whole length, the same at both ends | 8.5 | 20 | 3.2 (z = 1.15 to 4.35) |
+| Opening at the end faces (flared over 0.8 mm) | 9.1 | | 3.8 |
+| Side walls / floor / roof | 2.5 each | | 1.15 / 1.15 |
+| Sewing holes (`_sew` version) | Ø 1.2 at x = ±5.5 (0.65 mm of wall either side) | at y = ±7 | through, top to bottom |
 
-Corners rounded 0.5 mm (smaller than the guides' 1.5 so the flared opening doesn't cut through them), top edge chamfered 0.6 mm. All in mm.
+Corners rounded 1.0 mm, top edge chamfered 0.6 mm. All in mm. 13.5 is the narrowest width that leaves room for the sewing holes beside an 8.5 mm opening.
 
 ![anchor preview](anchor_preview.png)
-
-**Sewing:** the 1.25 mm side walls leave no room for holes. Sew over the body: 2 or 3 stitches across the top at each end, pulled tight around it.
 
 **Locking the pins:** once the sensor is in and tested, fill the opening with hot glue from the wire end, so bending pulls on the holder, not on the pins.
 
