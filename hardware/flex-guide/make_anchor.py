@@ -2,21 +2,21 @@
 Base holder (anchor) for the connector end of a flex sensor on the Ishara glove. Units: mm.
 X = across the hand, Y = along the sensor, Z = height.
 
-  body:    14 (W) x 20 (L) x 5.5 (H), rounded corners, chamfered top
-  pocket:  8.5 x 3.2 through the whole length, centred, for the sensor's end, the 2 crimp pins,
-           the solder joints and heat shrink; 0.5 mm flared entries at both ends
-  holes:   4 x 1.2 mm vertical holes in the side walls, for sewing it to the glove (_sew version)
+  body:    10 (W) x 20 (L) x 5.5 (H), rounded corners, chamfered top
+  pocket:  7.5 x 3.2 through the whole length, centred, for the sensor's end, the 2 crimp pins,
+           the solder joints and heat shrink; 0.3 mm flared entries at both ends
+  sewing:  no holes (the 1.25 mm side walls have no room); sew over the body, see the README
 """
 import sys
 import numpy as np
 import trimesh
 from manifold3d import CrossSection, Manifold
 
-W, L, H = 14.0, 20.0, 5.5
-CORNER_R, TOP_CHAMFER = 1.5, 0.6
-POCKET_W, POCKET_H = 8.5, 3.2
+W, L, H = 10.0, 20.0, 5.5
+CORNER_R, TOP_CHAMFER = 0.5, 0.6
+POCKET_W, POCKET_H = 7.5, 3.2
 POCKET_Z = (H - POCKET_H) / 2
-FLARE, FLARE_D = 0.5, 0.8
+FLARE, FLARE_D = 0.3, 0.8
 HOLE_D = 1.2
 
 
@@ -48,14 +48,6 @@ def pocket():
     return c
 
 
-def holes():
-    out = Manifold()
-    x = (W / 2 + POCKET_W / 2) / 2                  # middle of each side wall
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            out = out + Manifold.cylinder(H + 2, HOLE_D / 2, HOLE_D / 2, 32).translate([sx * x, sy * (L / 2 - 3), -1])
-    return out
-
 
 def save(m, path):
     assert m.status().name == "NoError", m.status()
@@ -69,10 +61,6 @@ def save(m, path):
 
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "."
-    for sew in (True, False):
-        m = body() - pocket()
-        if sew:
-            m = m - holes()
-        name = f"{out}/ishara_flex_anchor_14x20x5.5{'_sew' if sew else ''}.stl"
-        t = save(m, name)
-        print(name, "size", np.round(t.bounds[1] - t.bounds[0], 2), "volume", round(t.volume, 1), "mm3")
+    name = f"{out}/ishara_flex_anchor_10x20x5.5.stl"
+    t = save(body() - pocket(), name)
+    print(name, "size", np.round(t.bounds[1] - t.bounds[0], 2), "volume", round(t.volume, 1), "mm3")

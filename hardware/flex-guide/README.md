@@ -17,17 +17,22 @@ A 3D-printed guide that holds a flex sensor on the back of a finger while lettin
 
 # Anchor (base holder at the pins)
 
-Holds the sensor's connector end fixed on the back of the hand, before the knuckle, so the sensor slides in the finger guides while its pins don't move. One per finger. Same width as the finger guides.
+Holds the sensor's connector end fixed on the back of the hand, before the knuckle, so the sensor slides in the finger guides while its pins don't move. One per finger.
 
-| | |
-|---|---|
-| Body | 14 mm wide × 20 mm long × 5.5 mm high, rounded corners |
-| Opening | 8.5 × 3.2 mm through the whole length, the same at both ends, flared 0.5 mm at the entries. The sensor's end, the 2 crimp pins, the solder joints and heat shrink sit inside; the wires leave at the back |
-| `_sew` version | 4 × 1.2 mm holes in the side walls, for sewing it to the glove (about 0.8 mm of wall either side of each hole) |
+| | X (width) | Y (length) | Z (height) |
+|---|---|---|---|
+| Body | 10 | 20 | 5.5 |
+| Opening, through the whole length, the same at both ends | 7.5 | 20 | 3.2 (z = 1.15 to 4.35) |
+| Opening at the end faces (flared over 0.8 mm) | 8.1 | | 3.8 |
+| Side walls / floor / roof | 1.25 each | | 1.15 / 1.15 |
+
+Corners rounded 0.5 mm (smaller than the guides' 1.5 so the flared opening doesn't cut through them), top edge chamfered 0.6 mm. All in mm.
 
 ![anchor preview](anchor_preview.png)
 
-To lock the pins, fill the opening with hot glue from the wire end once the sensor is in and tested, so bending pulls on the holder, not on the pins.
+**Sewing:** the 1.25 mm side walls leave no room for holes. Sew over the body: 2 or 3 stitches across the top at each end, pulled tight around it.
+
+**Locking the pins:** once the sensor is in and tested, fill the opening with hot glue from the wire end, so bending pulls on the holder, not on the pins.
 
 The opening size is from the sensor's typical crimp size, not measured on our sensors; measure the end with its solder joints and heat shrink before printing, and change `POCKET_W` / `POCKET_H` if needed.
 
