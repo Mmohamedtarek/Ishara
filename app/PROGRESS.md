@@ -534,3 +534,15 @@ Your answers: S8-1 … S8-4 (DECISIONS). Static screens `08-learn` / `08b`: a ca
 4. Connect / Calibrate now from a practice step end on Ready (`go`), leaving the mission (Talk does the same). Return to the mission instead?
 5. Practice loops at 0.8× (prototype), not the user's speed — keep?
 
+### Step 8 review answers (2026-10-15): S8-5 … S8-9
+
+| # | Answer | Status |
+|---|---|---|
+| 1 | L1-L16, L18-L20 approved; L17 AR «اوصل لدقة {p}% …»; looks and tile icons approved | ✓ ARB descriptions "approved new text (step 8, 2026-10-15)" |
+| 2 | TURN Calibrate "after" images committed; Learn goldens from the runner (branch `step8`) | ✓ calibrate (both variants); Learn: see below |
+| 3 | Streak up to yesterday kept; ICU plural chip | ✓ `streakDays` (L21, **draft**, `drafts.html`): EN 0/1/2/5, AR 1/2/3/10/11/25/100 tested; AR 0 uses the 11+ form (not in your list) |
+| 4 | Connect / Calibrate now → back to the same practice step, attempts reset; Talk unchanged | ✓ `?back=N` on Pair / Calibrate; widget tests (4: Connect, a used attempt reset, Calibrate now, Pair → Calibrate), 2 of them fail with the old `go(ready)`, 1 without the reset; learn_test: disconnect during practice → Connect → Pair → back on the step (A and B) |
+| 5 | Practice at min(0.8×, user speed) | ✓ test (1x → 0.8, 0.5x → 0.5, 1.5x → 0.8) |
+
+**Checks (Linux laptop):** analyze 0 issues, format 0 changed; `flutter test --coverage`: 823 passed, 4 skipped, 8 failed = the Learn goldens' local laptop images (stale chip text, never committed; replaced by the runner's); Cairo 3/3; `lib/core` 93.3 %, domain 100 %. Emulator: onboarding 2/2, talk 1/1, avatar 1/1 (59.8-60 fps), learn 3/3 (with the disconnect → reconnect).
+

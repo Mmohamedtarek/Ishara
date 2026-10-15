@@ -346,8 +346,9 @@
   "missionKeepGoing": "عدّي كل الإشارات عشان تفتح الوحدة اللي بعدها.",
   "missionNice": "شغل حلو. كمّل كده!",
   "medalEarned": "كسبت ميدالية",
-  "noMedal": "وصّل لدقة {p}% عشان تكسب ميدالية.",
+  "noMedal": "اوصل لدقة {p}% عشان تكسب ميدالية.",
   "closeLabel": "اقفل",
   "missionStepOf": "خطوة {n} من {total}",
-  "passedOf": "عدّيت {done} من {total}"
+  "passedOf": "عدّيت {done} من {total}",
+  "streakDays": "{n, plural, =0{{n} يوم} =1{يوم واحد} =2{يومين} few{{n} أيام} other{{n} يوم}}"
 }

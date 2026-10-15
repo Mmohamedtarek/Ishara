@@ -147,6 +147,19 @@ void main() {
       });
     });
 
+    test('practice loops at min(0.8x, the user speed) (S8-9)', () {
+      _run((m) {
+        m
+          ..answer()
+          ..ctl.next();
+        expect(m.rig.avatar.plays.last, ('hello', .8, true)); // 1x chosen
+        m.c.read(signSpeedProvider.notifier).cycle(); // 0.5x
+        expect(m.rig.avatar.plays.last, ('hello', .5, true));
+        m.c.read(signSpeedProvider.notifier).cycle(); // 1.5x
+        expect(m.rig.avatar.plays.last, ('hello', .8, true));
+      });
+    });
+
     test('a new speed replays the quiz sign at it', () {
       _run((m) {
         m.c.read(signSpeedProvider.notifier).cycle(); // 1 → 0.5

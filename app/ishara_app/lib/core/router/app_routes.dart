@@ -28,6 +28,11 @@ abstract final class AppRoutes {
   static String readyAfter({required bool skipped}) =>
       skipped ? '$ready?skipped=1' : ready;
 
+  /// Pair / Calibrate opened from a mission's practice step (S8-8): when
+  /// done they pop [screens] screens, back to that step, instead of Ready.
+  static String pairBack(int screens) => '$pair?back=$screens';
+  static String calibrateBack(int screens) => '$calibrate?back=$screens';
+
   static String mission(String moduleId) =>
       '/mission/${Uri.encodeComponent(moduleId)}';
 

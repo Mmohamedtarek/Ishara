@@ -175,7 +175,7 @@ void main() {
     expect(find.text('Connect your glove to sign.'), findsOneWidget);
     expect(_key('mission-sign'), findsNothing);
     await tapIt(t, _key('mission-connect'));
-    expect(find.text('route:/pair'), findsOneWidget);
+    expect(find.text('route:/pair?back=1'), findsOneWidget);
     m.h.router.pop();
     await settle(t);
     await tapIt(t, _key('mission-skip'));

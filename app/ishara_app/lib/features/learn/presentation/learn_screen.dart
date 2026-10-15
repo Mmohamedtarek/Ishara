@@ -146,8 +146,7 @@ class _Header extends ConsumerWidget {
               key: const ValueKey('learn-streak'),
               icon: 'flame',
               value: '$streak',
-              text: l.days,
-              semantics: '$streak ${l.days}',
+              text: l.streakDays(streak),
             ),
           ],
         ),
@@ -156,29 +155,31 @@ class _Header extends ConsumerWidget {
   }
 }
 
-/// `.chip.a`: amber glass, an icon, the number in `amber-soft`, a word.
+/// `.chip.a`: amber glass, an icon and [text] (a plural form, e.g. "4
+/// days" / «يومين»), its number in `amber-soft` where it shows one.
 class _Chip extends StatelessWidget {
   const new({
     required this.icon,
     required this.value,
-    required this.semantics,
-    this.text,
+    required this.text,
     super.key,
   });
 
   final String icon;
+
+  /// The number, as it appears in [text] (if it does).
   final String value;
-  final String? text;
-  final String semantics;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     final dark = _dark(context);
     final style = context.text.chip.copyWith(color: c.ink);
+    final at = text.indexOf(value);
     return Semantics(
       container: true,
-      label: semantics,
+      label: text,
       excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -194,11 +195,21 @@ class _Chip extends StatelessWidget {
           children: [
             IsharaIcon(icon, size: 14, color: c.ink),
             const SizedBox(width: 7),
-            Text(value, style: style.copyWith(color: c.amberSoft)),
-            if (text case final w?) ...[
-              const SizedBox(width: 7),
-              Text(w, style: style),
-            ],
+            Text.rich(
+              TextSpan(
+                style: style,
+                children: at < 0
+                    ? [TextSpan(text: text)]
+                    : [
+                        TextSpan(text: text.substring(0, at)),
+                        TextSpan(
+                          text: value,
+                          style: style.copyWith(color: c.amberSoft),
+                        ),
+                        TextSpan(text: text.substring(at + value.length)),
+                      ],
+              ),
+            ),
           ],
         ),
       ),

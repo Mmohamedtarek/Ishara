@@ -185,6 +185,7 @@ void main() {
     MissionState s() => c.read(missionControllerProvider('start'));
     await waitUntil(t, () => s().plan != null, what: 'plan');
     var wrongDone = false;
+    var dropDone = false;
     final outcomes = <String, PracticePhase>{};
     while (s().result == null) {
       final step = s().step!;
@@ -230,6 +231,47 @@ void main() {
         await linger(t);
         await tapKey(t, 'mission-check'); // Next
         continue;
+      }
+      if (!dropDone && swapFrom == null) {
+        // once: the glove disconnects during practice; Connect → Pair →
+        // connected → back on this step with its attempts reset (S8-8)
+        await waitUntil(t, () => s().practice != null, what: 'practice step');
+        await tapKey(t, 'mission-sign');
+        await linger(t, const Duration(milliseconds: 800));
+        await source.disconnect();
+        await waitUntil(
+          t,
+          () => s().block == PracticeBlock.noGlove,
+          what: 'no glove',
+        );
+        expect(s().practice!.attempt, 0, reason: 'attempt not counted');
+        mark('practice ${step.label}: glove disconnected');
+        await linger(t);
+        await tapKey(t, 'mission-connect');
+        final connect = find.byWidgetPredicate(
+          (w) =>
+              w.key is ValueKey<String> &&
+              (w.key! as ValueKey<String>).value.startsWith('pair-connect-'),
+        );
+        await waitUntil(
+          t,
+          () => connect.evaluate().isNotEmpty,
+          what: 'Pair found the glove',
+        );
+        await linger(t);
+        await t.tap(connect.first);
+        await waitUntil(
+          t,
+          () =>
+              find.byKey(const ValueKey('screen-pair')).evaluate().isEmpty &&
+              s().block == null,
+          what: 'back on the practice step',
+        );
+        expect(s().step!.label, step.label);
+        expect(s().practice!.phase, PracticePhase.ready);
+        expect(s().practice!.attempt, 0);
+        mark('practice ${step.label}: reconnected, back on the step');
+        dropDone = true;
       }
       // your turn: "Sign now" plays practice/<label>.csv through the
       // real pipeline

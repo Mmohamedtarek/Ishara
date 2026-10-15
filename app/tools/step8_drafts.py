@@ -10,7 +10,7 @@ import html
 import json
 import re
 
-from extract_strings import STEP8_DRAFTS
+from extract_strings import STEP8_DRAFTS, STEP8_TEXTS
 from proto_common import REPO
 
 APP = REPO / "app" / "ishara_app"
@@ -40,22 +40,27 @@ def esc(s: str) -> str:
     return html.escape(s)
 
 
-rows = "\n".join(
-    f"<tr><td><b>{why.split(':')[0]}</b><br><code>{esc(k)}</code></td><td>{esc(e)}</td>"
-    f'<td dir="rtl" lang="ar">{esc(a)}</td><td>{esc(why)}</td></tr>'
-    for k, (e, a, why, _ph) in STEP8_DRAFTS.items()
-)
+def text_rows(items: dict) -> str:
+    return "\n".join(
+        f"<tr><td><b>{why.split(':')[0]}</b><br><code>{esc(k)}</code></td><td>{esc(e)}</td>"
+        f'<td dir="rtl" lang="ar">{esc(a)}</td><td>{esc(why)}</td></tr>'
+        for k, (e, a, why, _ph) in items.items()
+    )
+
+
+drafts = text_rows(STEP8_DRAFTS)
+rows = text_rows(STEP8_TEXTS)
 looks = "\n".join(
     f"<tr><td><code>{mid}</code></td>"
     f'<td><span style="display:inline-grid;place-items:center;width:50px;height:50px;border-radius:16px;'
     f'background:linear-gradient(135deg,#{COLORS[col][0]},#{COLORS[col][1]})">{icon(ic, "#fff", 24)}</span></td>'
-    f"<td><code>{ic}</code>, {col}</td><td>{'prototype (mStart)' if mid in PROTO_LOOKS else '<b>draft</b>'}</td></tr>"
+    f"<td><code>{ic}</code>, {col}</td><td>{'prototype (mStart)' if mid in PROTO_LOOKS else 'approved'}</td></tr>"
     for mid, ic, col, _title in LOOKS
 )
 tiles = "\n".join(
     f"<tr><td><code>{s['label']}</code></td><td>{esc(s['en']['word'])}</td>"
     f"<td dir='rtl'>{esc(s['ar']['word'])}</td><td>{icon(s['icon'])}</td><td><code>{s['icon']}</code></td>"
-    f"<td>{'prototype WORDS' if s['label'] in PROTO_ICONS else '<b>draft</b>: no prototype icon, neutral hand'}</td></tr>"
+    f"<td>{'prototype WORDS' if s['label'] in PROTO_ICONS else 'approved: no prototype icon, neutral hand'}</td></tr>"
     for s in signs["signs"]
 )
 
@@ -63,19 +68,22 @@ page = f"""<!doctype html><html><head><meta charset="utf-8"><title>Step 8 drafts
 <style>body{{font:14px system-ui,sans-serif;margin:24px;max-width:1100px}}table{{border-collapse:collapse;width:100%;margin-bottom:28px}}
 td,th{{border:1px solid #ccc;padding:6px 8px;vertical-align:middle;text-align:start}}th{{background:#eee}}
 td[dir=rtl]{{font-size:15px}}</style></head><body>
-<h1>Step 8 (Learn): drafts for your approval</h1>
-<p>Nothing here is approved yet. The texts are in the ARB files with "DRAFT" in their descriptions
-(<code>extract_strings.py</code> <code>STEP8_DRAFTS</code>). Screens: <code>tools/out/step8/compare/</code>.</p>
-<h2>1. New texts (L1-L20)</h2>
+<h1>Step 8 (Learn): texts</h1>
+<h2>Draft for your approval</h2>
+<p>ICU plural: Arabic 0 is not in your list; it uses the 11+ form («0 يوم»). Examples: EN 1 day, 2 days;
+AR يوم واحد، يومين، 3 أيام … 10 أيام، 11 يوم، 100 يوم.</p>
+<table><tr><th>ID / key</th><th>English</th><th>Egyptian Arabic</th><th>Where / why</th></tr>
+{drafts}</table>
+<h2>1. Approved 2026-10-15 (L1-L20; L17 Arabic is your wording)</h2>
 <table><tr><th>ID / key</th><th>English</th><th>Egyptian Arabic</th><th>Where / why</th></tr>
 {rows}</table>
 <p>Not new: module subtitles other than Start here are the signs' words from <code>signs.json</code> joined with
 ", " / "، " (e.g. "One, Two, Three, Four, Five"). The practice feedback above 92 % keeps the prototype's
 "Great! {{p}}% match". "being reviewed" (sign rule 5) is a debug-only English marker.</p>
-<h2>2. Module looks (path icons and colours)</h2>
+<h2>2. Module looks (approved 2026-10-15)</h2>
 <table><tr><th>Module</th><th>Look</th><th>Icon, colour</th><th>Source</th></tr>
 {looks}<tr><td><code>daily</code></td><td><span style="display:inline-grid;place-items:center;width:50px;height:50px;border-radius:16px;background:linear-gradient(135deg,#FCD34D,#D97706)">{icon('bolt','#fff',24)}</span></td><td><code>bolt</code>, amber</td><td>prototype (mDaily)</td></tr></table>
-<h2>3. Quiz tile icons (signs.json "icon")</h2>
+<h2>3. Quiz tile icons (approved 2026-10-15)</h2>
 <table><tr><th>Label</th><th>EN</th><th>AR</th><th>Icon</th><th>Name</th><th>Source</th></tr>
 {tiles}</table>
 </body></html>"""

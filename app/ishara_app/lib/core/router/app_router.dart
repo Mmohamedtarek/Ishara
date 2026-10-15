@@ -44,8 +44,17 @@ GoRouter buildRouter({String initialLocation = AppRoutes.splash}) => GoRouter(
       (s) => AuthScreen(signUp: s.uri.queryParameters['mode'] == 'signup'),
     ),
     _route(AppRoutes.setup, (_) => const SetupScreen()),
-    _route(AppRoutes.pair, (_) => const PairScreen()),
-    _route(AppRoutes.calibrate, (_) => const CalibrateScreen()),
+    _route(
+      AppRoutes.pair,
+      (s) =>
+          PairScreen(back: int.tryParse(s.uri.queryParameters['back'] ?? '')),
+    ),
+    _route(
+      AppRoutes.calibrate,
+      (s) => CalibrateScreen(
+        back: int.tryParse(s.uri.queryParameters['back'] ?? ''),
+      ),
+    ),
     _route(
       AppRoutes.ready,
       (s) => ReadyScreen(skipped: s.uri.queryParameters['skipped'] == '1'),

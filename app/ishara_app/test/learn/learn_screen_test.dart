@@ -10,6 +10,7 @@ import 'package:ishara_app/features/learn/data/activity_repository.dart';
 import 'package:ishara_app/features/learn/domain/activity_event.dart';
 import 'package:ishara_app/features/learn/domain/local_day.dart';
 import 'package:ishara_app/features/learn/presentation/learn_screen.dart';
+import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
 import '../support/fake_learn.dart';
 import '../support/screen_harness.dart';
@@ -93,7 +94,10 @@ void main() {
       );
     }
     expect(
-      find.descendant(of: _key('learn-streak'), matching: find.text('0')),
+      find.descendant(
+        of: _key('learn-streak'),
+        matching: find.text('0 days', findRichText: true),
+      ),
       findsOneWidget,
     );
     await tapIt(t, _key('learn-guest-save'));
@@ -138,7 +142,10 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.descendant(of: _key('learn-streak'), matching: find.text('2')),
+      find.descendant(
+        of: _key('learn-streak'),
+        matching: find.text('2 days', findRichText: true),
+      ),
       findsOneWidget,
     );
   });
@@ -227,5 +234,22 @@ void main() {
       findsOneWidget,
     );
     sem.dispose();
+  });
+
+  test('streak: ICU plural, EN and AR (user forms, step 8 review)', () {
+    final en = lookupAppLocalizations(const Locale('en'));
+    final ar = lookupAppLocalizations(const Locale('ar'));
+    expect(
+      [
+        for (final n in [0, 1, 2, 5]) en.streakDays(n),
+      ],
+      ['0 days', '1 day', '2 days', '5 days'],
+    );
+    expect(
+      [
+        for (final n in [1, 2, 3, 10, 11, 25, 100]) ar.streakDays(n),
+      ],
+      ['يوم واحد', 'يومين', '3 أيام', '10 أيام', '11 يوم', '25 يوم', '100 يوم'],
+    );
   });
 }

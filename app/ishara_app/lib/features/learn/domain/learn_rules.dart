@@ -28,7 +28,7 @@ abstract final class LearnRules {
   static const wrongReplaySpeed = .5;
 
   /// The prototype's practice step loops the sign at 0.8×
-  /// (`renderMissionStep`).
+  /// (`renderMissionStep`); a slower speed the user chose wins (S8-9).
   static const practiceDemoSpeed = .8;
 
   /// The prototype's "Great!" text from this match % (`greatMatch`, p ≥ 92).

@@ -230,9 +230,13 @@ class MissionController extends _$MissionController {
       ..listen(recognitionFeedProvider, (_, next) {
         if (next.value case final feed?) _subscribe(feed);
       }, fireImmediately: true)
-      // the user changed the speed: the quiz sign loops at the new one
+      // the user changed the speed: the step's sign loops at the new one
+      // (not a wrong answer's 0.5x replay)
       ..listen(signSpeedProvider, (_, _) {
-        if (state.step is QuizStep && !state.checked) _demo();
+        final step = state.step;
+        if (step is PracticeStep || (step is QuizStep && !state.checked)) {
+          _demo();
+        }
       });
     _wasReady = _glove.status.phase == GlovePhase.ready;
     unawaited(_load(moduleId));
@@ -359,6 +363,20 @@ class MissionController extends _$MissionController {
     _glove.cuePractice(check.label);
     _timer?.cancel();
     _timer = Timer.periodic(_tick, (_) => _onTick());
+    _publish();
+  }
+
+  /// Connect / Calibrate now from this step (S8-8): the user comes back to
+  /// the same step with its attempts reset.
+  void leaveForGlove() {
+    final check = _check;
+    if (check == null ||
+        check.phase == PracticePhase.passed ||
+        check.phase == PracticePhase.failed) {
+      return;
+    }
+    _timer?.cancel();
+    _check = PracticeCheck(check.label);
     _publish();
   }
 
@@ -559,7 +577,11 @@ class MissionController extends _$MissionController {
       QuizStep() when state.checked && !state.correct =>
         LearnRules.wrongReplaySpeed,
       QuizStep() => ref.read(signSpeedProvider),
-      PracticeStep() => LearnRules.practiceDemoSpeed,
+      // user, step 8 review: never faster than a slower speed they chose
+      PracticeStep() => min(
+        LearnRules.practiceDemoSpeed,
+        ref.read(signSpeedProvider),
+      ),
     };
     _play(step.label, speed: speed, loop: true);
   }

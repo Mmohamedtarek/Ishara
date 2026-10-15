@@ -432,7 +432,7 @@ class _Cta extends ConsumerWidget {
     final block = state.block;
     if (block != null) {
       return [
-        ?blockAction(context, l, block),
+        ?blockAction(context, l, block, ctl.leaveForGlove),
         IsharaLink(
           key: const ValueKey('mission-skip'),
           label: l.skipPractice,
@@ -460,21 +460,29 @@ class _Cta extends ConsumerWidget {
 }
 
 /// The glove's action for a practice block (S8-1): Connect → Pair,
-/// Calibrate now → Calibrate; none while reconnecting or stopped.
+/// Calibrate now → Calibrate; none while reconnecting or stopped. Both come
+/// back to this step, its attempts reset (S8-8, [onLeave]).
 Widget? blockAction(
   BuildContext context,
   AppLocalizations l,
   PracticeBlock block,
+  VoidCallback onLeave,
 ) => switch (block) {
   PracticeBlock.noGlove || PracticeBlock.mpuFail => IsharaButton(
     key: const ValueKey('mission-connect'),
     label: l.connect,
-    onPressed: () => unawaited(context.push(AppRoutes.pair)),
+    onPressed: () {
+      onLeave();
+      unawaited(context.push(AppRoutes.pairBack(1)));
+    },
   ),
   PracticeBlock.notCalibrated => IsharaButton(
     key: const ValueKey('mission-calibrate'),
     label: l.ctaCalNow,
-    onPressed: () => unawaited(context.push(AppRoutes.calibrate)),
+    onPressed: () {
+      onLeave();
+      unawaited(context.push(AppRoutes.calibrateBack(1)));
+    },
   ),
   PracticeBlock.reconnecting || PracticeBlock.stopped => null,
 };

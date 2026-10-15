@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ishara_app/core/glove/glove_failures.dart';
 import 'package:ishara_app/core/glove/glove_permissions.dart';
+import 'package:ishara_app/core/glove/glove_providers.dart';
+import 'package:ishara_app/core/glove/glove_source.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/onboarding_ui.dart';
@@ -16,7 +18,12 @@ import 'package:ishara_app/l10n/gen/app_localizations.dart';
 /// real checks (Q-K3), then calibrate. Adds the states the prototype lacks
 /// (permissions, Bluetooth off, not found, failed checks).
 class PairScreen extends ConsumerStatefulWidget {
-  const new({super.key});
+  const new({this.back, super.key});
+
+  /// Opened from a practice step (S8-8): once connected, a glove with a
+  /// stored calibration goes back (this many screens); one without goes on
+  /// to Calibrate, which comes back here plus one.
+  final int? back;
 
   @override
   ConsumerState<PairScreen> createState() => _PairScreenState();
@@ -64,6 +71,27 @@ class _PairScreenState extends ConsumerState<PairScreen>
     final t = context.text;
     final s = ref.watch(pairControllerProvider);
     final ctl = ref.read(pairControllerProvider.notifier);
+    ref.listen(pairControllerProvider.select((s) => s.stage), (prev, stage) {
+      // from a practice step: a calibrated glove goes straight back (after
+      // "Connected" was seen, 0.75 s as Calibrate's "Captured")
+      final back = widget.back;
+      if (back == null ||
+          stage != PairStage.connected ||
+          prev == PairStage.connected ||
+          ref.read(gloveSourceProvider).status.storedCalibration !=
+              StoredCalibration.present) {
+        return;
+      }
+      final router = GoRouter.of(context);
+      unawaited(
+        Future<void>.delayed(const Duration(milliseconds: 750), () {
+          if (!mounted) return;
+          for (var i = 0; i < back && router.canPop(); i++) {
+            router.pop();
+          }
+        }),
+      );
+    });
 
     final (status, sub) = switch (s.stage) {
       PairStage.permission || PairStage.scanning => (l.scanning, l.scanningSub),
@@ -148,7 +176,11 @@ class _PairScreenState extends ConsumerState<PairScreen>
             },
             arrow: true,
             onPressed: s.stage == PairStage.connected
-                ? () => context.push(AppRoutes.calibrate)
+                ? () => context.push(
+                    widget.back == null
+                        ? AppRoutes.calibrate
+                        : AppRoutes.calibrateBack(widget.back! + 1),
+                  )
                 : null,
           ),
           if (scanAgain)

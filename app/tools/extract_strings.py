@@ -200,9 +200,9 @@ STEP7B_DRAFTS = {
     "typeAddLabel": ("Add", "ضيف", "D25: screen reader, the Type box's send button (prototype aria-label)", None),
 }
 
-# Step 8 (Learn) texts L1-L20 (app/tools/out/step8/drafts.html): DRAFTS,
-# not approved yet. Their ARB descriptions say "DRAFT".
-STEP8_DRAFTS = {
+# Step 8 (Learn) texts L1-L20, approved by the user on 2026-10-15 (DECISIONS
+# S8-5); L17's Arabic is the user's wording.
+STEP8_TEXTS = {
     "mNumbers": ("Numbers", "الأرقام", "L1: module title (Q-L1)", None),
     "mPeople": ("People", "الناس", "L2: module title (Q-L1)", None),
     "mNeeds": ("Needs", "الاحتياجات", "L3: module title (Q-L1)", None),
@@ -219,10 +219,21 @@ STEP8_DRAFTS = {
     "missionKeepGoing": ("Pass every sign to unlock the next module.", "عدّي كل الإشارات عشان تفتح الوحدة اللي بعدها.", "L14: result, the module isn't finished (S8-3); missionDoneS only when a module was unlocked", None),
     "missionNice": ("Nice work. Keep it up!", "شغل حلو. كمّل كده!", "L15: result, nothing new to unlock (finished before, last module, daily)", None),
     "medalEarned": ("Medal earned", "كسبت ميدالية", "L16: screen reader, the medal on the result", None),
-    "noMedal": ("Reach {p}% accuracy to earn a medal.", "وصّل لدقة {p}% عشان تكسب ميدالية.", "L17: result without a medal (Q-L2: 80 %)", {"p": "int"}),
+    "noMedal": ("Reach {p}% accuracy to earn a medal.", "اوصل لدقة {p}% عشان تكسب ميدالية.", "L17: result without a medal (Q-L2: 80 %)", {"p": "int"}),
     "closeLabel": ("Close", "اقفل", "L18: screen reader, the mission's close button (prototype aria-label)", None),
     "missionStepOf": ("Step {n} of {total}", "خطوة {n} من {total}", "L19: screen reader, the mission's progress", {"n": "int", "total": "int"}),
     "passedOf": ("{done} of {total} passed", "عدّيت {done} من {total}", "L20: screen reader, a module's progress", {"done": "int", "total": "int"}),
+}
+
+# Step 8 review texts: DRAFTS (app/tools/out/step8/drafts.html), the forms the
+# user gave on 2026-10-15 (S8-7). Their ARB descriptions say "DRAFT".
+STEP8_DRAFTS = {
+    "streakDays": (
+        "{n, plural, =1{1 day} other{{n} days}}",
+        "{n, plural, =0{{n} يوم} =1{يوم واحد} =2{يومين} few{{n} أيام} other{{n} يوم}}",
+        "L21: streak chip (replaces 'N days'); AR 0 is not in the user's list (11+ form used)",
+        {"n": "int"},
+    ),
 }
 
 STR = r'"((?:[^"\\]|\\.)*)"'
@@ -349,12 +360,22 @@ def main() -> int:
         out_en[key], out_ar[key] = e, a
         out_en["@" + key] = {"description": f"approved new text (step 7b, 2026-10-13): {why}"}
 
+    for key, (e, a, why, ph) in STEP8_TEXTS.items():
+        if key in out_en:
+            print(f"error: step 8 key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"approved new text (step 8, 2026-10-15): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
     for key, (e, a, why, ph) in STEP8_DRAFTS.items():
         if key in out_en:
             print(f"error: step 8 draft key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
-        meta = {"description": f"DRAFT (step 8, not approved): {why}"}
+        meta = {"description": f"DRAFT (step 8 review, not approved): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta

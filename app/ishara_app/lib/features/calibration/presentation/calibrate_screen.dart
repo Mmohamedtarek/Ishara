@@ -18,7 +18,11 @@ import 'package:ishara_app/l10n/gen/app_localizations.dart';
 /// (BLE-CONTRACT §7), with the live hand, then `CAL SAVE` and Ready. Skip
 /// only with a stored calibration (Q-K6).
 class CalibrateScreen extends ConsumerStatefulWidget {
-  const new({super.key});
+  const new({this.back, super.key});
+
+  /// Opened from a practice step (S8-8): when saved or skipped, pop this
+  /// many screens (back to the step) instead of going to Ready.
+  final int? back;
 
   @override
   ConsumerState<CalibrateScreen> createState() => _CalibrateScreenState();
@@ -57,7 +61,19 @@ class _CalibrateScreenState extends ConsumerState<CalibrateScreen>
     final ok = await ref.read(calibrationControllerProvider.notifier).skip();
     if (!ok || !mounted) return;
     showToast(context, l.toastSkip);
-    context.go(AppRoutes.readyAfter(skipped: true));
+    _done(skipped: true);
+  }
+
+  void _done({required bool skipped}) {
+    final back = widget.back;
+    if (back == null) {
+      context.go(AppRoutes.readyAfter(skipped: skipped));
+      return;
+    }
+    final router = GoRouter.of(context);
+    for (var i = 0; i < back && router.canPop(); i++) {
+      router.pop();
+    }
   }
 
   @override
@@ -72,7 +88,7 @@ class _CalibrateScreenState extends ConsumerState<CalibrateScreen>
         _frame.stop();
       }
       if (next.phase == StepPhase.saved && prev?.phase != StepPhase.saved) {
-        context.go(AppRoutes.readyAfter(skipped: false));
+        _done(skipped: false);
       }
     });
     final n = s.step.index + 1;
