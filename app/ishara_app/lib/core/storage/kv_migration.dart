@@ -50,6 +50,10 @@ class KvMigration {
 
   static final _log = Log('storage');
 
+  /// The parts [run] couldn't move (left in the old store for the next
+  /// start; this session reads them from there, see `openStorage`).
+  final failed = <LegacyPart>{};
+
   static String markerKey(LegacyPart part) => 'kv.migrated.${part.name}';
 
   Future<void> _step(String point) async => await onStep?.call(point);
@@ -110,6 +114,7 @@ class KvMigration {
           'earlier': earlier,
         });
       } on Object catch (e) {
+        failed.add(part);
         _log.warn('kv_migration_failed', {
           'part': part.name,
           'error': e.runtimeType.toString(),
@@ -190,17 +195,11 @@ class KvMigration {
       case LegacyPart.talk:
         if (insert) {
           await _db.batch(
-            (b) => b.insertAll(_db.messages, [
-              for (final m in data.messages)
-                MessagesCompanion.insert(
-                  id: m.id,
-                  conversation: Value(m.message.conversation),
-                  side: m.message.side.name,
-                  content: m.message.text,
-                  at: m.message.at.toIso8601String(),
-                  atUs: m.message.at.microsecondsSinceEpoch,
-                ),
-            ], mode: InsertMode.insertOrIgnore),
+            (b) => b.insertAll(
+              _db.messages,
+              data.messages.map(LocalConversationRepository.row),
+              mode: InsertMode.insertOrIgnore,
+            ),
           );
         }
         // compared by content: ids are new on every read of the old store
@@ -284,35 +283,30 @@ class KvMigration {
           }
         }
       case LegacyPart.sos:
-        final before = await _db.select(_db.contacts).get();
-        if (insert && before.isEmpty) {
-          for (final (i, c) in data.contacts.indexed) {
-            await _db
-                .into(_db.contacts)
-                .insert(
-                  ContactsCompanion.insert(
-                    position: Value(i),
-                    name: c.name,
-                    phone: c.phone,
-                  ),
-                );
-          }
-        }
-        final rows = await (_db.select(
+        // Contacts already in the database (added in a session where this
+        // part had failed) stay first; the old ones join up to the limit.
+        final before = await (_db.select(
           _db.contacts,
         )..orderBy([(t) => OrderingTerm(expression: t.position)])).get();
-        final back = [
-          for (final r in rows) EmergencyContact(name: r.name, phone: r.phone),
+        final have = [
+          for (final r in before)
+            EmergencyContact(name: r.name, phone: r.phone),
         ];
-        if (_same(back, data.contacts)) {
-          stored += data.contacts.length;
-        } else {
-          for (final (i, c) in data.contacts.indexed) {
+        for (final (i, c) in data.contacts.indexed) {
+          if (have.contains(c)) {
+            stored++;
+          } else if (insert && have.length < EmergencyContactsRepository.max) {
+            await _db
+                .into(_db.contacts)
+                .insert(LocalEmergencyContactsRepository.row(have.length, c));
+            have.add(c);
+            stored++;
+          } else {
             keep.add(
               KeptValue(
                 key: '${LegacyKeys.contacts}[$i]',
                 value: jsonEncode(c.toJson()),
-                reason: why ?? 'the database already had contacts',
+                reason: why ?? 'over the limit with the contacts added since',
               ),
             );
           }

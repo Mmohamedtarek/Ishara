@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:drift/drift.dart';
 import 'package:ishara_app/core/storage/database/app_database.dart';
+import 'package:ishara_app/core/storage/hex_id.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/core/storage/legacy_store.dart';
 import 'package:meta/meta.dart';
@@ -173,12 +174,10 @@ class LocalConversationRepository implements ConversationRepository {
   @override
   Stream<List<TalkMessage>> get changes => _changes.stream;
 
-  String _newId(int bytes) => [
-    for (var i = 0; i < bytes; i++)
-      _random.nextInt(256).toRadixString(16).padLeft(2, '0'),
-  ].join();
+  String _newId(int bytes) => hexId(_random, bytes);
 
-  static MessagesCompanion _row(StoredMessage r) => MessagesCompanion.insert(
+  /// The row for [r] (the migration writes the same).
+  static MessagesCompanion row(StoredMessage r) => MessagesCompanion.insert(
     id: r.id,
     conversation: Value(r.message.conversation),
     side: r.message.side.name,
@@ -216,17 +215,22 @@ class LocalConversationRepository implements ConversationRepository {
         }
       }
     }
-    final row = (id: _newId(8), message: message.inConversation(conversation));
-    _rows.add(row);
+    final stored = (
+      id: _newId(8),
+      message: message.inConversation(conversation),
+    );
+    _rows.add(stored);
     _changes.add(messages);
+    // Clear's flag is used up now, before any await: a Clear tapped while
+    // this message is being written stays for the next one.
+    _kv.remove(kNewNext).ignore();
     await _db.transaction(() async {
       if (adopted.isNotEmpty) {
         await (_db.update(_db.messages)..where((t) => t.id.isIn(adopted)))
             .write(MessagesCompanion(conversation: Value(conversation)));
       }
-      await _db.into(_db.messages).insert(_row(row));
+      await _db.into(_db.messages).insert(row(stored));
     });
-    await _kv.remove(kNewNext);
   }
 
   @override
@@ -241,7 +245,7 @@ class LocalConversationRepository implements ConversationRepository {
     if (removed.isEmpty) return const [];
     // The newest conversation gone: the next message never joins an older
     // one (it may have been cleared before, S9-4).
-    final newest = identical(removed.last, _rows.last);
+    final newest = removed.last.id == _rows.last.id;
     _rows.removeWhere((r) => r.message.conversationKey == key);
     _changes.add(messages);
     final ids = [for (final r in removed) r.id];
@@ -258,7 +262,7 @@ class LocalConversationRepository implements ConversationRepository {
       ..addAll(back)
       ..sort((a, b) => a.message.at.compareTo(b.message.at));
     _changes.add(this.messages);
-    await _db.batch((b) => b.insertAll(_db.messages, back.map(_row)));
+    await _db.batch((b) => b.insertAll(_db.messages, back.map(row)));
   }
 
   @override

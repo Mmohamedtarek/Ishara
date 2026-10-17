@@ -369,6 +369,30 @@ void main() {
     );
   });
 
+  test('contacts added while the old ones could not move: the old ones '
+      'join up to the limit, the rest are kept aside', () async {
+    final db = memoryDb();
+    final now = LocalEmergencyContactsRepository(db);
+    await now.add(const EmergencyContact(name: 'New 1', phone: '+2011'));
+    await now.add(const EmergencyContact(name: 'Mona', phone: '+201012345678'));
+    await now.dispose();
+    await KvMigration(MemoryKeyValueStore(snapshot('v9')), db).run();
+    final d = await LocalData.load(db);
+    // Mona was already there; علي fits as the third
+    expect(d.contacts.map((c) => c.name), ['New 1', 'Mona', 'علي']);
+    expect(d.kept, isEmpty);
+    final full = memoryDb();
+    final three = LocalEmergencyContactsRepository(full);
+    for (final n in ['x', 'y', 'z']) {
+      await three.add(EmergencyContact(name: n, phone: '+20$n'));
+    }
+    await three.dispose();
+    await KvMigration(MemoryKeyValueStore(snapshot('v9')), full).run();
+    final kept = (await LocalData.load(full)).kept;
+    expect(kept.map((k) => k.key), ['sos.contacts[0]', 'sos.contacts[1]']);
+    expect(kept.first.reason, 'over the limit with the contacts added since');
+  });
+
   group('the key-value store on the database', () {
     test('every type a phone store holds round-trips', () async {
       final db = memoryDb();

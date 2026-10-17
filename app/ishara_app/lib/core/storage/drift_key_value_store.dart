@@ -56,6 +56,15 @@ class DriftKeyValueStore implements KeyValueStore {
         );
   }
 
+  /// Shows [values] this session without storing them, for keys with no
+  /// value yet (an old-store part that couldn't move: `openStorage`). A
+  /// value set later is stored as usual.
+  void showUnstored(Map<String, Object> values) {
+    for (final MapEntry(:key, :value) in values.entries) {
+      _v.putIfAbsent(key, () => value);
+    }
+  }
+
   @override
   Object? read(String key) => _v[key];
 

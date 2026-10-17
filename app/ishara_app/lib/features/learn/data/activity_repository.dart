@@ -80,11 +80,12 @@ class LocalActivityRepository implements ActivityRepository {
 
   @override
   Future<void> append(ActivityEvent event) async {
+    // an id already stored is the same immutable event: kept once
+    if (_events.any((e) => e.id == event.id)) return;
     final json = event.toJson();
     _raw.add(json);
     _events.add(event);
     _changes.add(events);
-    // an id already stored is the same immutable event: kept once
     await _db
         .into(_db.activityEntries)
         .insert(

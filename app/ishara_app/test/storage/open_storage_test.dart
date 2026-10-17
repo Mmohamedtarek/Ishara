@@ -73,18 +73,74 @@ void main() {
     await second.db.close();
   });
 
-  test("the database can't open: the app runs on the old store and "
-      'removes nothing', () async {
-    // a folder where the file should be: SQLite can't open it
-    Directory('${dir.path}/$databaseFileName').createSync();
+  test('a damaged database file is moved aside (kept) and a new one is '
+      'made from the old store', () async {
+    final file = File('${dir.path}/$databaseFileName')
+      ..writeAsStringSync('this is not a database');
     final s = await openStorage();
+    expect(s.degraded, isFalse);
     expect(s.kv.getString('settings.theme'), 'dark');
     expect(s.data.messages, hasLength(4));
-    final left = await prefs.getKeys(
-      const GetPreferencesParameters(filter: PreferencesFilters()),
+    final aside = dir
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.contains('$databaseFileName.damaged-'))
+        .single;
+    expect(aside.readAsStringSync(), 'this is not a database');
+    expect(file.existsSync(), isTrue);
+    await s.db.close();
+  });
+
+  test('a part that fails is shown from the old store this session, then '
+      'moves at the next start', () async {
+    final s = await openStorage(
+      onStep: (p) async {
+        if (p == 'copying:sos' || p == 'copying:prefs') {
+          throw StateError('disk full');
+        }
+      },
+    );
+    expect(s.degraded, isFalse);
+    expect(s.data.contacts.map((c) => c.phone), [
+      '+201012345678',
+      '+201123456789',
+    ]);
+    expect(s.kv.getString('settings.theme'), 'dark');
+    expect(s.data.messages, hasLength(4)); // talk moved
+    // a value set this session is stored and wins over the old one
+    await s.kv.setString('settings.theme', 'light');
+    await s.db.close();
+    final next = await openStorage();
+    expect(next.kv.getString('settings.theme'), 'light');
+    expect(next.kv.getString('setup.spoken'), 'ar');
+    expect(next.data.contacts, hasLength(2));
+    expect(await _left(prefs), {'flutter.other'});
+    await next.db.close();
+  });
+
+  test('no database can be written: degraded, the old store is shown and '
+      'never written to', () async {
+    // a folder where the file goes, inside a folder that can't be written
+    Directory('${dir.path}/$databaseFileName').createSync();
+    Process.runSync('chmod', ['a-w', dir.path]);
+    addTearDown(() => Process.runSync('chmod', ['u+w', dir.path]));
+    final s = await openStorage();
+    expect(s.degraded, isTrue);
+    expect(s.kv.getString('settings.theme'), 'dark');
+    expect(s.data.messages, hasLength(4));
+    await s.kv.setString('settings.theme', 'light');
+    expect(await _left(prefs), contains('ishara.talk.messages'));
+    final theme = await prefs.getString(
+      'ishara.settings.theme',
       const SharedPreferencesOptions(),
     );
-    expect(left, contains('ishara.talk.messages'));
+    expect(theme, 'dark');
     await s.db.close();
   });
 }
+
+Future<Set<String>> _left(InMemorySharedPreferencesAsync prefs) =>
+    prefs.getKeys(
+      const GetPreferencesParameters(filter: PreferencesFilters()),
+      const SharedPreferencesOptions(),
+    );

@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
 import 'package:ishara_app/core/phrases/saved_phrases_repository.dart';
+import 'package:ishara_app/core/storage/hex_id.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/features/sos/data/emergency_contacts_repository.dart';
 import 'package:meta/meta.dart';
@@ -174,10 +175,7 @@ class LegacyData {
           KeptValue(key: '$key[$i]', value: jsonEncode(e), reason: why),
         );
 
-    String id(int bytes) => [
-      for (var i = 0; i < bytes; i++)
-        r.nextInt(256).toRadixString(16).padLeft(2, '0'),
-    ].join();
+    String id(int bytes) => hexId(r, bytes);
 
     // Talk (v1: no conversation; v2: with it). Same reader as the old store.
     final messages = <StoredMessage>[];

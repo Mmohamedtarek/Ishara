@@ -151,6 +151,25 @@ void main() {
     expect(jsonDecode(json), isA<Map<String, Object?>>());
   });
 
+  test('Export my data adds the old values kept aside (step 10a), when '
+      'there are any', () {
+    final c = _c(
+      MemoryKeyValueStore({
+        'talk.messages':
+            '[{"side":"me","text":"ok",'
+            '"at":"2026-10-15T10:00:00.000"},7]',
+        'phrases.all': '{damaged',
+      }),
+    );
+    final data = DataExport.build(c.read(_refProvider));
+    expect(data['keptAside'], [
+      {'key': 'talk.messages[1]', 'reason': 'unreadable', 'value': '7'},
+      {'key': 'phrases.all', 'reason': 'damaged', 'value': '{damaged'},
+    ]);
+    final conv = data['conversation']! as Map<String, Object>;
+    expect(conv['talk.messages'], contains('"text":"ok"'));
+  });
+
   test("app_rules.json: the 10-minute gap and Egypt's numbers are data", () {
     expect(testAppRules.conversationGap, const Duration(minutes: 10));
     expect(testAppRules.emergencyRegion, 'EG');

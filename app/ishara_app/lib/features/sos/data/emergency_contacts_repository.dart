@@ -86,17 +86,18 @@ class LocalEmergencyContactsRepository implements EmergencyContactsRepository {
     await _save();
   }
 
+  /// The row for [contact] at [position] (the migration writes the same).
+  static ContactsCompanion row(int position, EmergencyContact contact) =>
+      ContactsCompanion.insert(
+        position: Value(position),
+        name: contact.name,
+        phone: contact.phone,
+      );
+
   /// The whole (tiny) list, rewritten in one transaction.
   Future<void> _save() async {
     _changes.add(contacts);
-    final rows = [
-      for (var i = 0; i < _list.length; i++)
-        ContactsCompanion.insert(
-          position: Value(i),
-          name: _list[i].name,
-          phone: _list[i].phone,
-        ),
-    ];
+    final rows = [for (final (i, c) in _list.indexed) row(i, c)];
     await _db.transaction(() async {
       await _db.delete(_db.contacts).go();
       await _db.batch((b) => b.insertAll(_db.contacts, rows));

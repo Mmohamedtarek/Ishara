@@ -66,6 +66,7 @@ void main() {
       final a = ev(ActivityType.quiz, label: 'hello');
       await repo.append(a);
       await repo.append(a);
+      expect(repo.events, hasLength(1));
       expect(await db.select(db.activityEntries).get(), hasLength(1));
       await repo.dispose();
     });

@@ -27,6 +27,39 @@ class LocalData {
     kept: [for (final k in d.kept.values) ...k],
   );
 
+  /// This data plus the old store's [parts] that couldn't move yet (shown
+  /// this session; the next start moves them, newer rows win).
+  LocalData withLegacy(LegacyData d, Set<LegacyPart> parts) {
+    bool has(LegacyPart p) => parts.contains(p);
+    final phraseIds = {for (final p in phrases) p.id};
+    final activityIds = {for (final a in activity) a.id};
+    return LocalData(
+      messages: has(LegacyPart.talk)
+          ? ([...messages, ...d.messages]
+              ..sort((a, b) => a.message.at.compareTo(b.message.at)))
+          : messages,
+      phrases: [
+        ...phrases,
+        if (has(LegacyPart.phrases))
+          for (final p in d.phrases)
+            if (!phraseIds.contains(p.id)) p,
+      ],
+      activity: [
+        ...activity,
+        if (has(LegacyPart.activity))
+          for (final a in d.activity)
+            if (!activityIds.contains(a.id)) a,
+      ],
+      contacts: has(LegacyPart.sos)
+          ? {
+              ...contacts,
+              ...d.contacts,
+            }.take(EmergencyContactsRepository.max).toList()
+          : contacts,
+      kept: [...kept, for (final p in parts) ...?d.kept[p]],
+    );
+  }
+
   static Future<LocalData> load(AppDatabase db) async {
     final messages =
         await (db.select(db.messages)..orderBy([

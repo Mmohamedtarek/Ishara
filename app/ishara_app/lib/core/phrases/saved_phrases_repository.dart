@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:drift/drift.dart';
 import 'package:ishara_app/core/storage/database/app_database.dart';
+import 'package:ishara_app/core/storage/hex_id.dart';
 import 'package:meta/meta.dart';
 
 /// A starred sentence (Q-B4): it syncs (step 10b; Phase 0 model
@@ -180,10 +181,7 @@ class LocalSavedPhrasesRepository implements SavedPhrasesRepository {
       p = _all[i] = _all[i].copyWith(deleted: false, at: now);
     } else {
       p = SavedPhrase(
-        id: [
-          for (var i = 0; i < 10; i++)
-            _random.nextInt(256).toRadixString(16).padLeft(2, '0'),
-        ].join(),
+        id: hexId(_random, 10),
         text: t,
         lang: phraseLanguage(t),
         createdAt: now,

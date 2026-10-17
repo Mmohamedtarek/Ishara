@@ -150,6 +150,35 @@ void main() {
       expect(r2.messages[1].conversation, r2.messages[2].conversation);
     });
 
+    test('a Clear tapped while a message is being written holds for the next '
+        'message (review fix)', () async {
+      final repo = _repo();
+      await repo.add(at(t0, 'a'));
+      final writing = repo.add(at(t0.add(const Duration(seconds: 1)), 'b'));
+      await repo.startNewConversation(); // during b's write
+      await writing;
+      await repo.add(at(t0.add(const Duration(seconds: 2)), 'c'));
+      final ids = [for (final x in repo.messages) x.conversation];
+      expect(ids[1], ids[0]);
+      expect(ids[2], isNot(ids[1]));
+      await repo.dispose();
+    });
+
+    test('after Clear, two messages arriving together start one new '
+        'conversation, not two', () async {
+      final repo = _repo();
+      await repo.add(at(t0, 'a'));
+      await repo.startNewConversation();
+      await Future.wait([
+        repo.add(at(t0.add(const Duration(seconds: 1)), 'b')),
+        repo.add(at(t0.add(const Duration(seconds: 2)), 'c')),
+      ]);
+      final ids = [for (final x in repo.messages) x.conversation];
+      expect(ids[1], isNot(ids[0]));
+      expect(ids[2], ids[1]);
+      await repo.dispose();
+    });
+
     test('midnight: 23:58 and 00:01 are two conversations', () async {
       final a = await ids([
         DateTime(2026, 10, 14, 23, 58),
