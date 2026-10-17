@@ -61,8 +61,8 @@ page = f"""<!doctype html><html><head><meta charset="utf-8"><title>Step 9 drafts
 td,th{{border:1px solid #ccc;padding:6px 8px;vertical-align:middle;text-align:start}}th{{background:#eee}}
 td[dir=rtl]{{font-size:15px}}</style></head><body>
 <h1>Step 9: texts</h1>
-<h2>New drafts from the step 9 review ({len(STEP9B_DRAFTS)}), waiting for your approval</h2>
-<p>Your wording, EN and AR. The age: minutes under 1 h, hours under 48 h, then days (ICU plurals); the
+<h2>New texts from the step 9 review ({len(STEP9B_DRAFTS)}), approved 2026-10-17</h2>
+<p>Approved with the step 10 brief. The age: minutes under 1 h, hours under 48 h, then days (ICU plurals); the
 "out of date" line under a last known position older than 1 hour; the SMS / phone app messages with
 "Copy message" (copies the same text the SMS would carry) and its toast.</p>
 <table><tr><th>ID / key</th><th>English</th><th>Egyptian Arabic</th><th>Where / why</th></tr>

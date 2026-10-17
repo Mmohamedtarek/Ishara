@@ -248,8 +248,8 @@ STEP8_DRAFTS = {
 # Step 9 texts (app/tools/out/step9/drafts.html): DRAFTS until approved.
 # H = History, S = Settings, P = Privacy / About, A = Avatar studio,
 # E = emergency contacts, O = the SOS sheet.
-# Step 9 review (2026-10-15): new texts the user asked for, drafts until
-# approved. key: (en, ar, why, placeholders).
+# Step 9 review (2026-10-15): new texts the user asked for, approved
+# 2026-10-17 (step 10 brief). key: (en, ar, why, placeholders).
 STEP9B_DRAFTS = {
     "sosLocOldHours": ("Last known location, about {n, plural, =1{1 hour} other{{n} hours}} ago (±{m} m)", "آخر مكان معروف، من حوالي {n, plural, =1{ساعة} =2{ساعتين} few{{n} ساعات} other{{n} ساعة}} (±{m} م)", "O17: last known, 1 h to 48 h old", {"n": "int", "m": "int"}),
     "sosLocOldDays": ("Last known location, about {n, plural, =1{1 day} other{{n} days}} ago (±{m} m)", "آخر مكان معروف، من حوالي {n, plural, =1{يوم} =2{يومين} few{{n} أيام} other{{n} يوم}} (±{m} م)", "O18: last known, 48 h or older", {"n": "int", "m": "int"}),
@@ -524,7 +524,7 @@ def main() -> int:
             print(f"error: step 9 review draft key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
-        meta = {"description": f"DRAFT (step 9 review, not approved): {why}"}
+        meta = {"description": f"approved new text (step 9 review, 2026-10-17): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta

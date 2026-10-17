@@ -1998,7 +1998,7 @@
   },
   "sosLocOldHours": "Last known location, about {n, plural, =1{1 hour} other{{n} hours}} ago (±{m} m)",
   "@sosLocOldHours": {
-    "description": "DRAFT (step 9 review, not approved): O17: last known, 1 h to 48 h old",
+    "description": "approved new text (step 9 review, 2026-10-17): O17: last known, 1 h to 48 h old",
     "placeholders": {
       "n": {
         "type": "int"
@@ -2010,7 +2010,7 @@
   },
   "sosLocOldDays": "Last known location, about {n, plural, =1{1 day} other{{n} days}} ago (±{m} m)",
   "@sosLocOldDays": {
-    "description": "DRAFT (step 9 review, not approved): O18: last known, 48 h or older",
+    "description": "approved new text (step 9 review, 2026-10-17): O18: last known, 48 h or older",
     "placeholders": {
       "n": {
         "type": "int"
@@ -2022,22 +2022,22 @@
   },
   "sosLocStale": "This location may be out of date.",
   "@sosLocStale": {
-    "description": "DRAFT (step 9 review, not approved): O19: under a last known position older than 1 hour"
+    "description": "approved new text (step 9 review, 2026-10-17): O19: under a last known position older than 1 hour"
   },
   "sosSmsFailed": "Couldn't open the SMS app.",
   "@sosSmsFailed": {
-    "description": "DRAFT (step 9 review, not approved): O20: no app opened for SMS"
+    "description": "approved new text (step 9 review, 2026-10-17): O20: no app opened for SMS"
   },
   "sosCallFailed": "Couldn't open the phone app.",
   "@sosCallFailed": {
-    "description": "DRAFT (step 9 review, not approved): O21: no app opened for a call"
+    "description": "approved new text (step 9 review, 2026-10-17): O21: no app opened for a call"
   },
   "sosCopy": "Copy message",
   "@sosCopy": {
-    "description": "DRAFT (step 9 review, not approved): O22: copies the SOS message to paste anywhere"
+    "description": "approved new text (step 9 review, 2026-10-17): O22: copies the SOS message to paste anywhere"
   },
   "toastCopied": "Message copied",
   "@toastCopied": {
-    "description": "DRAFT (step 9 review, not approved): O23: toast after Copy message"
+    "description": "approved new text (step 9 review, 2026-10-17): O23: toast after Copy message"
   }
 }
