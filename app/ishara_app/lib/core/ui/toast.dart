@@ -41,7 +41,7 @@ class _ToastEntry {
     _entry = OverlayEntry(
       builder: (context) => Theme(
         data: theme,
-        child: _Toast(message: message, visible: _visible),
+        child: ToastView(message: message, visible: _visible),
       ),
     );
     overlay.insert(_entry!);
@@ -66,8 +66,9 @@ class _ToastEntry {
   }
 }
 
-class _Toast extends StatelessWidget {
-  const new({required this.message, required this.visible});
+/// The toast's look, on a stack: also used by `StorageNotice`.
+class ToastView extends StatelessWidget {
+  const new({required this.message, required this.visible, super.key});
 
   final String message;
   final ValueListenable<bool> visible;

@@ -41,6 +41,7 @@ Future<void> main() async {
       keyValueStoreProvider.overrideWithValue(storage.kv),
       appDatabaseProvider.overrideWithValue(storage.db),
       localDataProvider.overrideWithValue(storage.data),
+      storageHealthProvider.overrideWithValue(storage.health),
     ],
   );
   // The first screens name the avatar ("Hi, I'm Nour!"): load the (tiny)

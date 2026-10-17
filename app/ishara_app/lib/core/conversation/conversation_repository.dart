@@ -7,6 +7,7 @@ import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:ishara_app/core/storage/hex_id.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/core/storage/legacy_store.dart';
+import 'package:ishara_app/core/storage/storage_health.dart';
 import 'package:meta/meta.dart';
 
 /// Who said a Talk message.
@@ -224,13 +225,15 @@ class LocalConversationRepository implements ConversationRepository {
     // Clear's flag is used up now, before any await: a Clear tapped while
     // this message is being written stays for the next one.
     _kv.remove(kNewNext).ignore();
-    await _db.transaction(() async {
-      if (adopted.isNotEmpty) {
-        await (_db.update(_db.messages)..where((t) => t.id.isIn(adopted)))
-            .write(MessagesCompanion(conversation: Value(conversation)));
-      }
-      await _db.into(_db.messages).insert(row(stored));
-    });
+    await storeOrKeepGoing(
+      () => _db.transaction(() async {
+        if (adopted.isNotEmpty) {
+          await (_db.update(_db.messages)..where((t) => t.id.isIn(adopted)))
+              .write(MessagesCompanion(conversation: Value(conversation)));
+        }
+        await _db.into(_db.messages).insert(row(stored));
+      }),
+    );
   }
 
   @override
@@ -249,7 +252,9 @@ class LocalConversationRepository implements ConversationRepository {
     _rows.removeWhere((r) => r.message.conversationKey == key);
     _changes.add(messages);
     final ids = [for (final r in removed) r.id];
-    await (_db.delete(_db.messages)..where((t) => t.id.isIn(ids))).go();
+    await storeOrKeepGoing(
+      () => (_db.delete(_db.messages)..where((t) => t.id.isIn(ids))).go(),
+    );
     if (newest) await startNewConversation();
     return [for (final r in removed) r.message];
   }
@@ -262,14 +267,16 @@ class LocalConversationRepository implements ConversationRepository {
       ..addAll(back)
       ..sort((a, b) => a.message.at.compareTo(b.message.at));
     _changes.add(this.messages);
-    await _db.batch((b) => b.insertAll(_db.messages, back.map(row)));
+    await storeOrKeepGoing(
+      () => _db.batch((b) => b.insertAll(_db.messages, back.map(row))),
+    );
   }
 
   @override
   Future<void> deleteAll() async {
     _rows.clear();
     _changes.add(messages);
-    await _db.delete(_db.messages).go();
+    await storeOrKeepGoing(() => _db.delete(_db.messages).go());
   }
 
   /// The same shape as before step 10 (Privacy › Export keeps its format;

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:clock/clock.dart';
+import 'package:drift/drift.dart' show ApplyInterceptor;
 import 'package:drift/native.dart';
 import 'package:ishara_app/core/errors/failure.dart';
 import 'package:ishara_app/core/logging/log.dart';
@@ -10,16 +11,19 @@ import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/core/storage/kv_migration.dart';
 import 'package:ishara_app/core/storage/legacy_store.dart';
 import 'package:ishara_app/core/storage/local_data.dart';
+import 'package:ishara_app/core/storage/storage_health.dart';
 import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// The opened storage `main` hands to the providers. `degraded`: nothing
-/// is stored this session (see [openStorage]).
+/// is stored this session (see [openStorage]); `health` raises the "out of
+/// storage" notice at the first write that fails.
 typedef OpenedStorage = ({
   KeyValueStore kv,
   AppDatabase db,
   LocalData data,
   bool degraded,
+  StorageHealth health,
 });
 
 /// The database file, in the app's private support folder.
@@ -54,13 +58,14 @@ Future<OpenedStorage> openStorage({
     old = MemoryKeyValueStore();
   }
   AppDatabase? db;
+  final health = StorageHealth();
   try {
     final dir = (await getApplicationSupportDirectory()).path;
     final path = '$dir${Platform.pathSeparator}$databaseFileName';
-    db = await _open(path, log);
+    db = await _open(path, log, health);
     if (db == null && FileSystemEntity.typeSync(path) != .notFound) {
       _moveAside(path, log);
-      db = await _open(path, log);
+      db = await _open(path, log, health);
     }
     if (db == null) throw const FileSystemException('no database');
     final migration = KvMigration(old, db, onStep: onStep);
@@ -74,29 +79,35 @@ Future<OpenedStorage> openStorage({
         kv.showUnstored(left.prefs);
       }
     }
-    return (kv: kv, db: db, data: data, degraded: false);
+    return (kv: kv, db: db, data: data, degraded: false, health: health);
   } on Object catch (e, st) {
     log.failure(
       'storage_degraded',
       UnexpectedFailure('database', cause: e, stackTrace: st),
     );
     await db?.close();
+    health.dispose();
     final left = LegacyData.read(old);
+    final none = StorageHealth(degraded: true);
     return (
       kv: MemoryKeyValueStore({
         for (final k in old.keys)
           if (old.read(k) case final Object v) k: v,
       }),
-      db: AppDatabase(NativeDatabase.memory()),
+      db: AppDatabase(NativeDatabase.memory().interceptWith(WriteWatch(none))),
       data: LocalData.fromLegacy(left),
       degraded: true,
+      health: none,
     );
   }
 }
 
 /// The database at [path], opened and checked; null when it can't be used.
-Future<AppDatabase?> _open(String path, Log log) async {
-  final db = AppDatabase(NativeDatabase.createInBackground(File(path)));
+Future<AppDatabase?> _open(String path, Log log, StorageHealth health) async {
+  final db = AppDatabase(
+    NativeDatabase.createInBackground(File(path))
+        .interceptWith(WriteWatch(health)),
+  );
   try {
     final check = await db.customSelect('PRAGMA quick_check').get();
     if (check.length == 1 && check.single.data.values.single == 'ok') {

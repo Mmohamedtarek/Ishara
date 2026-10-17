@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:ishara_app/core/logging/log.dart';
 import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:ishara_app/core/storage/legacy_store.dart';
+import 'package:ishara_app/core/storage/storage_health.dart';
 import 'package:ishara_app/features/learn/domain/activity_event.dart';
 
 /// Learn's append-only activity log (Phase 0 model
@@ -86,12 +87,17 @@ class LocalActivityRepository implements ActivityRepository {
     _raw.add(json);
     _events.add(event);
     _changes.add(events);
-    await _db
-        .into(_db.activityEntries)
-        .insert(
-          ActivityEntriesCompanion.insert(id: event.id, json: jsonEncode(json)),
-          mode: InsertMode.insertOrIgnore,
-        );
+    await storeOrKeepGoing(
+      () => _db
+          .into(_db.activityEntries)
+          .insert(
+            ActivityEntriesCompanion.insert(
+              id: event.id,
+              json: jsonEncode(json),
+            ),
+            mode: InsertMode.insertOrIgnore,
+          ),
+    );
   }
 
   /// The same shape as before step 10 (Privacy › Export keeps its format;

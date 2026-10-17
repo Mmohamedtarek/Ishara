@@ -4,10 +4,13 @@ import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ishara_app/core/speech/mic_permissions.dart';
 import 'package:ishara_app/core/speech/speech_providers.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
+import 'package:ishara_app/core/storage/storage_health.dart';
+import 'package:ishara_app/core/storage/storage_providers.dart';
 import 'package:ishara_app/features/sos/application/sos_controller.dart';
 import 'package:ishara_app/features/sos/data/emergency_contacts_repository.dart';
 import 'package:ishara_app/features/sos/data/sos_platform.dart';
@@ -15,6 +18,7 @@ import 'package:ishara_app/features/sos/domain/sos_location.dart';
 import 'package:ishara_app/features/sos/presentation/emergency_contacts_screen.dart';
 import 'package:ishara_app/features/talk/presentation/talk_screen.dart';
 
+import '../support/failing_db.dart';
 import '../support/fake_sos.dart';
 import '../support/fake_speech.dart';
 import '../support/fake_talk.dart';
@@ -45,7 +49,10 @@ class _Talk {
   final SosFakes sos;
   final MemoryKeyValueStore store;
 
-  Future<void> pressSos(WidgetTester t) async {
+  Future<void> pressSos(
+    WidgetTester t, {
+    List<Override> overrides = const [],
+  }) async {
     addTearDown(rootBundle.clear);
     addTearDown(talk.feed.dispose);
     await pumpScreen(
@@ -59,6 +66,7 @@ class _Talk {
         micPermissionsProvider.overrideWithValue(
           FakeMicPermissions(current: MicPermission.granted),
         ),
+        ...overrides,
       ],
     );
     await tapIt(t, _key('talk-quick-sos'));
@@ -248,6 +256,35 @@ void main() {
     await s.pressSos(t);
     expect(_key('sos-sms'), findsOneWidget);
     expect(_key('sos-whatsapp'), findsNothing);
+  });
+
+  _sosTest('the phone is out of storage: SOS still speaks, opens the '
+      'sheet, sends the SMS and calls (step 10a review)', (t) async {
+    final health = StorageHealth();
+    addTearDown(health.dispose);
+    final db = fullDiskDb(health);
+    addTearDown(db.close);
+    final s = _Talk(
+      contacts: [_nour],
+      location: FakeLocation(fresh: _fixAgo(Duration.zero)),
+    );
+    await s.pressSos(
+      t,
+      overrides: [
+        storageHealthProvider.overrideWithValue(health),
+        appDatabaseProvider.overrideWithValue(db),
+      ],
+    );
+    expect(s.talk.tts.spoken, ['I need help, please.']);
+    expect(find.text('Your location (±12 m)'), findsOneWidget);
+    // the SOS phrase went to the feed (Q-T2) and couldn't be saved
+    expect(health.notSaving.value, isTrue);
+    await tapIt(t, _key('sos-sms'));
+    expect(s.sos.launcher.opened.single, startsWith('sms +201012345678 | '));
+    await tapIt(t, _key('sos-call-0'));
+    expect(s.sos.launcher.opened.last, 'dial +201012345678');
+    await tapIt(t, _key('sos-ambulance'));
+    expect(s.sos.launcher.opened.last, 'dial 123');
   });
 
   _sosTest('D23 is spoken before the location arrives; the send button '

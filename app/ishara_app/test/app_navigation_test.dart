@@ -16,6 +16,7 @@ import 'package:ishara_app/core/router/transitions.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/core/theme/ishara_tokens.dart';
 import 'package:ishara_app/core/ui/ishara_tab_bar.dart';
+import 'package:ishara_app/core/ui/storage_notice.dart';
 
 import 'support/fake_glove.dart';
 import 'support/fake_talk.dart';
@@ -171,6 +172,8 @@ void main() {
 
   testWidgets('tabs switch screens and keep the tab bar', (t) async {
     await _pumpApp(t, at: AppRoutes.talk);
+    // the "out of storage" notice sits at the app root (step 10a review)
+    expect(find.byType(StorageNotice), findsOneWidget);
     for (final (label, key) in [
       ('Learn', 'learn'),
       ('History', 'history'),

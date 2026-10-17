@@ -11,7 +11,24 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    excludeDataFromBackup()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  /// Conversations and emergency contacts never leave the phone (Q-B4,
+  /// step 10a review): the folder with the database (Application Support:
+  /// ishara.sqlite, its journal, any damaged copy kept aside) is excluded
+  /// from iCloud and computer backups. Excluding a folder excludes what is
+  /// in it, also files made later.
+  private func excludeDataFromBackup() {
+    let files = FileManager.default
+    guard
+      var url = files.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+    else { return }
+    try? files.createDirectory(at: url, withIntermediateDirectories: true)
+    var values = URLResourceValues()
+    values.isExcludedFromBackup = true
+    try? url.setResourceValues(values)
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {

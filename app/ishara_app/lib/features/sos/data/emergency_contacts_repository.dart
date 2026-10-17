@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart';
 import 'package:ishara_app/core/storage/database/app_database.dart';
+import 'package:ishara_app/core/storage/storage_health.dart';
 import 'package:meta/meta.dart';
 
 /// One emergency contact (Q-T4 phase 1).
@@ -98,10 +99,12 @@ class LocalEmergencyContactsRepository implements EmergencyContactsRepository {
   Future<void> _save() async {
     _changes.add(contacts);
     final rows = [for (final (i, c) in _list.indexed) row(i, c)];
-    await _db.transaction(() async {
-      await _db.delete(_db.contacts).go();
-      await _db.batch((b) => b.insertAll(_db.contacts, rows));
-    });
+    await storeOrKeepGoing(
+      () => _db.transaction(() async {
+        await _db.delete(_db.contacts).go();
+        await _db.batch((b) => b.insertAll(_db.contacts, rows));
+      }),
+    );
   }
 
   Future<void> dispose() => _changes.close();

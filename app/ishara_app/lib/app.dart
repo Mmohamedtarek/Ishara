@@ -4,6 +4,7 @@ import 'package:ishara_app/core/avatar/avatar_host.dart';
 import 'package:ishara_app/core/router/app_router.dart';
 import 'package:ishara_app/core/settings/app_settings.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
+import 'package:ishara_app/core/ui/storage_notice.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
 /// Root widget: theme (light / dark / system), language and RTL, router.
@@ -36,7 +37,9 @@ class IsharaApp extends ConsumerWidget {
       // One avatar WebView for the whole app (AvatarHost).
       builder: (context, child) => ColoredBox(
         color: context.colors.bg,
-        child: AvatarHost(child: child ?? const SizedBox.shrink()),
+        child: StorageNotice(
+          child: AvatarHost(child: child ?? const SizedBox.shrink()),
+        ),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:drift/drift.dart';
 import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:ishara_app/core/storage/hex_id.dart';
+import 'package:ishara_app/core/storage/storage_health.dart';
 import 'package:meta/meta.dart';
 
 /// A starred sentence (Q-B4): it syncs (step 10b; Phase 0 model
@@ -203,7 +204,9 @@ class LocalSavedPhrasesRepository implements SavedPhrasesRepository {
 
   Future<void> _save(SavedPhrase p) async {
     _changes.add(phrases);
-    await _db.into(_db.phrases).insertOnConflictUpdate(row(p));
+    await storeOrKeepGoing(
+      () => _db.into(_db.phrases).insertOnConflictUpdate(row(p)),
+    );
   }
 
   /// The same shape as before step 10 (Privacy › Export keeps its format;

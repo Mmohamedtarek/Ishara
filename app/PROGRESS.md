@@ -654,3 +654,14 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 2. Degraded mode (no database file can be written at all, e.g. a full disk): changes that session are lost and a cleared history comes back at the next start. OK as a known limit, or should the app say something (a new text)?
 3. Location is off on your phone; may I switch it on over adb for the fresh-fix SOS run (and back off after), or leave it?
 4. The recordings and screenshots in `tools/out/step10/device/` show your data: delete them after your review?
+
+### Step 10a review answers (2026-10-17): S10-1 … S10-4
+
+| # | Answer | Status |
+|---|---|---|
+| 1 | Auto Backup off; device transfer too; iOS excluded from backup | ✓ Android manifest + `backup_rules.xml` + `data_extraction_rules.xml` (every domain, both sections); the built APK shows `allowBackup=false` and both rule files (`aapt`); iOS `AppDelegate.excludeDataFromBackup()` on Application Support (✗ **not compiled: needs a Mac**); `test/storage/backup_rules_test.dart`. Privacy page wording unchanged (already "stay on this phone") |
+| 2 | Full disk: a message once per session; SOS never blocked | ✓ `WriteWatch` + `StorageHealth` + `StorageNotice`; draft N1 (`tools/out/step10/drafts.html`); tests: every repository keeps the change and doesn't throw, raised once, degraded mode raises at the first write, the notice once (EN, AR, before the first frame), takes no taps, sits at the app root; SOS on a full disk speaks, opens the sheet, SMS, calls a contact and 123 |
+| 3 | Location on for the run, left on | ✓ switched on over adb (left on); sos_test ✓ 1/1 with a fresh fix (±8 m), Google Messages and the Samsung dialer opened, nothing sent; the watcher's screenshots deleted |
+| 4 | Delete `tools/out/step10/device/` | ✓ deleted |
+
+**Checks:** analyze 0 issues, format clean; `flutter test --concurrency=2`: **979 passed, 4 skipped**. CI on `53fbcee` (10a): run 39036934472 green (Flutter app, AI, Firmware, Android build).

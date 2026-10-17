@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:clock/clock.dart';
 import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
+import 'package:ishara_app/core/storage/storage_health.dart';
 
 /// The named values in the database's `prefs` table (step 10a). All of them
 /// are read at start; a write changes the value at once and is stored in
@@ -45,15 +46,17 @@ class DriftKeyValueStore implements KeyValueStore {
 
   Future<void> _put(String key, Object value) {
     _v[key] = value;
-    return _db
-        .into(_db.prefs)
-        .insertOnConflictUpdate(
-          PrefsCompanion.insert(
-            key: key,
-            value: encode(value),
-            updatedAtUs: clock.now().microsecondsSinceEpoch,
+    return storeOrKeepGoing(
+      () => _db
+          .into(_db.prefs)
+          .insertOnConflictUpdate(
+            PrefsCompanion.insert(
+              key: key,
+              value: encode(value),
+              updatedAtUs: clock.now().microsecondsSinceEpoch,
+            ),
           ),
-        );
+    );
   }
 
   /// Shows [values] this session without storing them, for keys with no
@@ -90,7 +93,9 @@ class DriftKeyValueStore implements KeyValueStore {
   @override
   Future<void> remove(String key) async {
     _v.remove(key);
-    await (_db.delete(_db.prefs)..where((t) => t.key.equals(key))).go();
+    await storeOrKeepGoing(
+      () => (_db.delete(_db.prefs)..where((t) => t.key.equals(key))).go(),
+    );
   }
 
   @override

@@ -260,6 +260,12 @@ STEP9B_DRAFTS = {
     "toastCopied": ("Message copied", "الرسالة اتنسخت", "O23: toast after Copy message", None),
 }
 
+# Step 10 texts (app/tools/out/step10/drafts.html): DRAFTS until approved.
+# key: (en, ar, why, placeholders).
+STEP10_DRAFTS = {
+    "storageFull": ("Your phone is out of storage, so Ishara can't save new changes. Free up some space.", "مساحة الموبايل خلصت، فإشارة مش قادر يحفظ التغييرات الجديدة. فضّي شوية مساحة.", "N1: once per session, when a change can't be saved (your wording, step 10a review)", None),
+}
+
 # Prototype texts whose Arabic the user changed (key: (ar, why)).
 AR_CHANGED = {
     "starred": ("المحفوظة", "Starred = «المحفوظة» everywhere (step 9 review, 2026-10-15)"),
@@ -525,6 +531,16 @@ def main() -> int:
             return 1
         out_en[key], out_ar[key] = e, a
         meta = {"description": f"approved new text (step 9 review, 2026-10-17): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
+    for key, (e, a, why, ph) in STEP10_DRAFTS.items():
+        if key in out_en:
+            print(f"error: step 10 draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"DRAFT (step 10, not approved): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta
