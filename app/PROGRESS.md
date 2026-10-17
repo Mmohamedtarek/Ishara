@@ -614,3 +614,43 @@ Your answers: S9-1 … S9-6 and the Q-T4 change (DECISIONS). **Device checks:** 
 New drafts (7): `tools/out/step9/drafts.html`, top section.
 
 **Checks (Linux laptop):** analyze 0 issues, format 0 changed; `flutter test --concurrency=2`: 945 passed, 4 skipped; `lib/core` 92.9 %, domain 99.7 % (345/346). The integration tests were not rerun on the phone for this round (the changes are texts and the SOS sheet, covered by widget tests).
+
+## Step 10a: the local database (2026-10-17, Linux laptop; device: the user's Galaxy A52 RZ8R317P1EW)
+
+Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/drafts.html`); `app/ishara_app/run.txt`, `runB.log` and the root `stt.txt` deleted (old logs, referenced nowhere but a step 6 note here).
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | drift (SQLite) is the local source of truth behind the existing repositories: conversations, saved phrases, Learn log, settings, onboarding store, emergency contacts; screens unchanged | brief 10a; PHASE0 §5 | ✓ `lib/core/storage/` (database, `DriftKeyValueStore`, `LocalData`, `openStorage`); the repositories keep their interfaces and synchronous reads; no screen file changed |
+| 2 | Migration from the key-value store, once: copy, check, remove the old key only after the commit | brief; S6-2; S7-1 | ✓ `KvMigration`: per part one transaction (rows, read-back comparison, marker), keys removed after the commit |
+| 3 | Interruption-safe: killed halfway, the next start finishes; nothing lost or twice | brief | ✓ test kills at every point (inside each transaction, after each commit, after each removed key) on a database file, for the v8 and v9 snapshots; the result equals a clean run |
+| 4 | Damaged values kept aside, never blocking | brief; 2026-10-15 | ✓ `kept_values` (damaged lists, unreadable entries, duplicate ids, a 4th contact, unknown keys, step 8's `learn.activity.broken…`); Export carries them (`keptAside`) |
+| 5 | Tests with real snapshots of every old version | brief | ✓ `test/storage/legacy_snapshots/v6…v9.json`, written by each version's own store code from git (`tools/legacy_snapshots/make.sh`); each migrates with the same values, and the export from the database equals the old store's |
+| 6 | The 500-message limit lifted; export / clear unchanged | 2026-10-12; brief | ✓ 600-message test; the export keeps its keys and JSON (a list with nothing stored exports nothing) |
+| 7 | Schema versioning with drift's migration tests from the start | brief | ✓ schema v1 dumped (`drift_schemas/`), `test/storage/drift/schema_test.dart` |
+| 8 | Sync fields now (updatedAt, tombstones, stable ids) | brief; PHASE0 data model | ✓ plus `outbox` and `meta` tables (DECISIONS 2026-10-17) |
+| 9 | Emergency contacts on the phone only, never synced; no analytics | step 9; brief | ✓ `contacts` table, not in any sync list; no analytics |
+| 10 | New packages: licence, no analytics / network | CLAUDE.md; S6-4 | ✓ drift / sqlite3 MIT; build-time SQLite download with pinned hashes recorded (DECISIONS) |
+
+**Phone (Galaxy A52, real step 9 data):** the step 9 build from `main` (7aba72f) installed fresh, then you used it (onboarding, Talk, a starred phrase and an unstarred one, a Learn mission, settings, one emergency contact). `tools/storage_probe.py` (names and counts only):
+- before: 20 `ishara.*` keys: `talk.messages` 5 entries, `phrases.all` 2, `learn.activity` 11, `sos.contacts` 1, 12 named values; no database;
+- upgrade with `adb install -r` (data kept), first start log: prefs 12 stored / 12 keys removed, talk 5 / 2, phrases 2 / 2, activity 11 / 2, sos 1 / 2, nothing kept aside, about 0.2 s for all parts;
+- after: no `ishara.*` keys left; database: prefs 12, messages 5 (1 conversation), phrases 2 (1 live, 1 tombstone), activity_entries 11, contacts 1, kept_values 0, 5 markers, schema 1;
+- second start: no migration log line, database unchanged;
+- screens after (`tools/out/step10/device/after_shots/`): History "النهارده، 15:59 · 5 رسائل" (the same row as in the step 9 recording), Starred "Come home", Learn 125 points / 5 signs / 1 medal / 1-day streak, Settings Arabic, light, large text and vibrate on, emergency numbers "رقم واحد"; you confirmed everything looked the same. The "before" recording shows Settings, Talk and History; the "after" recording shows only Talk (not the planned walk-through), so the after screenshots were taken by `adb` instead. The recordings show your data: delete them after review (`tools/out/step10/device/`).
+
+**Built:** `lib/core/storage/database/app_database.dart` (schema v1: prefs, messages, phrases, activity_entries, contacts, kept_values, meta, outbox), `drift_key_value_store.dart`, `legacy_store.dart` (the old store's reader), `kv_migration.dart`, `local_data.dart`, `open_storage.dart`, `storage_providers.dart`, `hex_id.dart`; the four list repositories rewritten on the database (same interfaces); `main` opens storage before the first frame; `build.yaml` (drift schemas), `drift_schemas/app/drift_schema_v1.json`; `tools/legacy_snapshots/` (snapshot generator), `tools/storage_probe.py` (names and counts from a phone).
+
+**Tests (Linux laptop):** analyze 0 issues, format clean; `flutter test --concurrency=2`: **971 passed, 4 skipped**; coverage `lib/core` 92.2 %, domain 99.7 % (345/346), `lib/core/storage` 80 % (the generated table code counts; migration 88 %, the key-value store, local data and providers 100 %). New: `test/storage/kv_migration_test.dart` (every snapshot version, kills at every point on a file, every kind of damage, a newer value in the database, a part that fails, contacts merged), `open_storage_test.dart` (the real start path with the official in-memory shared_preferences and path_provider fakes: first and second start, a damaged file moved aside, a failing part shown from the old store, degraded mode never writing the old store), `drift/schema_test.dart`; the conversation, phrases and activity tests moved onto the database (600 messages, microseconds kept, Clear during a write, two messages after Clear).
+
+**Integration (Galaxy A52, one file at a time):** onboarding ✓ 2/2, talk ✓ 1/1, learn ✓ 3/3, avatar ✓ 1/1 (31–42 fps), history ✓ 1/1, settings ✓ 1/1 (values survive a restart, now through the database), flow ✓ 1/1; sos ✗ with the default expectation (a fix): **location was off on the phone** (`location_mode 0`), so the app said "Couldn't get your location", correct for that state; rerun with `SOS_EXPECT=none` ✓ 1/1 (no-location message, Google Messages and the Samsung dialer opened, nothing sent). The fresh-fix path was not rerun (location stays off unless you switch it on or let me).
+
+**Review:** line by line, then `/code-review` (10 findings), all fixed with tests except one kept with numbers (DECISIONS 2026-10-17): Clear lost during a write; the fallback wrote into a throwaway database and could write settings into the old store that a later start would set aside (redesigned: damaged file moved aside, failed part shown from the old store, degraded mode only when nothing can be written); record identity; duplicate Learn events; kept values missing from the export; duplicated row code; an unused PRAGMA; the build-time SQLite download recorded. Kept: the whole history is read at start (5,000 messages 75 ms, 50,000 0.4 s on the laptop).
+
+**No new texts** in 10a (no drafts).
+
+**Open questions**
+1. **Android Auto Backup is on** (the manifest doesn't set `android:allowBackup`, so Android's default copies the app's files, now the database, to your Google Drive backup): conversations and emergency contacts leave the phone that way, against "recognized sentences never leave the phone" and Q-B4. This was already true of the old store. Proposal: turn it off (`allowBackup="false"`, plus `dataExtractionRules` excluding everything for Android 12+); the cost: a new phone starts empty (signed-in users get settings, Learn and phrases back through the sync in 10b). Shall I?
+2. Degraded mode (no database file can be written at all, e.g. a full disk): changes that session are lost and a cleared history comes back at the next start. OK as a known limit, or should the app say something (a new text)?
+3. Location is off on your phone; may I switch it on over adb for the fresh-fix SOS run (and back off after), or leave it?
+4. The recordings and screenshots in `tools/out/step10/device/` show your data: delete them after your review?
