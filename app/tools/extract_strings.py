@@ -260,7 +260,8 @@ STEP9B_DRAFTS = {
     "toastCopied": ("Message copied", "الرسالة اتنسخت", "O23: toast after Copy message", None),
 }
 
-# Step 10 texts (app/tools/out/step10/drafts.html): DRAFTS until approved.
+# Step 10 texts (app/tools/out/step10/drafts.html): DRAFTS until approved;
+# N1 approved 2026-10-17.
 # key: (en, ar, why, placeholders).
 STEP10_DRAFTS = {
     "storageFull": ("Your phone is out of storage, so Ishara can't save new changes. Free up some space.", "مساحة الموبايل خلصت، فإشارة مش قادر يحفظ التغييرات الجديدة. فضّي شوية مساحة.", "N1: once per session, when a change can't be saved (your wording, step 10a review)", None),
@@ -540,7 +541,7 @@ def main() -> int:
             print(f"error: step 10 draft key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
-        meta = {"description": f"DRAFT (step 10, not approved): {why}"}
+        meta = {"description": f"approved new text (step 10, 2026-10-17): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta

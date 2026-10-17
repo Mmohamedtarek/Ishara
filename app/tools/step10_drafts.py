@@ -25,7 +25,7 @@ page = f"""<!doctype html><html><head><meta charset="utf-8"><title>Step 10 draft
 <style>body{{font:14px system-ui,sans-serif;margin:24px;max-width:1100px}}table{{border-collapse:collapse;width:100%;margin-bottom:28px}}
 td,th{{border:1px solid #ccc;padding:6px 8px;vertical-align:middle;text-align:start}}th{{background:#eee}}
 td[dir=rtl]{{font-size:15px}}</style></head><body>
-<h1>Step 10: texts ({len(STEP10_DRAFTS)}), waiting for your approval</h1>
+<h1>Step 10a: texts ({len(STEP10_DRAFTS)}), approved 2026-10-17</h1>
 <table><tr><th>ID / key</th><th>English</th><th>Egyptian Arabic</th><th>Where / why</th></tr>
 {rows}</table>
 </body></html>"""

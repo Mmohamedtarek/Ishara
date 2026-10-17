@@ -2042,6 +2042,6 @@
   },
   "storageFull": "Your phone is out of storage, so Ishara can't save new changes. Free up some space.",
   "@storageFull": {
-    "description": "DRAFT (step 10, not approved): N1: once per session, when a change can't be saved (your wording, step 10a review)"
+    "description": "approved new text (step 10, 2026-10-17): N1: once per session, when a change can't be saved (your wording, step 10a review)"
   }
 }
