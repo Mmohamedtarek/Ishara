@@ -8,6 +8,7 @@ analyzer:
     - lib/l10n/gen/**
     - android/**
     - ios/**
+    - test/storage/drift/generated/**
 
 linter:
   rules:

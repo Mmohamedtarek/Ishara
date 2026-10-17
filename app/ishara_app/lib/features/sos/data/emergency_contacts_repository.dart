@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 
-import 'package:ishara_app/core/logging/log.dart';
-import 'package:ishara_app/core/storage/key_value_store.dart';
+import 'package:drift/drift.dart';
+import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:meta/meta.dart';
 
 /// One emergency contact (Q-T4 phase 1).
@@ -49,34 +48,15 @@ abstract interface class EmergencyContactsRepository {
   Future<void> remove(int index);
 }
 
-/// In the phone's key-value store (S6-2 pattern), versioned. Not part of
-/// the step 10 sync.
+/// In the phone's database (`contacts`, step 10a). Never part of the sync.
 class LocalEmergencyContactsRepository implements EmergencyContactsRepository {
-  new(this._kv) : _list = _load(_kv);
+  /// `initial`: the stored contacts, in order (`LocalData`).
+  new(this._db, {List<EmergencyContact> initial = const []})
+    : _list = initial.take(EmergencyContactsRepository.max).toList();
 
-  final KeyValueStore _kv;
+  final AppDatabase _db;
   final List<EmergencyContact> _list;
   final _changes = StreamController<List<EmergencyContact>>.broadcast();
-
-  static const schemaVersion = 1;
-  static const kVersion = 'sos.version';
-  static const kContacts = 'sos.contacts';
-  static final _log = Log('sos');
-
-  static List<EmergencyContact> _load(KeyValueStore kv) {
-    final raw = kv.getString(kContacts);
-    if (raw == null) return [];
-    try {
-      final list = jsonDecode(raw);
-      if (list is! List) throw const FormatException('not a list');
-      return [for (final j in list) ?EmergencyContact.fromJson(j)]
-          .take(EmergencyContactsRepository.max)
-          .toList();
-    } on FormatException catch (e) {
-      _log.warn('load_failed', {'error': e.message});
-      return [];
-    }
-  }
 
   @override
   List<EmergencyContact> get contacts => List.unmodifiable(_list);
@@ -106,27 +86,21 @@ class LocalEmergencyContactsRepository implements EmergencyContactsRepository {
     await _save();
   }
 
+  /// The whole (tiny) list, rewritten in one transaction.
   Future<void> _save() async {
     _changes.add(contacts);
-    await _kv.setInt(kVersion, schemaVersion);
-    await _kv.setString(
-      kContacts,
-      jsonEncode([for (final c in _list) c.toJson()]),
-    );
-  }
-
-  /// Every stored value by key, for the step 10 migration (to the phone's
-  /// own database: these never sync).
-  Map<String, Object> export() => {
-    if (_kv.getInt(kVersion) case final int v) kVersion: v,
-    if (_kv.getString(kContacts) case final String v) kContacts: v,
-  };
-
-  Future<void> clear() async {
-    _list.clear();
-    _changes.add(contacts);
-    await _kv.remove(kVersion);
-    await _kv.remove(kContacts);
+    final rows = [
+      for (var i = 0; i < _list.length; i++)
+        ContactsCompanion.insert(
+          position: Value(i),
+          name: _list[i].name,
+          phone: _list[i].phone,
+        ),
+    ];
+    await _db.transaction(() async {
+      await _db.delete(_db.contacts).go();
+      await _db.batch((b) => b.insertAll(_db.contacts, rows));
+    });
   }
 
   Future<void> dispose() => _changes.close();

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:clock/clock.dart';
 import 'package:ishara_app/core/config/app_rules.dart';
-import 'package:ishara_app/core/profile/profile_providers.dart';
+import 'package:ishara_app/core/storage/storage_providers.dart';
 import 'package:ishara_app/features/sos/data/emergency_contacts_repository.dart';
 import 'package:ishara_app/features/sos/data/sos_platform.dart';
 import 'package:ishara_app/features/sos/domain/sos_location.dart';
@@ -14,7 +14,8 @@ part 'sos_controller.g.dart';
 @Riverpod(keepAlive: true)
 EmergencyContactsRepository emergencyContactsRepository(Ref ref) {
   final repo = LocalEmergencyContactsRepository(
-    ref.watch(keyValueStoreProvider),
+    ref.watch(appDatabaseProvider),
+    initial: ref.watch(localDataProvider).contacts,
   );
   ref.onDispose(repo.dispose);
   return repo;

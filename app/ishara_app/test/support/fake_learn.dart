@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -18,9 +19,12 @@ import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/recognition/recognition_config.dart';
 import 'package:ishara_app/core/recognition/recognition_providers.dart';
 import 'package:ishara_app/core/recognition/recognition_service.dart';
+import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
+import 'package:ishara_app/core/storage/legacy_store.dart';
 import 'package:ishara_app/features/learn/application/learn_providers.dart';
 import 'package:ishara_app/features/learn/application/mission_controller.dart';
+import 'package:ishara_app/features/learn/data/activity_repository.dart';
 
 import 'fake_glove.dart';
 import 'fake_talk.dart';
@@ -67,23 +71,36 @@ class RecordingAvatarSurface implements AvatarSurface {
 
 /// Everything a mission or the Learn screen needs, without a device.
 class LearnRig {
-  /// [kv]: another rig's store, to go on with the same phone's log.
-  /// [source] / [recognition]: a real glove and recognizer instead of the
-  /// fakes.
+  /// [samePhone]: another rig, to go on with that phone's store and Learn
+  /// log (its database). [source] / [recognition]: a real glove and
+  /// recognizer instead of the fakes.
   new({
     FakeGloveSource? glove,
-    MemoryKeyValueStore? kv,
+    LearnRig? samePhone,
     this.seed = 1,
     this.source,
     this.recognition,
   }) : glove = glove ?? FakeGloveSource(),
+       _phone = samePhone,
        kv =
-           kv ??
+           samePhone?.kv ??
            MemoryKeyValueStore({
              'onboarding.done': true,
              'glove.id': 'g1',
              'glove.name': 'Ishara-3FA2',
            });
+
+  final LearnRig? _phone;
+
+  /// The phone's Learn log, in a database in memory; made when the rig is
+  /// first used, from the old-store values seeded in [kv] (as the app's
+  /// fallback reads them).
+  late final ActivityRepository activity =
+      _phone?.activity ??
+      LocalActivityRepository(
+        AppDatabase(NativeDatabase.memory()),
+        initial: LegacyData.read(kv).activity,
+      );
 
   final FakeGloveSource glove;
   final GloveSource? source;
@@ -112,6 +129,7 @@ class LearnRig {
     keyValueStoreProvider.overrideWithValue(kv),
     gloveSourceProvider.overrideWithValue(source ?? glove),
     glovePermissionsProvider.overrideWithValue(perms),
+    activityRepositoryProvider.overrideWithValue(activity),
     recognitionFeedProvider.overrideWithValue(AsyncData(recognition ?? feed)),
     signCatalogueProvider.overrideWithValue(AsyncData(shippedSignCatalogue)),
     learnCatalogProvider.overrideWithValue(

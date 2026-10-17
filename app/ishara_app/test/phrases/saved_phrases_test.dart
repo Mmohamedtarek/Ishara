@@ -1,8 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ishara_app/core/phrases/saved_phrases_repository.dart';
-import 'package:ishara_app/core/storage/key_value_store.dart';
+
+import '../support/local_db.dart';
 
 void main() {
   var t = DateTime.utc(2026, 10, 14, 9);
@@ -11,8 +10,8 @@ void main() {
   test(
     'star → a saved phrase (Phase 0 fields), language from the text',
     () async {
-      final kv = MemoryKeyValueStore();
-      final repo = LocalSavedPhrasesRepository(kv, now: now);
+      final db = memoryDb();
+      final repo = LocalSavedPhrasesRepository(db, now: now);
       await repo.star('  Where is the pharmacy?  ');
       await repo.star('محتاج مساعدة');
       expect(repo.phrases.map((p) => (p.text, p.lang)), [
@@ -20,18 +19,10 @@ void main() {
         ('Where is the pharmacy?', 'en'),
       ]);
       expect(repo.find('Where is the pharmacy?'), isNotNull);
-      expect(kv.getInt(LocalSavedPhrasesRepository.kVersion), 1);
-      final stored = jsonDecode(
-        kv.getString(LocalSavedPhrasesRepository.kPhrases)!,
-      ) as List;
-      expect((stored.first as Map).keys.toSet(), {
-        'id',
-        'text',
-        'lang',
-        'createdAt',
-        'updatedAt',
-        'deleted',
-      });
+      final rows = await db.select(db.phrases).get();
+      expect(rows, hasLength(2));
+      expect(rows.first.content, 'Where is the pharmacy?');
+      expect(rows.first.updatedAtUs, rows.first.createdAtUs);
       // starring twice keeps one
       await repo.star('محتاج مساعدة');
       expect(repo.phrases, hasLength(2));
@@ -43,47 +34,51 @@ void main() {
 
   test('unstar keeps a tombstone (for the sync); star again revives the '
       'same id', () async {
-    final kv = MemoryKeyValueStore();
-    final repo = LocalSavedPhrasesRepository(kv, now: now);
+    final db = memoryDb();
+    final repo = LocalSavedPhrasesRepository(db, now: now);
     await repo.star('yes');
     final id = repo.find('yes')!.id;
     await repo.unstar('yes');
     expect(repo.phrases, isEmpty);
     expect(repo.find('yes'), isNull);
-    final stored =
-        jsonDecode(kv.getString(LocalSavedPhrasesRepository.kPhrases)!) as List;
-    expect((stored.single as Map)['deleted'], isTrue);
+    final row = await db.select(db.phrases).getSingle();
+    expect(row.deleted, isTrue);
+    expect(row.updatedAtUs, greaterThan(row.createdAtUs));
     await repo.star('yes');
     expect(repo.find('yes')!.id, id);
     await repo.unstar('nope'); // nothing to do
-    final again = LocalSavedPhrasesRepository(kv, now: now);
+    final again = LocalSavedPhrasesRepository(
+      db,
+      now: now,
+      initial: (await reload(db)).phrases,
+    );
     expect(again.phrases.single.text, 'yes');
+    expect(again.phrases.single.id, id);
     await repo.dispose();
     await again.dispose();
   });
 
-  test('damaged values are skipped; export and clear', () async {
-    final kv = MemoryKeyValueStore({
-      LocalSavedPhrasesRepository.kPhrases:
-          '[{"id":"a","text":"hi","lang":"en",'
-          '"createdAt":"2026-10-14T09:00:00Z",'
-          '"updatedAt":"2026-10-14T09:00:00Z","deleted":false},'
-          '{"id":"b","text":"x","lang":"fr",'
-          '"createdAt":"2026-10-14T09:00:00Z",'
-          '"updatedAt":"2026-10-14T09:00:00Z","deleted":false},5]',
-    });
-    final repo = LocalSavedPhrasesRepository(kv, now: now);
-    expect(repo.phrases.single.text, 'hi');
-    const key = LocalSavedPhrasesRepository.kPhrases;
-    expect(repo.export().keys, contains(key));
-    await repo.clear();
-    expect(kv.keys, isEmpty);
-    expect(
-      LocalSavedPhrasesRepository(
-        MemoryKeyValueStore({LocalSavedPhrasesRepository.kPhrases: 'not json'}),
-      ).phrases,
-      isEmpty,
-    );
+  test('times keep their microseconds through the database', () async {
+    final db = memoryDb();
+    final at = DateTime.utc(2026, 10, 14, 9, 0, 0, 123, 456);
+    final repo = LocalSavedPhrasesRepository(db, now: () => at);
+    await repo.star('hi');
+    final back = (await reload(db)).phrases.single;
+    expect(back.createdAt, at);
+    expect(back.updatedAt, at);
+    expect(back.toJson(), repo.find('hi')!.toJson());
+    await repo.dispose();
+  });
+
+  test('export keeps its step 9 shape (tombstones included)', () async {
+    final repo = LocalSavedPhrasesRepository(memoryDb(), now: now);
+    await repo.star('a');
+    await repo.star('b');
+    await repo.unstar('b');
+    final out = repo.export();
+    expect(out.keys, {'phrases.version', 'phrases.all'});
+    expect(out['phrases.version'], 1);
+    expect(out['phrases.all'], contains('"deleted":true'));
     await repo.dispose();
   });
 }

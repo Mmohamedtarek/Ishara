@@ -1,11 +1,16 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// A small key-value store on the phone (S6-2): the setup answers, the
-/// paired glove and "onboarding done" until the local database arrives. The
-/// database step migrates these values (see `OnboardingStore`).
+/// Named values on the phone (S6-2 keys): the onboarding answers, the
+/// settings and local flags. Since step 10 they live in the database's
+/// `prefs` table (`DriftKeyValueStore`); the old `shared_preferences` store
+/// is only read once, by `KvMigration`.
 ///
 /// Reads are synchronous (the values are loaded once at start).
 abstract interface class KeyValueStore {
+  /// The stored value as it is (String, bool, int, double or a string
+  /// list), or null.
+  Object? read(String key);
+
   String? getString(String key);
   bool? getBool(String key);
   int? getInt(String key);
@@ -23,6 +28,9 @@ class MemoryKeyValueStore implements KeyValueStore {
   new([Map<String, Object>? values]) : _v = {...?values};
 
   final Map<String, Object> _v;
+
+  @override
+  Object? read(String key) => _v[key];
 
   @override
   String? getString(String key) =>
@@ -51,8 +59,9 @@ class MemoryKeyValueStore implements KeyValueStore {
   Set<String> get keys => _v.keys.toSet();
 }
 
-/// On the phone: `shared_preferences` (BSD-3, Flutter team, no network).
-/// Only keys under [prefix] are read or written.
+/// The store before step 10: `shared_preferences` (BSD-3, Flutter team, no
+/// network). Only keys under [prefix] are read or written. Kept so that
+/// `KvMigration` can move an older install's values into the database.
 class SharedPrefsKeyValueStore implements KeyValueStore {
   new _(this._p);
 
@@ -68,6 +77,9 @@ class SharedPrefsKeyValueStore implements KeyValueStore {
   final SharedPreferencesWithCache _p;
 
   static String _k(String key) => '$prefix$key';
+
+  @override
+  Object? read(String key) => _p.get(_k(key));
 
   @override
   String? getString(String key) {

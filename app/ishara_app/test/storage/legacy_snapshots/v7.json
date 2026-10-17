@@ -1,0 +1,12 @@
+{
+  "glove.id": "AA:BB:CC:DD:EE:02",
+  "glove.name": "Ishara-77C1",
+  "onboarding.done": true,
+  "onboarding.version": 1,
+  "setup.role": "sign",
+  "setup.signLanguage": "asl",
+  "setup.spoken": "ar",
+  "talk.messages": "[{\"side\":\"me\",\"text\":\"مرحبا\",\"at\":\"2026-10-12T21:03:05.120\"},{\"side\":\"them\",\"text\":\"Where is the pharmacy?\",\"at\":\"2026-10-12T21:03:40.007\"},{\"side\":\"me\",\"text\":\"thank you\",\"at\":\"2026-10-13T08:15:00.000\"}]",
+  "talk.privacySeen": true,
+  "talk.version": 1
+}

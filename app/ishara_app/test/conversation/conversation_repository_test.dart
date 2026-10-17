@@ -1,24 +1,46 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
+import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
+import 'package:ishara_app/core/storage/legacy_store.dart';
+
+import '../support/local_db.dart';
 
 Duration _gap() => const Duration(minutes: 10);
+
+LocalConversationRepository _repo([AppDatabase? db, KeyValueStore? kv]) =>
+    LocalConversationRepository(
+      db ?? memoryDb(),
+      kv ?? MemoryKeyValueStore(),
+      gap: _gap,
+    );
+
+/// The repository after a restart: what the database holds.
+Future<LocalConversationRepository> _reopen(
+  AppDatabase db,
+  KeyValueStore kv,
+) async => LocalConversationRepository(
+  db,
+  kv,
+  gap: _gap,
+  initial: (await reload(db)).messages,
+);
 
 void main() {
   final at = DateTime(2026, 10, 12, 9, 30);
   TalkMessage m(String text, {MessageSide side = MessageSide.them}) =>
       TalkMessage(side: side, text: text, at: at);
 
-  test('messages persist on the phone store and load back in order', () async {
+  test('messages persist in the database and load back in order', () async {
+    final db = memoryDb();
     final kv = MemoryKeyValueStore();
-    final repo = LocalConversationRepository(kv, gap: _gap);
+    final repo = _repo(db, kv);
     final seen = <List<TalkMessage>>[];
     repo.changes.listen(seen.add);
     await repo.add(m('hello'));
     await repo.add(m('شكرا', side: MessageSide.me));
-    expect(kv.getInt(LocalConversationRepository.kVersion), 2);
     expect(seen.last.map((x) => x.text), ['hello', 'شكرا']);
-    final again = LocalConversationRepository(kv, gap: _gap);
+    final again = await _reopen(db, kv);
     expect(
       [for (final x in again.messages) (x.side, x.text, x.at)],
       [(MessageSide.them, 'hello', at), (MessageSide.me, 'شكرا', at)],
@@ -30,53 +52,36 @@ void main() {
     await again.dispose();
   });
 
-  test('keeps the newest maxMessages', () async {
-    final repo = LocalConversationRepository(MemoryKeyValueStore(), gap: _gap);
-    for (var i = 0; i < LocalConversationRepository.maxMessages + 3; i++) {
+  test('no size limit any more (2026-10-12): 600 messages all stay', () async {
+    final db = memoryDb();
+    final kv = MemoryKeyValueStore();
+    final repo = _repo(db, kv);
+    for (var i = 0; i < 600; i++) {
       await repo.add(m('$i'));
     }
-    expect(repo.messages.length, LocalConversationRepository.maxMessages);
-    expect(repo.messages.first.text, '3');
+    expect(repo.messages.length, 600);
+    final again = await _reopen(db, kv);
+    expect(again.messages.length, 600);
+    expect(again.messages.first.text, '0');
+    expect(again.messages.last.text, '599');
     await repo.dispose();
+    await again.dispose();
   });
 
-  test('a broken stored value starts empty instead of failing', () {
-    for (final raw in ['not json', '{"a": 1}']) {
-      final kv = MemoryKeyValueStore({'talk.messages': raw});
-      expect(
-        LocalConversationRepository(kv, gap: _gap).messages,
-        isEmpty,
-        reason: raw,
-      );
-    }
-  });
-
-  test('bad entries are skipped, good ones kept', () {
-    final kv = MemoryKeyValueStore({
-      'talk.messages':
-          '[{"side":"them","text":"hi","at":"2026-10-12T09:30:00.000"},'
-          '{"side":"x","text":"a","at":"2026-10-12T09:30:00.000"},'
-          '{"side":"me","text":3,"at":"2026-10-12T09:30:00.000"},'
-          '{"side":"me","text":"b","at":"never"},7]',
-    });
-    expect(LocalConversationRepository(kv, gap: _gap).messages, [m('hi')]);
-  });
-
-  test('export and clear, for the step 10 migration', () async {
-    final kv = MemoryKeyValueStore();
-    final repo = LocalConversationRepository(kv, gap: _gap);
-    expect(repo.export(), isEmpty);
+  test('export keeps its step 9 shape', () async {
+    final repo = _repo();
     await repo.add(m('hello'));
     final out = repo.export();
     expect(out.keys, {'talk.version', 'talk.messages'});
-    await repo.clear();
-    expect(kv.keys, isEmpty);
-    expect(repo.messages, isEmpty);
+    expect(out['talk.version'], 2);
+    expect(out['talk.messages'], contains('"text":"hello"'));
+    await repo.startNewConversation();
+    expect(repo.export()['talk.newConversation'], isTrue);
     await repo.dispose();
   });
 
   test('messages are read-only outside', () {
-    final repo = LocalConversationRepository(MemoryKeyValueStore(), gap: _gap);
+    final repo = _repo();
     expect(() => repo.messages.add(m('x')), throwsUnsupportedError);
   });
 
@@ -94,10 +99,7 @@ void main() {
       List<DateTime> times, {
       int clearAfter = -1,
     }) async {
-      final repo = LocalConversationRepository(
-        MemoryKeyValueStore(),
-        gap: _gap,
-      );
+      final repo = _repo();
       for (final (i, t) in times.indexed) {
         await repo.add(at(t));
         if (i == clearAfter) await repo.startNewConversation();
@@ -132,11 +134,12 @@ void main() {
         t0.add(const Duration(seconds: 5)),
       ], clearAfter: 0);
       expect(sameAsPrevious(a, 1), isFalse);
+      final db = memoryDb();
       final kv = MemoryKeyValueStore();
-      final r1 = LocalConversationRepository(kv, gap: _gap);
+      final r1 = _repo(db, kv);
       await r1.add(at(t0));
       await r1.startNewConversation();
-      final r2 = LocalConversationRepository(kv, gap: _gap);
+      final r2 = await _reopen(db, kv);
       await r2.add(at(t0.add(const Duration(seconds: 5))));
       expect(
         r2.messages[0].conversation == r2.messages[1].conversation,
@@ -169,13 +172,23 @@ void main() {
 
     test('older messages (no id) are one conversation per local day; one '
         'that goes on gets an id for all of it', () async {
-      final kv = MemoryKeyValueStore({
-        'talk.messages':
-            '[{"side":"them","text":"a","at":"2026-10-13T09:00:00.000"},'
-            '{"side":"me","text":"b","at":"2026-10-14T09:00:00.000"},'
-            '{"side":"me","text":"c","at":"2026-10-14T09:01:00.000"}]',
-      });
-      final repo = LocalConversationRepository(kv, gap: _gap);
+      // talk v1 (step 7): no conversation ids
+      final old = LegacyData.read(
+        MemoryKeyValueStore({
+          'talk.messages':
+              '[{"side":"them","text":"a","at":"2026-10-13T09:00:00.000"},'
+              '{"side":"me","text":"b","at":"2026-10-14T09:00:00.000"},'
+              '{"side":"me","text":"c","at":"2026-10-14T09:01:00.000"}]',
+        }),
+      );
+      final db = memoryDb();
+      final kv = MemoryKeyValueStore();
+      final repo = LocalConversationRepository(
+        db,
+        kv,
+        gap: _gap,
+        initial: old.messages,
+      );
       expect(repo.messages.map((x) => x.conversationKey), [
         'day:2026-10-13',
         'day:2026-10-14',
@@ -187,14 +200,13 @@ void main() {
       expect(keys.sublist(1).toSet(), hasLength(1));
       expect(keys[1], isNot(startsWith('day:')));
       await repo.dispose();
+      // (seeded rows aren't in this database: only the new one is)
+      expect((await reload(db)).messages.single.message.text, 'd');
     });
 
     test('A, Clear, B; deleting B: the next message starts a new '
         'conversation, never joins the cleared A', () async {
-      final repo = LocalConversationRepository(
-        MemoryKeyValueStore(),
-        gap: _gap,
-      );
+      final repo = _repo();
       await repo.add(at(t0, 'a'));
       await repo.startNewConversation();
       await repo.add(at(t0.add(const Duration(minutes: 1)), 'b'));
@@ -207,10 +219,8 @@ void main() {
     });
 
     test('delete a conversation, then Undo puts it back in order', () async {
-      final repo = LocalConversationRepository(
-        MemoryKeyValueStore(),
-        gap: _gap,
-      );
+      final db = memoryDb();
+      final repo = _repo(db);
       await repo.add(at(t0, 'a'));
       await repo.add(at(t0.add(const Duration(minutes: 30)), 'b'));
       await repo.add(at(t0.add(const Duration(minutes: 31)), 'c'));
@@ -221,8 +231,14 @@ void main() {
       await repo.restore(removed);
       expect(repo.messages.map((x) => x.text), ['a', 'b', 'c']);
       expect(await repo.deleteConversation('nope'), isEmpty);
+      expect((await reload(db)).messages.map((r) => r.message.text), [
+        'a',
+        'b',
+        'c',
+      ]);
       await repo.deleteAll();
       expect(repo.messages, isEmpty);
+      expect((await reload(db)).messages, isEmpty);
       await repo.dispose();
     });
   });

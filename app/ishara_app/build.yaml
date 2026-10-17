@@ -1,0 +1,10 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # every schema change is versioned and tested (drift_schemas/)
+          databases:
+            app: lib/core/storage/database/app_database.dart
+          schema_dir: drift_schemas/
+          test_dir: test/storage/drift/

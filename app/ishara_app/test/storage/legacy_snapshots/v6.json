@@ -1,0 +1,9 @@
+{
+  "glove.id": "AA:BB:CC:DD:EE:01",
+  "glove.name": "Ishara-3F2A",
+  "onboarding.done": true,
+  "onboarding.version": 1,
+  "setup.role": "speak",
+  "setup.signLanguage": "asl",
+  "setup.spoken": "en"
+}

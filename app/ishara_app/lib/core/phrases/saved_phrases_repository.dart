@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:ishara_app/core/logging/log.dart';
-import 'package:ishara_app/core/storage/key_value_store.dart';
+import 'package:drift/drift.dart';
+import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:meta/meta.dart';
 
-/// A starred sentence (Q-B4): it syncs after step 10 (Phase 0 model
+/// A starred sentence (Q-B4): it syncs (step 10b; Phase 0 model
 /// `users/{uid}/phrases/{phraseId}`: text, lang, createdAt, updatedAt,
 /// deleted). Unstarring keeps a tombstone, so a phrase removed offline isn't
 /// brought back by the sync.
@@ -101,44 +101,54 @@ abstract interface class SavedPhrasesRepository {
   /// Unstars [text] (a tombstone stays for the sync).
   Future<void> unstar(String text);
 
-  /// Every stored value by key (Privacy › Export, step 10).
+  /// Every stored value by key (Privacy › Export).
   Map<String, Object> export();
 }
 
-/// The phrases in the phone's key-value store (S6-2 pattern), one
-/// versioned JSON list, tombstones included.
-///
-/// **Migration and sync (step 10):** the database reads [export] and calls
-/// [clear]; the sync uploads every entry (last writer wins by `updatedAt`).
+/// The phrases in the phone's database (`phrases`, step 10a), tombstones
+/// included; every row is read at start. The sync (step 10b) uploads every
+/// change (last writer wins by `updatedAt`, id as tie-break).
 class LocalSavedPhrasesRepository implements SavedPhrasesRepository {
-  new(this._kv, {DateTime Function()? now, Random? random})
-    : _now = now ?? DateTime.now,
-      _random = random ?? Random.secure(),
-      _all = _load(_kv);
+  /// `initial`: every stored phrase (`LocalData`).
+  new(
+    this._db, {
+    List<SavedPhrase> initial = const [],
+    DateTime Function()? now,
+    Random? random,
+  }) : _now = now ?? DateTime.now,
+       _random = random ?? Random.secure(),
+       _all = [...initial];
 
-  final KeyValueStore _kv;
+  final AppDatabase _db;
   final DateTime Function() _now;
   final Random _random;
   final List<SavedPhrase> _all;
   final _changes = StreamController<List<SavedPhrase>>.broadcast();
 
+  /// The phrase JSON's shape in the export, unchanged since step 9.
   static const schemaVersion = 1;
   static const kVersion = 'phrases.version';
   static const kPhrases = 'phrases.all';
-  static final _log = Log('phrases');
 
-  static List<SavedPhrase> _load(KeyValueStore kv) {
-    final raw = kv.getString(kPhrases);
-    if (raw == null) return [];
-    try {
-      final list = jsonDecode(raw);
-      if (list is! List) throw const FormatException('not a list');
-      return [for (final j in list) ?SavedPhrase.fromJson(j)];
-    } on FormatException catch (e) {
-      _log.warn('load_failed', {'error': e.message});
-      return [];
-    }
-  }
+  /// The row for [p] (times in microseconds, UTC).
+  static PhrasesCompanion row(SavedPhrase p) => PhrasesCompanion.insert(
+    id: p.id,
+    content: p.text,
+    lang: p.lang,
+    createdAtUs: p.createdAt.microsecondsSinceEpoch,
+    updatedAtUs: p.updatedAt.microsecondsSinceEpoch,
+    deleted: Value(p.deleted),
+  );
+
+  /// [row] read back.
+  static SavedPhrase fromRow(PhraseRow r) => SavedPhrase(
+    id: r.id,
+    text: r.content,
+    lang: r.lang,
+    createdAt: DateTime.fromMicrosecondsSinceEpoch(r.createdAtUs, isUtc: true),
+    updatedAt: DateTime.fromMicrosecondsSinceEpoch(r.updatedAtUs, isUtc: true),
+    deleted: r.deleted,
+  );
 
   @override
   List<SavedPhrase> get phrases => List.unmodifiable(
@@ -164,24 +174,24 @@ class LocalSavedPhrasesRepository implements SavedPhrasesRepository {
     if (t.isEmpty || find(t) != null) return;
     final now = _now();
     final i = _all.indexWhere((p) => p.text == t);
+    final SavedPhrase p;
     if (i >= 0) {
       // a tombstone comes back to life (same id: one document to sync)
-      _all[i] = _all[i].copyWith(deleted: false, at: now);
+      p = _all[i] = _all[i].copyWith(deleted: false, at: now);
     } else {
-      _all.add(
-        SavedPhrase(
-          id: [
-            for (var i = 0; i < 10; i++)
-              _random.nextInt(256).toRadixString(16).padLeft(2, '0'),
-          ].join(),
-          text: t,
-          lang: phraseLanguage(t),
-          createdAt: now,
-          updatedAt: now,
-        ),
+      p = SavedPhrase(
+        id: [
+          for (var i = 0; i < 10; i++)
+            _random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+        ].join(),
+        text: t,
+        lang: phraseLanguage(t),
+        createdAt: now,
+        updatedAt: now,
       );
+      _all.add(p);
     }
-    await _save();
+    await _save(p);
   }
 
   @override
@@ -189,32 +199,24 @@ class LocalSavedPhrasesRepository implements SavedPhrasesRepository {
     final t = text.trim();
     final i = _all.indexWhere((p) => !p.deleted && p.text == t);
     if (i < 0) return;
-    _all[i] = _all[i].copyWith(deleted: true, at: _now());
-    await _save();
+    final p = _all[i] = _all[i].copyWith(deleted: true, at: _now());
+    await _save(p);
   }
 
-  Future<void> _save() async {
+  Future<void> _save(SavedPhrase p) async {
     _changes.add(phrases);
-    await _kv.setInt(kVersion, schemaVersion);
-    await _kv.setString(
-      kPhrases,
-      jsonEncode([for (final p in _all) p.toJson()]),
-    );
+    await _db.into(_db.phrases).insertOnConflictUpdate(row(p));
   }
 
+  /// The same shape as before step 10 (Privacy › Export keeps its format;
+  /// nothing stored, nothing exported).
   @override
   Map<String, Object> export() => {
-    if (_kv.getInt(kVersion) case final int v) kVersion: v,
-    if (_kv.getString(kPhrases) case final String v) kPhrases: v,
+    if (_all.isNotEmpty) ...{
+      kVersion: schemaVersion,
+      kPhrases: jsonEncode([for (final p in _all) p.toJson()]),
+    },
   };
-
-  /// Removes every value (after a successful migration).
-  Future<void> clear() async {
-    _all.clear();
-    _changes.add(phrases);
-    await _kv.remove(kVersion);
-    await _kv.remove(kPhrases);
-  }
 
   Future<void> dispose() => _changes.close();
 }

@@ -566,12 +566,12 @@ void main() {
           expect(m.events.where((e) => e.xp == 30), hasLength(1));
         },
         id: LearnCatalog.dailyId,
-        rig: LearnRig(kv: first.kv),
+        rig: LearnRig(samePhone: first),
       );
     });
 
     test('a mission with zero practice steps (watch only)', () {
-      final phone = LearnRig().kv;
+      final phone = LearnRig();
       for (final id in ['start', 'numbers', 'people', 'needs']) {
         _run(
           (m) {
@@ -579,7 +579,7 @@ void main() {
             playAll(m);
           },
           id: id,
-          rig: LearnRig(kv: phone),
+          rig: LearnRig(samePhone: phone),
         );
       }
       _run(
@@ -594,7 +594,7 @@ void main() {
           expect(m.s.result!.moduleFinished, isTrue);
         },
         id: 'watch',
-        rig: LearnRig(kv: phone),
+        rig: LearnRig(samePhone: phone),
       );
     });
   });

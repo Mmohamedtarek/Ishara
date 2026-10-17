@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:ishara_app/core/logging/log.dart';
+import 'package:drift/drift.dart';
+import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
+import 'package:ishara_app/core/storage/legacy_store.dart';
 import 'package:meta/meta.dart';
 
 /// Who said a Talk message.
@@ -102,8 +104,8 @@ bool startsNewConversation({
   return at.difference(a) > gap;
 }
 
-/// The Talk conversation (Q-B4: history stays on the phone). History reads
-/// it; the local database (step 10) replaces the storage.
+/// The Talk conversation (Q-B4: history stays on the phone, never synced).
+/// History reads it.
 abstract interface class ConversationRepository {
   /// Every message, oldest first.
   List<TalkMessage> get messages;
@@ -127,27 +129,35 @@ abstract interface class ConversationRepository {
   /// Settings › Privacy › Clear history.
   Future<void> deleteAll();
 
-  /// Every stored value by key (Privacy › Export, step 10 migration).
+  /// Every stored value by key (Privacy › Export).
   Map<String, Object> export();
 }
 
-/// The conversation in the phone's key-value store (S6-2 pattern), one
-/// versioned JSON list.
-///
-/// **Migration (step 10):** the database reads [export] and calls [clear],
-/// like `OnboardingStore`; the database step adds the migration test.
+/// The conversation in the phone's database (`messages`, step 10a). Every
+/// message is read at start (History reads them synchronously); there is
+/// no size limit any more (2026-10-12).
 class LocalConversationRepository implements ConversationRepository {
-  /// [gap]: the S9-4 silence rule (from `app_rules.json`).
-  new(this._kv, {required this._gap, Random? random})
-    : _random = random ?? Random.secure(),
-      _messages = _load(_kv);
+  /// `initial`: the stored messages, oldest first (`LocalData`). The
+  /// key-value store holds Clear's "next message starts a new conversation"
+  /// flag. `gap`: the S9-4 silence rule (from `app_rules.json`).
+  new(
+    this._db,
+    this._kv, {
+    required this._gap,
+    List<StoredMessage> initial = const [],
+    Random? random,
+  }) : _random = random ?? Random.secure(),
+       _rows = [...initial];
 
+  final AppDatabase _db;
   final KeyValueStore _kv;
   final Duration Function() _gap;
   final Random _random;
-  final List<TalkMessage> _messages;
+  final List<StoredMessage> _rows;
   final _changes = StreamController<List<TalkMessage>>.broadcast();
 
+  /// The message JSON's shape in the export (talk v2: with conversation
+  /// ids), unchanged since step 9.
   static const schemaVersion = 2;
   static const kVersion = 'talk.version';
   static const kMessages = 'talk.messages';
@@ -156,66 +166,67 @@ class LocalConversationRepository implements ConversationRepository {
   /// a restart).
   static const kNewNext = 'talk.newConversation';
 
-  /// The oldest messages are dropped past this many (the key-value store
-  /// is meant for small values; the database in step 10 lifts the limit).
-  static const maxMessages = 500;
-
-  static final _log = Log('conversation');
-
-  static List<TalkMessage> _load(KeyValueStore kv) {
-    final raw = kv.getString(kMessages);
-    if (raw == null) return [];
-    try {
-      final list = jsonDecode(raw);
-      if (list is! List) throw const FormatException('not a list');
-      return [for (final j in list) ?TalkMessage.fromJson(j)];
-    } on FormatException catch (e) {
-      // A broken value must not stop Talk: start empty, keep the log.
-      _log.warn('load_failed', {'error': e.message});
-      return [];
-    }
-  }
-
   @override
-  List<TalkMessage> get messages => List.unmodifiable(_messages);
+  List<TalkMessage> get messages =>
+      List.unmodifiable([for (final r in _rows) r.message]);
 
   @override
   Stream<List<TalkMessage>> get changes => _changes.stream;
 
-  String _newId() => [
-    for (var i = 0; i < 8; i++)
+  String _newId(int bytes) => [
+    for (var i = 0; i < bytes; i++)
       _random.nextInt(256).toRadixString(16).padLeft(2, '0'),
   ].join();
 
+  static MessagesCompanion _row(StoredMessage r) => MessagesCompanion.insert(
+    id: r.id,
+    conversation: Value(r.message.conversation),
+    side: r.message.side.name,
+    content: r.message.text,
+    at: r.message.at.toIso8601String(),
+    atUs: r.message.at.microsecondsSinceEpoch,
+  );
+
   @override
   Future<void> add(TalkMessage message) async {
-    final last = _messages.isEmpty ? null : _messages.last;
+    final last = _rows.isEmpty ? null : _rows.last.message;
     final fresh = startsNewConversation(
       last: last,
       at: message.at,
       cleared: _kv.getBool(kNewNext) ?? false,
       gap: _gap(),
     );
-    final id = fresh
-        ? _newId()
-        : (last!.conversation ?? _newIdFor(last.conversationKey));
-    _messages.add(message.inConversation(id));
-    if (_messages.length > maxMessages) {
-      _messages.removeRange(0, _messages.length - maxMessages);
-    }
-    await _kv.remove(kNewNext);
-    await _save();
-  }
-
-  // An older (no id) conversation that goes on gets one id for all of it.
-  String _newIdFor(String key) {
-    final id = _newId();
-    for (var i = 0; i < _messages.length; i++) {
-      if (_messages[i].conversationKey == key) {
-        _messages[i] = _messages[i].inConversation(id);
+    // An older (no id) conversation that goes on gets one id for all of it.
+    final adopted = <String>[];
+    final String conversation;
+    if (fresh) {
+      conversation = _newId(8);
+    } else if (last!.conversation case final String c) {
+      conversation = c;
+    } else {
+      conversation = _newId(8);
+      final key = last.conversationKey;
+      for (var i = 0; i < _rows.length; i++) {
+        if (_rows[i].message.conversationKey == key) {
+          adopted.add(_rows[i].id);
+          _rows[i] = (
+            id: _rows[i].id,
+            message: _rows[i].message.inConversation(conversation),
+          );
+        }
       }
     }
-    return id;
+    final row = (id: _newId(8), message: message.inConversation(conversation));
+    _rows.add(row);
+    _changes.add(messages);
+    await _db.transaction(() async {
+      if (adopted.isNotEmpty) {
+        await (_db.update(_db.messages)..where((t) => t.id.isIn(adopted)))
+            .write(MessagesCompanion(conversation: Value(conversation)));
+      }
+      await _db.into(_db.messages).insert(_row(row));
+    });
+    await _kv.remove(kNewNext);
   }
 
   @override
@@ -224,58 +235,49 @@ class LocalConversationRepository implements ConversationRepository {
   @override
   Future<List<TalkMessage>> deleteConversation(String key) async {
     final removed = [
-      for (final m in _messages)
-        if (m.conversationKey == key) m,
+      for (final r in _rows)
+        if (r.message.conversationKey == key) r,
     ];
     if (removed.isEmpty) return const [];
     // The newest conversation gone: the next message never joins an older
     // one (it may have been cleared before, S9-4).
-    final newest = identical(removed.last, _messages.last);
-    _messages.removeWhere((m) => m.conversationKey == key);
-    await _save();
+    final newest = identical(removed.last, _rows.last);
+    _rows.removeWhere((r) => r.message.conversationKey == key);
+    _changes.add(messages);
+    final ids = [for (final r in removed) r.id];
+    await (_db.delete(_db.messages)..where((t) => t.id.isIn(ids))).go();
     if (newest) await startNewConversation();
-    return removed;
+    return [for (final r in removed) r.message];
   }
 
   @override
   Future<void> restore(List<TalkMessage> messages) async {
     if (messages.isEmpty) return;
-    _messages
-      ..addAll(messages)
-      ..sort((a, b) => a.at.compareTo(b.at));
-    await _save();
+    final back = [for (final m in messages) (id: _newId(8), message: m)];
+    _rows
+      ..addAll(back)
+      ..sort((a, b) => a.message.at.compareTo(b.message.at));
+    _changes.add(this.messages);
+    await _db.batch((b) => b.insertAll(_db.messages, back.map(_row)));
   }
 
   @override
   Future<void> deleteAll() async {
-    _messages.clear();
-    await _save();
-  }
-
-  Future<void> _save() async {
+    _rows.clear();
     _changes.add(messages);
-    await _kv.setInt(kVersion, schemaVersion);
-    await _kv.setString(
-      kMessages,
-      jsonEncode([for (final m in _messages) m.toJson()]),
-    );
+    await _db.delete(_db.messages).go();
   }
 
+  /// The same shape as before step 10 (Privacy › Export keeps its format;
+  /// nothing stored, nothing exported).
   @override
   Map<String, Object> export() => {
-    if (_kv.getInt(kVersion) case final int v) kVersion: v,
-    if (_kv.getString(kMessages) case final String v) kMessages: v,
+    if (_rows.isNotEmpty) ...{
+      kVersion: schemaVersion,
+      kMessages: jsonEncode([for (final r in _rows) r.message.toJson()]),
+    },
     if (_kv.getBool(kNewNext) case final bool v) kNewNext: v,
   };
-
-  /// Removes every value (after a successful migration).
-  Future<void> clear() async {
-    _messages.clear();
-    _changes.add(messages);
-    await _kv.remove(kVersion);
-    await _kv.remove(kMessages);
-    await _kv.remove(kNewNext);
-  }
 
   Future<void> dispose() => _changes.close();
 }

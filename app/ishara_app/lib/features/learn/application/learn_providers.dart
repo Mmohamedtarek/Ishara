@@ -5,7 +5,8 @@ import 'package:ishara_app/core/auth/auth_providers.dart';
 import 'package:ishara_app/core/auth/auth_repository.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/packs/pack_providers.dart';
-import 'package:ishara_app/core/profile/profile_providers.dart';
+import 'package:ishara_app/core/storage/legacy_store.dart';
+import 'package:ishara_app/core/storage/storage_providers.dart';
 import 'package:ishara_app/features/learn/data/activity_repository.dart';
 import 'package:ishara_app/features/learn/domain/activity_event.dart';
 import 'package:ishara_app/features/learn/domain/learn_catalog.dart';
@@ -31,10 +32,18 @@ LearnCatalog learnCatalogFrom(SignCatalogue c) => LearnCatalog(
   ],
 );
 
-/// The activity log, on the phone (the database replaces it in step 10).
+/// The activity log, in the phone's database (it syncs in step 10b).
 @Riverpod(keepAlive: true)
 ActivityRepository activityRepository(Ref ref) {
-  final repo = LocalActivityRepository(ref.watch(keyValueStoreProvider));
+  final local = ref.watch(localDataProvider);
+  final repo = LocalActivityRepository(
+    ref.watch(appDatabaseProvider),
+    initial: local.activity,
+    broken: [
+      for (final k in local.kept)
+        if (LegacyKeys.isActivityBroken(k.key)) k,
+    ],
+  );
   ref.onDispose(repo.dispose);
   return repo;
 }

@@ -1,0 +1,13 @@
+{
+  "device.id": "ec2e699ca0e79acba605e580acb0bac5",
+  "learn.activity": "[{\"v\":1,\"id\":\"e1\",\"type\":\"quiz\",\"label\":\"hello\",\"moduleId\":\"start\",\"passed\":true,\"prob\":null,\"xp\":10,\"day\":\"2026-10-14\",\"at\":\"2026-10-14T09:30:00.000Z\",\"deviceId\":\"ec2e699ca0e79acba605e580acb0bac5\"},{\"v\":1,\"id\":\"e2\",\"type\":\"practice\",\"label\":\"thanks\",\"moduleId\":\"start\",\"passed\":true,\"prob\":0.8734,\"xp\":15,\"day\":\"2026-10-14\",\"at\":\"2026-10-14T09:30:00.000Z\",\"deviceId\":\"ec2e699ca0e79acba605e580acb0bac5\"},{\"v\":1,\"id\":\"e3\",\"type\":\"practice\",\"label\":\"yes\",\"moduleId\":\"start\",\"passed\":false,\"prob\":0.31,\"xp\":0,\"day\":\"2026-10-14\",\"at\":\"2026-10-14T09:30:00.000Z\",\"deviceId\":\"ec2e699ca0e79acba605e580acb0bac5\"},{\"v\":1,\"id\":\"e4\",\"type\":\"missionDone\",\"label\":null,\"moduleId\":\"start\",\"passed\":true,\"prob\":0.8,\"xp\":0,\"day\":\"2026-10-14\",\"at\":\"2026-10-14T09:30:00.000Z\",\"deviceId\":\"ec2e699ca0e79acba605e580acb0bac5\"}]",
+  "learn.activity.version": 1,
+  "onboarding.done": true,
+  "onboarding.version": 1,
+  "setup.role": "sign",
+  "setup.signLanguage": "asl",
+  "setup.spoken": "en",
+  "talk.messages": "[{\"side\":\"them\",\"text\":\"hello\",\"at\":\"2026-10-14T10:00:00.000\"}]",
+  "talk.privacySeen": true,
+  "talk.version": 1
+}
