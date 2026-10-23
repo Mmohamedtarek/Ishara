@@ -54,7 +54,7 @@ class FeedResult {
 /// The model part of the pipeline, injectable for tests.
 typedef PredictFn = Float64List Function(Float32List window);
 
-/// The full pipeline of AI-SPEC v3.2.1 for one stream of samples:
+/// The full pipeline of AI-SPEC v3.3 for one stream of samples:
 /// gap rule (§4) → normalize (§3) → 2 s window (§4) → model every 10 samples
 /// (§4) → Decider (§5). Synchronous; the app runs it in an isolate.
 class Recognizer {
@@ -86,6 +86,10 @@ class Recognizer {
   int? _expected;
   List<int>? _last;
 
+  /// Samples dropped in a row (duplicate or older `seq`), for the glove
+  /// restart rule (§4, v3.3).
+  int _dropped = 0;
+
   GloveCalibration? get calibration => _calibration;
 
   /// A new calibration replaces the old one and resets everything (§2, §5).
@@ -114,6 +118,7 @@ class Recognizer {
     _resetWindow();
     _expected = null;
     _last = null;
+    _dropped = 0;
     return pending == null
         ? FeedResult.empty
         : FeedResult(
@@ -143,17 +148,26 @@ class Recognizer {
     final expected = _expected;
     if (expected != null) {
       final gap = (seq - expected) % 65536;
-      if (gap >= 32768) return FeedResult.empty; // duplicate or older: drop
-      if (gap >= 1 && gap <= AiSpec.maxFilledGap) {
-        for (var i = 0; i < gap; i++) {
-          _push(_last!, steps);
-        }
-      } else if (gap > AiSpec.maxFilledGap) {
+      var restarted = false;
+      if (gap >= 32768) {
+        // A duplicate or older sample: drop it, unless it is the 11th in a
+        // row: then the glove restarted and this is a real gap (v3.3).
+        _dropped += 1;
+        if (_dropped <= AiSpec.maxDroppedInARow) return FeedResult.empty;
+        restarted = true;
+      }
+      _dropped = 0;
+      if (restarted || gap > AiSpec.maxFilledGap) {
         final pending = _decider.pending;
         if (pending != null) {
           resetCancel = DeciderEvent(DeciderEventKind.cancel, pending);
         }
         _resetWindow();
+      } else if (gap >= 1) {
+        // 1-5 missing: repeat the last accepted sample that many times.
+        for (var i = 0; i < gap; i++) {
+          _push(_last!, steps);
+        }
       }
     }
     final copy = List<int>.unmodifiable(raw);

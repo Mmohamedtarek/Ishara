@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ishara_app/core/recognition/recognition_config.dart';
@@ -46,7 +47,7 @@ class _Run {
   }
 }
 
-/// AI-SPEC §5, line by line (reference: `live.py` `Decider.step`).
+/// AI-SPEC v3.3 §5, line by line (reference: `live.py` `Decider.step`).
 ///
 /// Feed it the averaged model output of each run with [step]. The pseudo-code
 /// counter [stepNo] starts at 1; the test files' 0-based step is
@@ -72,6 +73,13 @@ class Decider {
   final _runIdle = _Run();
   final _runTentative = _Run();
   final _runActive = _Run();
+
+  // v3.3: how the pending word is doing (a word signed alone).
+  int _pendingRest = 0;
+  double _pendingPeak = 0;
+  int _pendingRun = 0;
+  int _pendingBest = 0;
+  double _pendingNull = 1;
 
   /// Pseudo-code step counter (1 after the first run).
   int get stepNo => _stepNo;
@@ -109,8 +117,40 @@ class Decider {
     }
     final label = labels.all[top];
     final conf = avg[top];
+    var nullP = 0.0;
+    for (final i in labels.nonWordIndexes) {
+      nullP += avg[i];
+    }
+
+    if (_pending != null) {
+      // v3.3: how the pending word is doing.
+      final t = config.tentative;
+      if (label == _pending) {
+        _pendingPeak = math.max(_pendingPeak, conf);
+        _pendingNull = math.min(_pendingNull, nullP);
+        final thr = t.thresholdFor(label);
+        _pendingRun = (conf >= thr && nullP <= t.maxNull) ? _pendingRun + 1 : 0;
+        _pendingBest = math.max(_pendingBest, _pendingRun);
+      } else {
+        _pendingRun = 0;
+      }
+      _pendingRest = label == AiSpec.rest ? _pendingRest + 1 : 0;
+    }
 
     if (!labels.isWord(label)) {
+      final waiting = _pending;
+      if (waiting != null &&
+          config.confirmOnRest > 0 &&
+          _pendingRest >= config.confirmOnRest &&
+          _pendingPeak >= config.restConf &&
+          _pendingBest >= config.restRun &&
+          _pendingNull <= config.restNull) {
+        // v3.3: a word signed alone.
+        events.add(DeciderEvent(DeciderEventKind.confirm, waiting));
+        _say(waiting);
+        _pending = null;
+        _pendingRest = 0;
+      }
       _restSeen += 1;
       if (_restSeen >= 2) {
         _lastSaid = null;
@@ -122,10 +162,6 @@ class Decider {
       return events;
     }
     _restSeen = 0;
-    var nullP = 0.0;
-    for (final i in labels.nonWordIndexes) {
-      nullP += avg[i];
-    }
 
     final full = _recent.length == config.smooth;
     final passedIdle = _update(_runIdle, config.idle, label, conf, nullP, full);
@@ -145,6 +181,11 @@ class Decider {
       nullP,
       full,
     );
+    final passedPair = switch (config.pairLevel) {
+      DeciderLevel.idle => passedIdle,
+      DeciderLevel.tentative => passedTentative,
+      DeciderLevel.active => passedActive,
+    };
 
     if (_stepNo <= _activeUntil) {
       if (passedActive && label != _lastSaid) {
@@ -158,7 +199,7 @@ class Decider {
           _say(label);
           _pending = null;
         }
-      } else if (passedActive && label != _lastSaid) {
+      } else if (passedPair && label != _lastSaid) {
         events
           ..add(DeciderEvent(DeciderEventKind.confirm, _pending!))
           ..add(DeciderEvent(DeciderEventKind.word, label));
@@ -173,6 +214,11 @@ class Decider {
         events.add(DeciderEvent(DeciderEventKind.tentative, label));
         _pending = label;
         _pendingUntil = _stepNo + _confirmSteps;
+        _pendingRest = 0;
+        _pendingPeak = conf;
+        _pendingRun = 1;
+        _pendingBest = 1;
+        _pendingNull = nullP;
       }
     }
     return events;

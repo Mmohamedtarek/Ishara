@@ -27,7 +27,7 @@ If one looks wrong, tell the user. Kit files reach the app only through `app/too
 - One `GloveSource` interface (mock / BLE) → one real Recognizer → `Stream<RecognitionEvent>`. Only `lib/core/glove/` knows which source is active (`--dart-define=GLOVE=mock|ble` + hidden dev switch). The mock fakes raw samples only, never words.
 - Labels come from `labels.txt`, config from `decider.json`. Nothing about the 22 labels is hard-coded.
 - Test files use **0-based** steps (AI-SPEC §8); the pseudo-code counter starts at 1.
-- BLE gaps follow AI-SPEC v3.2.1 §4 exactly (repeat 1–5, reset > 5 with `cancel` first, drop duplicate/older, `seq` mod 65536). "Rounded" in the spec = Python round-half-to-even.
+- BLE gaps follow AI-SPEC v3.3 §4 exactly (repeat 1–5, reset > 5 with `cancel` first, drop duplicate/older, the 11th drop in a row = glove restart = reset, `seq` mod 65536). "Rounded" in the spec = Python round-half-to-even.
 - Every mock file in `mock/expected.json` must match exactly (events and steps). If one differs, stop and ask.
 - Recognition runs on the phone, in an isolate. Sensor data and recognized sentences never leave the phone unless the user saves a phrase.
 - Every word list lives in `assets/packs/<lang>/signs.json`. No duplicated lists.

@@ -665,3 +665,59 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 | 4 | Delete `tools/out/step10/device/` | ✓ deleted |
 
 **Checks:** analyze 0 issues, format clean; `flutter test --concurrency=2`: **979 passed, 4 skipped**. CI on `53fbcee` (10a): run 39036934472 green (Flutter app, AI, Firmware, Android build).
+
+## Kit v3.3 / AI-SPEC v3.3 (2026-10-23, Linux laptop; branch `app-v3.3` from `origin/ai-v3.3`, worktree `../Ishara-v3.3`)
+
+Read first: `git diff origin/main...origin/ai-v3.3` of `AI-SPEC.md` and the kit `README.md`, commits add8c1e and e9ed90c. The spec pseudo-code was checked against the AI team's `tests/verify_kit.py` (same lines, same order): no contradiction found.
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Kit v3.3 into the app only through `sync_kit.sh` | CLAUDE.md; kit README | ✓ 102 files synced; `test/kit` byte-for-byte ✓ |
+| 2 | `pair_level`: the word that confirms a pending tentative word must pass this level | AI-SPEC v3.3 §5 | ✓ `DeciderConfig.pairLevel` (`DeciderLevel`), `Decider.step` |
+| 3 | A word signed alone: `confirm_on_rest`, `rest_conf`, `rest_run`, `rest_null`, state `pending_rest/peak/run/best/null`, line for line | §5 pseudo-code | ✓ `decider.dart` (the `rest` name is `AiSpec.rest`, no label hard-coded) |
+| 4 | Glove restart: the 11th dropped sample in a row is a real gap; any non-dropped sample sets the count to 0 | §4 | ✓ `Recognizer.feed` (`_dropped`, `AiSpec.maxDroppedInARow = 10`); reset also clears it (DECISIONS) |
+| 5 | Defaults = v3.2.1 behaviour; an old `decider.json` still works | §5 table | ✓ the kit v3.2.3 Decider vectors reproduced exactly with the v3.2.1 config |
+| 6 | Decider stays pure Dart | brief | ✓ no new imports beyond `dart:math` |
+| 7 | test_vectors (normalize 1e-4, models 1e-3, Decider steps, gaps) | §8 | ✓ |
+| 8 | mock/expected.json, words and events | C6 | ✓ **88 / 88** |
+| 9 | Learn practice files: each confirms its sign once | kit README | ✓ 40 / 40 (`mission_pipeline_test`, kit numbers below) |
+| 10 | Calibration mock tests unchanged | v3.2.3 | ✓ unchanged and green |
+| 11 | New tests per rule, defaults, mutation check | brief §3 | ✓ `test/recognition/decider_v33_test.dart` (22 tests); 12 / 12 mutations fail a test (each rule, each `rest_*` condition, the restart, the count reset by a sample and by `reset()`, both defaults, the Talk fix) |
+| 12 | Talk: a Decider confirm and a tap on the same word: no double word or speech | Q-T1, S7-9 | ✓ both orders tested; one bug fixed (below) |
+| 13 | Learn practice pass rule unchanged on the mock | S8, sign rule 4 | ✓ every practice file still gives one tentative + one confirm of its sign, at most at sample 270 (5.4 s) of the 8 s window; none through the rest rule |
+| 14 | ME / YOU against the avatar and vocabulary | sign rules 1, 2 | Reported, nothing changed (below) |
+| 15 | Integration tests `talk_test`, `learn_test` on the phone | review protocol 4 | ✗ **not run yet: no phone attached** (`adb devices` empty) |
+
+**Built:** `recognition_config.dart` (v3.3 keys with defaults, `DeciderLevel`, `AiSpec.rest`, `AiSpec.maxDroppedInARow`), `decider.dart` (pending-word state, rest confirm, `pair_level`), `recognizer.dart` (glove restart), `talk_glove_controller.dart` (S7-9 fix). Tests: `decider_v33_test.dart`, fixture `test/fixtures/kit_v3_2_3_decider_vectors.json`, 4 Talk tests, `test/bench/kit_numbers_test.dart` (bench tag). `CLAUDE.md`'s gap-rule line now names spec v3.3 and the restart.
+
+**Review:** line by line, then `/code-review` (8 findings): the hard-coded `'rest'` (also caught by `architecture_test`) → `AiSpec.rest`; Talk: an older tapped word with the same label swallowed a later Decider `confirm` whose faded word had been cleared (e.g. Talk hidden), so a real sign was neither shown nor spoken → only the tapped word's own confirm is skipped now (S7-9 unchanged), with tests; unused `DeciderConfig.level()` removed; the restart path uses an explicit flag instead of a faked gap; the bench's v3.2.1 mode drops the keys from the JSON instead of rebuilding the config; the bench closes the models in a tear-down. Not changed, open question: the Learn match % of a word confirmed on rest (Q1 below).
+
+**Checks:** analyze 0 issues (`--fatal-infos`), format clean; `flutter test --coverage --concurrency=2`: **1005 passed, 5 skipped** (benches); Cairo time-zone test ✓; coverage `lib/core` 92.2 %, domain 99.7 % (345/346).
+
+**Numbers (§5 of the brief), through the app's own recognizer** (`kit_numbers_test.dart`; the app reproduces each kit's `expected.json` words 88 / 88 for both kits):
+
+| | v3.2.3 kit | v3.3 kit | v3.3 models + mock, v3.2.1 rules |
+|---|---|---|---|
+| Sign files (20 signs × 2 people × 3 repeats = 120): right words | 94 | **118** | 113 |
+| … wrong words | 0 | 0 | 1 (`two` in B/me) |
+| … files exactly 3× their sign / 40 | 31 | **39** | 33 |
+| `sentences.csv` A, B (15 words each): errors | 0, 0 | 0, 0 | 0, 0 |
+| `rest.csv`, `other.csv` (4 files): stray words | 0 | 0 | 0 |
+| `everyday.csv` A + B (10 min): **stray words** | **0** | **0** | 0 |
+| … faded word shown and cancelled | 0 | 2 (one per file) | 2 |
+| Practice files confirming their sign once / 40 | 40 | 40 | 40 |
+
+Missing in v3.2.3: A come, drink, hungry, me, one (all 0 of 3), B drink, me, one (0 of 3), B hungry (1 of 3). In v3.3: A drink (1 of 3). The v3.3 rules alone add 4 confirmed words on the v3.3 mock and remove one wrong word (`pair_level`).
+Cross runs (each model version on the other kit's everyday files too, 20 min per version): 0 stray words for both. v3.3 models on the v3.2.3 mock: 110 / 120 right, 0 wrong, B/practice/me gives `one` then `me` (the old ME without its pointing movement reads as ONE first).
+**Caveats:** the kit's sign and sentence files are regenerated up to 25 times until the model gets them right (`build_kit.py`), so those rows lean towards 100 % for the kit's own models. `everyday.csv` is generated once, but 10 minutes can't measure a rate of one stray word per 3–4 h (expected ≈ 0.05 in 10 min): 0 is consistent with both the AI team's v3.2 and v3.3 figures.
+
+**ME / YOU (v3.3 data: `simulate_data.py` `jab_in` / `jab_out`, a short ≈ 0.5 s movement in and back):**
+- Vocabulary PDF v2.1: ME "points to your own chest, touches it"; YOU "points forward at the other person" (no movement); ONE "still". `signs.json` descriptions say the same.
+- Avatar (`assets/packs/asl/avatar/library.json`): ME moves the fingertip ≈ 4 cm in to touch the chest in 0.22 s and holds; YOU pushes ≈ 4 cm forward in 0.3 s and holds; ONE still. Neither goes back out before the sign ends (the return is the move back to the ready pose).
+- Differences: YOU has a movement in the avatar and the new model but none in the PDF / Learn description; the model's jab goes out *and back*, the avatar's stops. Nothing changed (sign rules 1–2).
+
+**Open questions**
+1. Learn match % (Q-L4) for a word confirmed on rest: the `confirm` fires on a `rest` step, where the word's own smoothed probability is low (on the v3.3 mock: 0 % for `me`, `one`, `five`, `drink`, `hungry`, 26 % for `thanks`). No practice mock file is affected, but with the real glove a passed step could show "0 % match". Keep Q-L4 as is, or show the pending word's highest probability (`pending_peak`, already in the Decider)?
+2. YOU: add the short forward movement to the vocabulary / Learn description, and should the avatar's ME / YOU jab go back out (new previews for your approval)?
+3. `.gitattributes` for Windows (proposal below), not added yet.
+4. For the AI team: the gap stream in `test_vectors.json` has no run of 11+ dropped samples, so the restart rule isn't covered by a kit vector (only by the app's own tests).

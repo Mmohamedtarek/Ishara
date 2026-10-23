@@ -213,6 +213,12 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | S10-3 | The phone's location stays on (the user's normal setting); the SOS run switched it on over adb. |
 | S10-4 | Device recordings and screenshots with the user's data are deleted after review (`tools/out/step10/device/`). |
 
+## Kit v3.3 / AI-SPEC v3.3 (2026-10-23)
+| ID | Decision |
+|---|---|
+| K33-1 | The app follows **AI-SPEC v3.3** (Kit v3.3, branch `ai-v3.3`, commits add8c1e and e9ed90c): `pair_level` and a word signed alone (`confirm_on_rest`, `rest_conf`, `rest_run`, `rest_null`, the `pending_*` state) in the Decider (§5), and the glove restart in the gap rule (§4: the 11th dropped sample in a row is a real gap; any sample that isn't dropped sets the count to 0). Copied line for line from the pseudo-code. The new keys are optional; their defaults (`active`, 0, 0, 0, 1) give exactly the v3.2.1 behaviour, checked against the kit v3.2.3 Decider vectors. |
+| K33-2 | Work on branch `app-v3.3` from `origin/ai-v3.3`, in the worktree `../Ishara-v3.3`; `AI/` and `app/Ishara-Mobile-Kit/` unchanged, the kit reaches the app only through `sync_kit.sh`. |
+
 ## Backend
 | ID | Decision |
 |---|---|
@@ -227,7 +233,7 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 |---|---|
 | C6 | Expect an exact match on every mock file in `expected.json` (now 88). If one differs, stop and ask. |
 | C7 | AI-SPEC "rounded" = Python round-half-to-even, with a test. |
-| C8 | Ignore `confirm_on_rest` and the top-level level defaults in `live.py`; not part of the spec. |
+| C8 | ~~Ignore `confirm_on_rest` and the top-level level defaults in `live.py`; not part of the spec.~~ **Superseded by AI-SPEC v3.3 (2026-10-23):** `confirm_on_rest`, `rest_conf`, `rest_run`, `rest_null` and `pair_level` are now in the spec and implemented (K33-1). The top-level level defaults of `live.py` are still ignored. |
 | C10, C11 | Fixed in kit v3.2.1. |
 | C12 | Fixed in vocabulary v2.1 (Please = flat B, Sorry = A fist, I love you held still). |
 | C14 | See Q-T3. |
@@ -369,3 +375,7 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | 2026-10-17 | Migration tests use real snapshots of the old store written by each version's own store classes, taken from git (step 6 `432af54`, 7 `3e72281`, 8 `dc355a1`, 9 `7aba72f`): `app/tools/legacy_snapshots/make.sh` → `test/storage/legacy_snapshots/v6…v9.json`. drift's schema tests start at version 1 (`drift_schemas/`, `dart run drift_dev make-migrations` after each change). | Brief: snapshots of every version. |
 | 2026-10-17 | `/code-review` fixes (step 10a): Clear's "next message starts a new conversation" flag is used up before the message's write is awaited (a Clear during a write held; two messages arriving together started two conversations); "the newest conversation" compares message ids (record identity isn't defined in Dart); a Learn event with an id already in the log isn't counted twice; Export adds `keptAside` (key, reason, value) when the database kept old values aside, so the export still carries everything the old store held; the repositories and the migration share the row builders and one id helper. | Each with a test. Not changed: the whole Talk history is read at start (laptop: 5,000 messages 75 ms, 50,000 messages 0.4 s; the phone migrated everything and opened in about 0.2 s). |
 | 2026-10-17 | "Can't save" detection: a drift `QueryInterceptor` (`WriteWatch`) on the database reports any insert, update, delete, batch or commit that fails to `StorageHealth` (in degraded mode, the first write at all); the repositories run their writes through `storeOrKeepGoing`, which keeps going after a failure. The notice (`StorageNotice`) sits at the app root over every screen. Any failed write shows it, not only SQLITE_FULL: the other causes (a damaged file) are moved aside at start, so a full disk is by far the likeliest. | S10-2; one place sees every write, the screens don't change. |
+| 2026-10-23 | v3.3 Decider keys: `pair_level` must be `"idle"`, `"tentative"` or `"active"`; `confirm_on_rest` and `rest_run` ints ≥ 0; `rest_conf` and `rest_null` numbers. Anything else is a `ParseFailure`, as for `hold` and `smooth`. | A wrong `decider.json` must fail loudly at load, never run with a guessed value. |
+| 2026-10-23 | The count of samples dropped in a row is also set to 0 by a full reset (reconnect, new `#CAL`). | §4: the first sample after a reset is accepted as is, and any sample that isn't dropped sets the count to 0; the Python gap test has no reset, so this is the same rule. |
+| 2026-10-23 | The kit v3.2.3 Decider vectors (config, probabilities, events) are kept as a test fixture, `test/fixtures/kit_v3_2_3_decider_vectors.json` (from `main` b30507e), not as a kit file. | The kit folder now holds v3.3; the defaults (K33-1) stay tested against the old numbers. |
+| 2026-10-23 | `test/bench/kit_numbers_test.dart` (bench tag, skipped in normal runs) plays every mock file of any kit through the app's own recognizer and writes the words, events, Learn match % and top label per event; `ISHARA_KIT`, `ISHARA_MOCK`, `ISHARA_RULES=v3.2.1`, `ISHARA_OUT`. | The v3.2.3 / v3.3 comparison (PROGRESS) can be re-run for the next kit. |

@@ -87,9 +87,11 @@ void main() {
   });
 
   group('DeciderConfig', () {
-    test('reads only the spec keys (confirm_on_rest ignored, C8)', () {
+    test('reads the spec keys (confirm_on_rest is part of spec v3.3)', () {
       final c = DeciderConfig.parse(_decider);
       expect(c.smooth, 3);
+      expect(c.confirmOnRest, 2);
+      expect(c.pairLevel, DeciderLevel.active);
       expect(c.models, ['a.tflite']);
       expect(c.idle.thresholdFor('two'), .9);
       expect(c.idle.thresholdFor('one'), .85);
