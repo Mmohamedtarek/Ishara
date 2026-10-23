@@ -65,8 +65,9 @@ def test_kit_decider_config_matches():
         kit = json.load(f)["cnn"]
     with open(os.path.join(AI_DIR, "decider.json")) as f:
         mine = json.load(f)["cnn"]
-    for key in ("smooth", "active_s", "confirm_s", "idle", "tentative", "active"):
-        assert kit[key] == mine[key], key
+    for key in ("smooth", "active_s", "confirm_s", "idle", "tentative", "active",
+                "pair_level", "confirm_on_rest", "rest_conf", "rest_run", "rest_null"):   # spec v3.3 fields too
+        assert kit.get(key) == mine.get(key), key
 
 
 @pytest.mark.parametrize("line", [
