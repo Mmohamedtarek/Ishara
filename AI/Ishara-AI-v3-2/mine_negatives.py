@@ -24,7 +24,7 @@ import pandas as pd
 
 import live
 import simulate_data as sim
-from common import CHANNELS, NON_WORDS, WINDOW, load_calib, normalize, save_calib
+from common import CHANNELS, NON_WORDS, WINDOW, calib_arrays, load_calib, normalize, save_calib, setup_console
 
 MINE_SEED = 9000          # أشخاص مختلفين عن التدريب (rng 7) والضبط (5000) والاختبار (1000)
 MIN_CONF = 0.4            # أي نافذة الموديل شايفها إشارة بثقة أعلى من كده = غلطة نتعلم منها
@@ -55,7 +55,7 @@ def write_other(folder, person_name, takes, take0):
         for seq, r in enumerate(np.asarray(tk).round().astype(int)):
             rows.append(["other", person_name, take0 + k, seq % 256, *r])
     path = os.path.join(folder, "other.csv")
-    pd.DataFrame(rows).to_csv(path, mode="a", header=False, index=False)
+    pd.DataFrame(rows).to_csv(path, mode="a", header=False, index=False, encoding="utf-8", lineterminator="\n")   # LF زي Linux
 
 
 def main():
@@ -78,8 +78,7 @@ def main():
         df = pd.read_csv(files[0], header=None)
         df = df[df[1] == args.from_recording]
         raw = df.iloc[:, 4:4 + len(CHANNELS)].to_numpy(float)
-        takes = hard_windows(predictor, raw, np.asarray(cal["open"], float), np.asarray(cal["fist"], float),
-                             np.asarray(cal.get("gyro_bias", [0, 0, 0]), float))[:MAX_PER_PERSON * 4]
+        takes = hard_windows(predictor, raw, *calib_arrays(cal))[:MAX_PER_PERSON * 4]
         write_other(args.data, args.from_recording, takes, take0)
         print(f"اتضاف {len(takes)} take لـ other من تسجيل {args.from_recording}")
         return
@@ -93,8 +92,7 @@ def main():
         cal = load_calib(name, os.path.join(args.data, "calib"))
         labels = np.where(sim.rng.random(n_takes) < 0.45, "rest", "other")
         raw = sim.stitch([sim.make_sample(l, person) for l in labels])
-        takes = hard_windows(predictor, raw, np.asarray(cal["open"], float), np.asarray(cal["fist"], float),
-                             np.asarray(cal["gyro_bias"], float))
+        takes = hard_windows(predictor, raw, *calib_arrays(cal))
         if len(takes) > MAX_PER_PERSON:
             takes = [takes[i] for i in sim.rng.choice(len(takes), MAX_PER_PERSON, replace=False)]
         write_other(args.data, name, takes, take0 + p * 100_000)
@@ -104,4 +102,5 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_console()
     main()

@@ -15,7 +15,7 @@ import shutil
 
 import numpy as np
 
-from common import ACC_SCALE, CALIB_FIST, CALIB_OPEN, GYRO_SCALE, SAMPLE_RATE, WINDOW, save_calib
+from common import ACC_SCALE, CALIB_FIST, CALIB_OPEN, GYRO_SCALE, SAMPLE_RATE, WINDOW, save_calib, setup_console, show_help
 
 rng = np.random.default_rng(7)
 
@@ -51,8 +51,8 @@ SIGNS = {
     "three":    ([0, 0, 0, 1, 1], UP, UP, "still"),
     "four":     ([1, 0, 0, 0, 0], UP, UP, "still"),
     "five":     (OPEN, UP, UP, "still"),
-    "me":       (INDEX, TO_CHEST, TO_CHEST, "still"),
-    "you":      (INDEX, FORWARD, FORWARD, "still"),
+    "me":       (INDEX, TO_CHEST, TO_CHEST, "jab_in"),    # السبابة بتلمس الصدر (Lifeprint)، مش ثابتة زي one
+    "you":      (INDEX, FORWARD, FORWARD, "jab_out"),    # السبابة بتشاور لقدام ناحية الشخص
     "hello":    (B_HAND, AT_FOREHEAD, OUT_FOREHEAD, "salute"),
     "thanks":   (B_HAND, [0, 0.6, 0.8], [0, 0.8, -0.6], "push"),
     "please":   (OPEN, ON_CHEST, ON_CHEST, "circle"),
@@ -143,6 +143,13 @@ def motion(kind, amp, speed):
     elif kind == "arc_in":      # come: حركة واحدة سريعة، السبابة مفرودة وبتلف ناحيتك
         gyro[:, 0] = 170 * amp * env
         acc[:, 2] = 0.45 * amp * np.sin(2 * np.pi * x) * (x > 0) * (x < 1)
+    elif kind in ("jab_in", "jab_out"):
+        # me / you: حركة قصيرة (حوالي نص ثانية) السبابة بتروح فيها ناحية الصدر أو لقدام وترجع.
+        # من غيرها one و me و you مفيش فرق بينهم غير اتجاه الإيد، ولو الجلوف مايل شوية بيبقوا شبه بعض.
+        sign = 1 if kind == "jab_in" else -1
+        jx = np.clip((t - t0) / (rng.uniform(0.4, 0.6) / speed), 0, 1)
+        acc[:, 2] = sign * 0.35 * amp * np.sin(2 * np.pi * jx) * (jx > 0) * (jx < 1)
+        gyro[:, 0] = sign * 60 * amp * np.sin(np.pi * jx) ** 2
     elif kind == "beckon":      # إشارة "تعالى" بالسبابة (مش ASL، بتتعمل كحركة عادية)
         bend[:, 1] = 0.5 * (1 - np.cos(2 * np.pi * 1.5 * f * tau)) * (env > 0.05)
         gyro[:, 0] = 30 * amp * np.sin(2 * np.pi * 1.5 * f * tau) * env
@@ -299,7 +306,7 @@ def glove_cal(person):
 
 
 def write_take(folder, label, person_name, take_id, rows):
-    with open(os.path.join(folder, f"{label}.csv"), "a") as f:
+    with open(os.path.join(folder, f"{label}.csv"), "a", encoding="utf-8", newline="\n") as f:   # LF على Windows كمان
         for seq, r in enumerate(rows):
             f.write(",".join(map(str, [label, person_name, take_id, seq % 256, *r])) + "\n")
 
@@ -332,4 +339,6 @@ def main(folder="data"):
 
 
 if __name__ == "__main__":
+    setup_console()
+    show_help(__doc__)
     main()

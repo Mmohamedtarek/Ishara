@@ -14,7 +14,9 @@ eval_live.py — التقييم الكامل للتوقع الحي، بنفس ا
   python eval_live.py --hours 5          أسرع
   python eval_live.py --model rf
   python eval_live.py --tune             بيدوّر على أحسن إعدادات للـ Decider على أشخاص "validation"
+                                         (24 شخص للجمل و30 ساعة حركة عادية: --val-hours)
                                          ويحفظها في decider.json، وبعدين بيقيّم على أشخاص تانيين خالص
+  python eval_live.py --tune --model rf  نفس الكلام للـ Random Forest
 """
 import argparse
 import collections
@@ -28,7 +30,7 @@ import numpy as np
 
 import live
 import simulate_data as sim
-from common import SIGN_LABELS, WINDOW, normalize
+from common import SIGN_LABELS, WINDOW, normalize, setup_console
 
 STEP = live.STEP
 TEST_SEED, VAL_SEED = 1000, 5000        # أشخاص الاختبار وأشخاص الضبط مختلفين عن بعض ومختلفين عن التدريب
@@ -52,8 +54,12 @@ def windows_of(raw, o, f, b):
     return np.stack([x[e - WINDOW:e] for e in ends]), ends
 
 
-def sentence_streams(seed, n_random=8):
-    """الجمل التجريبية + جمل عشوائية من 1 لـ 4 كلمات، الإيد بتنتقل من كلمة للتانية على طول"""
+def sentence_streams(seed, n_random=8, isolated=True):
+    """
+    الجمل التجريبية + جمل عشوائية من 1 لـ 4 كلمات، الإيد بتنتقل من كلمة للتانية على طول.
+    isolated: وكمان كل إشارة من الـ 20 لوحدها مرة (إيد مرتاحة ← الإشارة ← إيد مرتاحة). من غيرها الضبط
+    مكانش شايف الكلمة المفردة تقريبًا، فطلع إعدادات بتقول 81% بس من الكلمات لما تتعمل لوحدها.
+    """
     person, o, f, b = new_person(seed)
     rng = np.random.default_rng(seed + 7)
     sentences = [list(s) for s in live.DEMO_SENTENCES]
@@ -65,14 +71,18 @@ def sentence_streams(seed, n_random=8):
             if not s or s[-1] != w:
                 s.append(w)
         sentences.append(s)
+    n_sent = len(sentences)
+    if isolated:
+        sentences += [[w] for w in SIGN_LABELS]
     out = []
-    for s in sentences:
-        seq = ["rest"] + s + ["rest"]
+    for k, s in enumerate(sentences):
+        # الكلمة المفردة بعدها 4 ثواني راحة: الإيد بتفضل مرتاحة بعدها، ومحتاجين نشوف هل اتأكدت ولا اتشالت
+        seq = ["rest"] + s + (["rest", "rest"] if k >= n_sent else ["rest"])
         takes = [sim.make_sample(lbl, person) for lbl in seq]
         starts = [i * (WINDOW - 10) for i in range(len(seq))]   # stitch بيشيل 10 قراءات في كل وصلة
         raw = sim.stitch(takes)
         W, ends = windows_of(raw, o, f, b)
-        out.append({"words": s, "W": W, "ends": ends, "starts": starts[1:-1]})
+        out.append({"words": s, "W": W, "ends": ends, "starts": starts[1:-1], "isolated": k >= n_sent})
     return out
 
 
@@ -123,6 +133,26 @@ def align(ref, hyp):
     return d[n][m][1:]
 
 
+def extra_words(ref, hyp):
+    """الكلمات الزيادة في hyp (اللي اتقالت ومكانتش في الجملة)، بنفس المحاذاة بأقل عدد تعديلات"""
+    n, m = len(ref), len(hyp)
+    d = np.zeros((n + 1, m + 1), int)
+    d[:, 0], d[0, :] = np.arange(n + 1), np.arange(m + 1)
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            d[i, j] = min(d[i - 1, j - 1] + (ref[i - 1] != hyp[j - 1]), d[i - 1, j] + 1, d[i, j - 1] + 1)
+    i, j, out = n, m, []
+    while j:
+        if i and d[i, j] == d[i - 1, j - 1] + (ref[i - 1] != hyp[j - 1]):
+            i, j = i - 1, j - 1
+        elif i and d[i, j] == d[i - 1, j] + 1:
+            i -= 1
+        else:
+            out.append(hyp[j - 1])
+            j -= 1
+    return out
+
+
 def upper95(k, minutes):
     """أقصى معدل في الدقيقة متوافق مع إننا شفنا k غلطة (Poisson، ثقة 95%)"""
     table = {0: 3.00, 1: 4.74, 2: 6.30, 3: 7.75, 4: 9.15, 5: 10.51}
@@ -161,13 +191,19 @@ class Bench:
 
     def score(self, cfg):
         S = D = I = words = 0
+        iso_ok = iso_n = iso_err = 0
         stats, sstats = {}, {}
-        lat = []
+        lat, extra = [], collections.Counter()
         for st in self.sent:
             said = run_decider(st["P"], cfg, self.classes, st["R"], sstats)
             hyp = [w for _, w in said]
             s, d, i = align(st["words"], hyp)
+            if st.get("isolated"):                        # كلمة لوحدها: بتتحسب لوحدها مش في WER الجمل
+                iso_n, iso_ok, iso_err = iso_n + 1, iso_ok + (hyp == st["words"]), iso_err + s + d + i
+                continue
             S, D, I, words = S + s, D + d, I + i, words + len(st["words"])
+            if i:
+                extra.update(extra_words(st["words"], hyp))
             k = 0
             for idx, w in said:                           # التأخير للكلمات الصح بالترتيب
                 if k < len(st["words"]) and w == st["words"][k]:
@@ -177,7 +213,10 @@ class Bench:
         for st in self.every:
             false += [w for _, w in run_decider(st["P"], cfg, self.classes, st["R"], stats)]
         return {"wer": (S + D + I) / words * 100, "S": S, "D": D, "I": I, "words": words,
-                "false": len(false), "false_words": collections.Counter(false).most_common(5),
+                "iso_ok": iso_ok, "iso_n": iso_n,
+                # الغلط الكلي اللي الضبط بيقلله: كلمات الجمل والكلمات المفردة مع بعض
+                "err": (S + D + I + iso_err) / (words + iso_n) * 100,
+                "extra_words": extra.most_common(5), "false": len(false), "false_words": collections.Counter(false).most_common(5),
                 "false_per_min": len(false) / self.minutes, "false_upper95": upper95(len(false), self.minutes),
                 "minutes": self.minutes, "latency": float(np.median(lat)) if lat else None,
                 "flicker_per_min": stats.get("flicker", 0) / self.minutes}
@@ -222,6 +261,8 @@ def show_takes(conf, classes):
 def show(r, title):
     print(f"\n{title}")
     print(f"  WER على الجمل: {r['wer']:.1f}%   (غلط {r['S']}، ناقص {r['D']}، زيادة {r['I']} من {r['words']} كلمة)")
+    if r.get("iso_n"):
+        print(f"  كل كلمة لوحدها: {r['iso_ok']}/{r['iso_n']} = {r['iso_ok'] / r['iso_n'] * 100:.1f}% اتقالت صح")
     print(f"  كلمات طلعت لوحدها: {r['false']} في {r['minutes'] / 60:.1f} ساعة = {r['false_per_min']:.4f} في الدقيقة"
           f"   (أقصى رقم بثقة 95%: {r['false_upper95']:.4f})  {r['false_words']}")
     print(f"  التأخير: {r['latency']:.2f} ثانية" if r["latency"] else "  التأخير: -")
@@ -291,46 +332,97 @@ GRID = {"confidence": [0.85, 0.9, 0.95, 0.97, 0.98, 0.99, 0.995], "hold": [2, 3,
         "max_null": [0.01, 0.03, 0.1], "confirm_rf": [False, True]}
 
 
-IDLE_GRID = {"confidence": [0.85, 0.9, 0.95, 0.98], "hold": [2, 3, 4, 5], "max_null": [0.02, 0.05, 0.1], "active_s": [4, 6, 8]}
+# (0.98 و active_s 8 عمرهم ما اتختاروا في كل مرات الضبط، فاتشالوا عشان الضبط ياخد نص الوقت)
+IDLE_GRID = {"confidence": [0.85, 0.9, 0.95], "hold": [2, 3, 4, 5], "max_null": [0.02, 0.05, 0.1], "active_s": [4, 6]}
 ACTIVE_GRID = {"confidence": [0.5, 0.6, 0.7, 0.8], "hold": [1, 2], "max_null": [0.3, 0.6, 1.0]}
+TENTATIVE_GRID = {"confidence": [0.5, 0.6, 0.7], "max_null": [0.2, 0.3, 0.5]}
+# الكلمة المفردة: تتأكد لما الإيد ترجع ترتاح، لو كانت واضحة (rest_conf) لفترة (rest_run) واحتمال "مش كلام" وصل لأقل من
+# rest_null. 0 = مقفول. على 110 ساعة وأشخاص جداد: 0.7 / 3 / 0.03 ← الكلمة لوحدها 82% ← 88%، والكلمات الغلط من كلمة كل
+# 5.5 ساعة لكلمة كل 3.8. بـ 0.05: الكلمة لوحدها 90% بس الكلمات الغلط كلمة كل 2.75 ساعة
+REST_GRID = {"confirm_on_rest": [0, 2, 3], "rest_conf": [0.7, 0.9], "rest_run": [1, 3], "rest_null": [0.03, 0.05, 1.0]}
+# الـ Random Forest احتمالاته أوطى من الـ CNN (متوسط 300 شجرة)، فمحتاج أرقام أوطى. قبل كده ملوش إعدادات
+# في decider.json خالص، فكان بيشتغل بالـ DEFAULTS، والـ WER على الجمل كان 70%.
+# (جربنا أرقام أوطى من كده: الـ WER بينزل شوية، بس الكلمات اللي بتطلع لوحدها بتزيد 6 مرات على أشخاص جداد)
+RF_GRIDS = {"idle": {"confidence": [0.5, 0.6, 0.7, 0.8], "hold": [2, 3, 4, 5], "max_null": [0.1, 0.2, 0.3], "active_s": [4, 6, 8]},
+            "active": {"confidence": [0.3, 0.4, 0.5, 0.6], "hold": [1, 2], "max_null": [0.4, 0.6, 1.0]},
+            "tentative": {"confidence": [0.35, 0.45, 0.55], "max_null": [0.3, 0.5, 0.7]},
+            "rest": {"confirm_on_rest": [0, 2, 3], "rest_conf": [0.5, 0.6, 0.7], "rest_run": [1, 4], "rest_null": [0.3, 1.0]}}
 
 
 def tune(bench, kind, target):
     """
-    الضبط على مرحلتين، والهدف بالترتيب: الكلمات اللي بتطلع لوحدها تحت target، بعدها أقل WER، بعدها أقل تأخير.
+    الضبط على 4 مراحل، والهدف بالترتيب: الكلمات اللي بتطلع لوحدها تحت target، بعدها أقل غلط
+    (كلمات الجمل والكلمات المفردة مع بعض)، بعدها أقل تأخير.
       1. حالة idle (أول كلمة واضحة جدًا) + مدة active، والكلمة المبدئية والـ active ثابتين على إعدادات سهلة
       2. حالة active (جوه المحادثة) بأحسن idle
+      3. الكلمة المبدئية (أول كلمة في الجملة لما تكون واضحة بس مش جدًا)
+      4. تأكيد الكلمة المفردة لما الإيد ترجع ترتاح (confirm_on_rest)
     """
     def key(r):
         over = max(0.0, r["false_per_min"] - target)
-        return (over > 0, over, r["wer"], r["latency"] or 9)
+        return (over > 0, over, r.get("err", r["wer"]), r["latency"] or 9)
 
-    models = [m for m in live.ENSEMBLE if os.path.exists(m + ".tflite")]
-    base = {"smooth": 3, "confirm_rf": False, "models": models, "confirm_s": 3.5,
-            "tentative": {"confidence": 0.6, "hold": 1, "max_null": 0.3, "per_class": {}}}   # الكلمة المبدئية
-    active = {"confidence": 0.5, "hold": 1, "max_null": 0.3, "per_class": {}}
+    grids = RF_GRIDS if kind == "rf" else {"idle": IDLE_GRID, "active": ACTIVE_GRID, "tentative": TENTATIVE_GRID,
+                                           "rest": REST_GRID}
+    tent0 = {"confidence": 0.45, "max_null": 0.5} if kind == "rf" else {"confidence": 0.6, "max_null": 0.3}
+    # pair_level: الكلمة اللي بتأكد كلمة مبدئية لازم تعدّي مستوى tentative مش active بس. على أشخاص جداد
+    # الـ WER فضل زي ما هو، والكلمات اللي بتطلع لوحدها قلّت من 9 لـ 5 في 20 ساعة
+    base = {"smooth": 3, "confirm_rf": False, "confirm_s": 3.5, "pair_level": "tentative",
+            "confirm_on_rest": 2, "rest_conf": 0.7 if kind == "cnn" else 0.6, "rest_run": 3,
+            "rest_null": 0.03 if kind == "cnn" else 1.0,
+            "tentative": dict(tent0, hold=1, per_class={})}   # الكلمة المبدئية
+    if kind == "cnn":
+        base["models"] = [m for m in live.ENSEMBLE if os.path.exists(m + ".tflite")]
+    active = {"confidence": min(grids["active"]["confidence"]), "hold": 1, "max_null": 0.3 if kind == "cnn" else 0.6,
+              "per_class": {}}
     best = None
-    for c, h, m, a_s in itertools.product(*IDLE_GRID.values()):
+    for c, h, m, a_s in itertools.product(*grids["idle"].values()):
         cfg = dict(base, active_s=a_s, idle={"confidence": c, "hold": h, "max_null": m, "per_class": {}}, active=dict(active))
         r = bench.score(cfg)
         if best is None or key(r) < key(best[1]):
             best = (cfg, r)
     cfg, r = best
-    for c, h, m in itertools.product(*ACTIVE_GRID.values()):
+    for c, h, m in itertools.product(*grids["active"].values()):
         cand = dict(cfg, active={"confidence": c, "hold": h, "max_null": m, "per_class": {}})
         rc = bench.score(cand)
         if key(rc) < key(r):
             cfg, r = cand, rc
+    for c, m in itertools.product(*grids["tentative"].values()):
+        cand = dict(cfg, tentative={"confidence": c, "hold": 1, "max_null": m, "per_class": {}})
+        rc = bench.score(cand)
+        if key(rc) < key(r):
+            cfg, r = cand, rc
+    keys = list(grids["rest"])
+    for vals in itertools.product(*grids["rest"].values()):
+        p = dict(zip(keys, vals))
+        if p["confirm_on_rest"] == 0 and any(p[k] != grids["rest"][k][0] for k in keys[1:]):
+            continue                                       # مقفول: الباقي مش فارق
+        cand = dict(cfg, **p)
+        rc = bench.score(cand)
+        if key(rc) < key(r):
+            cfg, r = cand, rc
+    # كلمات بتطلع زيادة جوه الجمل: غالبًا إشارة ثابتة شكلها زي آخر إشارة متحركة
+    # (آخر bye = إيد مفتوحة ثابتة = five، وآخر thanks شبه four). نرفع حدها في active لو ده بيقلل الـ WER
+    for w, _n in r["extra_words"]:
+        for conf in (0.6, 0.7, 0.8, 0.9):
+            cand = json.loads(json.dumps(cfg))
+            cand["active"]["per_class"][w] = conf
+            rc = bench.score(cand)
+            if key(rc) < key(r):
+                cfg, r = cand, rc
     # إشارات لسه بتطلع لوحدها كأول كلمة: نرفع حدها في idle بس
+    # (على نسخة: قبل كده التعديل كان بيفضل في الإعدادات حتى لو النتيجة بقت أوحش)
     for _ in range(4):
         if r["false_per_min"] <= target or not r["false_words"]:
             break
-        idle = cfg["idle"]
+        cand = json.loads(json.dumps(cfg))
+        idle = cand["idle"]
         for w, _n in r["false_words"]:
             idle["per_class"][w] = round(min(0.995, max(idle["per_class"].get(w, idle["confidence"]), idle["confidence"]) + 0.02), 3)
-        rc = bench.score(cfg)
-        if key(rc) < key(r):
-            r = rc
+        rc = bench.score(cand)
+        if key(rc) >= key(r):
+            break
+        cfg, r = cand, rc
     return cfg, r
 
 
@@ -340,7 +432,14 @@ def main():
     ap.add_argument("--hours", type=float, default=30, help="ساعات الحركة العادية في الاختبار")
     ap.add_argument("--people", type=int, default=12)
     ap.add_argument("--tune", action="store_true")
-    ap.add_argument("--target", type=float, default=0.0, help="أقصى كلمات لوحدها في الدقيقة وقت الضبط (0 = ولا كلمة في ساعات الـ validation)")
+    ap.add_argument("--val-hours", type=float, default=30,
+                    help="ساعات الحركة العادية وقت الضبط. الكلمات اللي بتطلع لوحدها نادرة، فلو الساعات قليلة (10) "
+                         "كل الإعدادات بتطلّع نفس العدد، والضبط بيختار أسهل إعدادات وبتطلّع كلمات أكتر على ناس جداد")
+    # 0.005 = حوالي كلمة غلط كل 3.3 ساعة حركة عادية (الإعداد "المتوازن": الكلمة لوحدها 89%، والجمل WER 3.2%).
+    # أقل من كده الضبط بيختار hold 5: الكلمات الغلط بتقل لكلمة كل 20 ساعة، بس الكلمة المفردة بتنزل لـ 85%
+    # والـ WER بيوصل 5.6%، لإن أول كلمة في الجملة بتضيع أكتر
+    ap.add_argument("--target", type=float, default=0.005,
+                    help="أقصى كلمات لوحدها في الدقيقة وقت الضبط (0 = أقل عدد ممكن، حتى لو كلمات أكتر هتضيع من الجمل)")
     ap.add_argument("--no-stress", action="store_true")
     ap.add_argument("--sessions", type=int, default=0, help="جلسات لبس 3 ساعات مع talk mode")
     ap.add_argument("--talk-off", type=float, default=None, help="لو عايز تقيس talk mode: بيقفل بعد كام ثانية (من غيره: الترجمة شغالة على طول)")
@@ -351,15 +450,19 @@ def main():
 
     if args.tune:
         print("الضبط على أشخاص validation:")
-        vb = Bench(predictor, VAL_SEED, people=8, hours=max(5.0, args.hours * 2 / 3), rf=None)
+        # 24 شخص للجمل (الجمل رخيصة جنب ساعات الحركة العادية): مع 8 بس الكلمات الزيادة كانت نادرة
+        # لدرجة إن الضبط مكانش بيشوفها، وبتظهر على أشخاص الاختبار
+        vb = Bench(predictor, VAL_SEED, people=24, hours=args.val_hours, rf=None)
         cfg, r = tune(vb, args.model, args.target)
         show(r, "أحسن إعدادات على validation:")
         try:
-            allcfg = json.load(open(live.DECIDER_FILE, encoding="utf-8"))
+            with open(live.DECIDER_FILE, encoding="utf-8") as f:
+                allcfg = json.load(f)
         except (OSError, ValueError):
             allcfg = {}
         allcfg[args.model] = cfg
-        json.dump(allcfg, open(live.DECIDER_FILE, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
+        with open(live.DECIDER_FILE, "w", encoding="utf-8", newline="\n") as f:      # LF زي Linux
+            json.dump(allcfg, f, indent=2, ensure_ascii=False)
         print(f"  اتحفظت في {live.DECIDER_FILE}: {cfg}")
 
     cfg = live.decider_config(args.model)
@@ -383,4 +486,5 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_console()
     main()
