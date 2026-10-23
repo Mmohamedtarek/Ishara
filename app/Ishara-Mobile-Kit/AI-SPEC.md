@@ -1,4 +1,15 @@
-# Ishara AI — what the app must do (spec v3.2.1)
+# Ishara AI — what the app must do (spec v3.3)
+
+**v3.3** changes the Decider and the gap rule (new models too; the labels and the pipeline are the same):
+1. **`pair_level`** (section 5): the word that confirms a pending tentative word must pass this level (`"tentative"` in the
+   config), not just `active`. Before, two everyday movements in a row could confirm each other.
+2. **A word signed alone** (section 5: `confirm_on_rest`, `rest_conf`, `rest_run`, `rest_null`): a tentative word is confirmed
+   when the hand goes back to rest, if it was clear for a while and the not-a-word probability was very low at some moment.
+   Before, a word signed on its own (rest, sign, rest) usually showed as tentative and was then cancelled.
+3. **Glove restart** (section 4): more than 10 dropped samples in a row (duplicate / older `seq`) means the glove restarted;
+   treat it as a real gap.
+
+All new config fields have defaults that give exactly the v3.2.1 behaviour, so a v3.2.1 `decider.json` still works.
 
 **v3.2.1** adds the exact BLE gap rule (section 4, with a test in `test_vectors.json` → `gaps`) and practice mock files (`mock/*/practice/`). Models, labels, config and every other number are the same as v3.2.
 
@@ -54,6 +65,8 @@ No clipping, no rounding. Tolerance in the tests: 1e-4.
   - `1 ≤ gap ≤ 5`: first push the **last accepted raw sample** `gap` times, then this one. The repeated samples are normal samples: they enter the window and the sample counter (the counter counts 20 ms time slots), so a model run can happen on one of them.
   - `5 < gap < 32768`: a real gap. If a tentative word is pending, emit `cancel` for it. Then **clear the window, set the sample counter to 0, and reset the Decider to its initial state**, and push this sample. The next model run comes when 100 new samples have arrived.
   - `gap ≥ 32768`: a duplicate (same `seq` as the last one) or an older sample arriving late. **Drop it**: it is not pushed and not counted, and `expected` doesn't change.
+  - **Glove restart (v3.3):** count the samples dropped in a row. When an **11th** sample in a row would be dropped, the glove restarted and its `seq` started again: treat that sample as a real gap (`5 < gap`): cancel a pending word, clear the window, counter 0, reset the Decider, push it. Any sample that is not dropped sets the count back to 0. (Before v3.3, every sample was dropped until `seq` caught up again, up to 11 minutes.)
+  - The glove's USB serial `seq` is 8-bit (wraps 255 → 0). The Python reference handles that too (mod 256 until it sees a `seq` above 255); the app only reads BLE, where `seq` is 16-bit.
   - The very first sample after connecting (or after a reconnect / new `#CAL`, which reset everything) is accepted as is.
 
 ## 5. Decider: when to say a word
@@ -79,12 +92,17 @@ Config = `model/decider.json` → object `"cnn"`:
 | `active_s` | the conversation ends after this many seconds without a confirmed word |
 | `confirm_s` | how long a tentative word waits for confirmation |
 | `confirm_rf` | always `false` in the app (ignore) |
+| `pair_level` | level (`"idle"`, `"tentative"` or `"active"`) the second word must pass to confirm a pending tentative word. Default `"active"` |
+| `confirm_on_rest` | a word signed alone: confirm the pending word after this many `rest` steps in a row. `0` = off (default) |
+| `rest_conf` | …if the pending word's highest `conf` while pending reached this. Default 0 |
+| `rest_run` | …and it passed the `tentative` level this many steps in a row at some point. Default 0 |
+| `rest_null` | …and at some step where it was the top label, `null` was this low or lower. Default 1 |
 
 Each level (`idle`, `tentative`, `active`) has: `confidence` (min averaged probability of the top label), `per_class` (`{label: threshold}` overriding `confidence`), `hold` (consecutive runs the same label must pass), `max_null` (max averaged probability of `rest + other`).
 
 One model run = one **step** = 0.2 s. `active_s` and `confirm_s` in steps = seconds × 5 (rounded).
 
-State: `recent` (last `smooth` vectors), `last_said = none`, `rest_seen = 0`, `step = 0`, `active_until = -1`, `pending = none`, `pending_until = -1`, `blocked = {}` (a set of labels), and for each level a run `(run_label = none, run_count = 0)`.
+State: `recent` (last `smooth` vectors), `last_said = none`, `rest_seen = 0`, `step = 0`, `active_until = -1`, `pending = none`, `pending_until = -1`, `blocked = {}` (a set of labels), for each level a run `(run_label = none, run_count = 0)`, and for the pending word `pending_rest = 0`, `pending_peak = 0`, `pending_run = 0`, `pending_best = 0`, `pending_null = 1`.
 
 On every averaged model output `p`:
 
@@ -96,14 +114,28 @@ if pending != none and step > pending_until:
 
 recent.push(p)                                  # keep the last `smooth`
 avg = mean(recent); top = argmax(avg); label = labels[top]; conf = avg[top]
+null = avg["rest"] + avg["other"]
+
+if pending != none:                                       # v3.3: how the pending word is doing
+    T = the tentative level
+    if label == pending:
+        pending_peak = max(pending_peak, conf); pending_null = min(pending_null, null)
+        thr = T.per_class[label] if label in T.per_class else T.confidence
+        pending_run = pending_run + 1 if (conf >= thr and null <= T.max_null) else 0
+        pending_best = max(pending_best, pending_run)
+    else:
+        pending_run = 0
+    pending_rest = pending_rest + 1 if label == "rest" else 0
 
 if label is "rest" or "other":
+    if pending != none and confirm_on_rest > 0 and pending_rest >= confirm_on_rest \
+       and pending_peak >= rest_conf and pending_best >= rest_run and pending_null <= rest_null:
+        events += confirm(pending); say(pending); pending = none; pending_rest = 0   # v3.3: a word signed alone
     rest_seen += 1
     if rest_seen >= 2: last_said = none; blocked.clear()
     every level's run = (none, 0)
     return events
 rest_seen = 0
-null = avg["rest"] + avg["other"]
 
 for each level L in (idle, tentative, active):         # update all runs every step
     thr = L.per_class[label] if label in L.per_class else L.confidence
@@ -120,13 +152,14 @@ if step <= active_until:                                   # inside a conversati
 elif pending != none:                                       # waiting to confirm a tentative word
     if label == pending:
         if passed(idle): events += confirm(label); say(label); pending = none
-    elif passed(active) and label != last_said:            # a second word arrived: both are real
+    elif passed(pair_level) and label != last_said:        # a second word arrived: both are real (v3.3: pair_level)
         events += confirm(pending); events += word(label); say(label); pending = none
 elif label != last_said:                                    # idle, nothing pending
     if passed(idle):
         events += word(label); say(label)
     elif passed(tentative) and label not in blocked:
         events += tentative(label); pending = label; pending_until = step + confirm_steps
+        pending_rest = 0; pending_peak = conf; pending_run = 1; pending_best = 1; pending_null = null
 return events
 
 say(label):  last_said = label; active_until = step + active_steps

@@ -1,4 +1,4 @@
-# Ishara Glove: AI (v3.2.2, ASL vocabulary v2.2)
+# Ishara Glove: AI (v3.3, ASL vocabulary v2.2)
 
 This folder turns the glove's sensor stream into words. It has:
 - the tools to record data from the glove;
@@ -11,6 +11,32 @@ Until the glove is finished, everything runs on **simulated data** that has the 
 
 ## Version history
 
+- **v3.3 (fixes: words not recognized, wrong words, single words):**
+  - **`data/`, the models and `decider.json` were out of sync.** `data/` was made before the v3.2.2 COME change (it still had
+    the old "come here" curl), the CNNs were trained on other data, and the Random Forest on the old data. The CNN recognized
+    COME from `data/` 1.4% of the time; the RF recognized the new COME 0% of the time. The data is regenerated, every model is
+    retrained on it (2 mining rounds), and the pipeline now tunes `decider.json` right after training, so data, models and
+    settings always come from the same run.
+  - **ONE / ME / YOU differed only by hand direction**, so with a tilted glove even an ideal classifier could not tell them
+    apart about 9% of the time (ONE was right 65% of the time). ME and YOU now follow ASL: the index touches the chest (ME) or
+    points forward at the person (YOU) with a short movement; ONE is held still. **Record them this way with the real glove.**
+  - **Decider:** new `pair_level`: a word that confirms a tentative word must pass the `tentative` level, not just `active`
+    (two everyday movements in a row no longer confirm each other). New single-word rule `confirm_on_rest` / `rest_conf` /
+    `rest_run` / `rest_null`: a tentative word is confirmed when the hand goes back to rest, if it was clear (>= 0.7), for a
+    while (3 steps), and at some moment the not-a-word probability was below 0.03. Words signed alone went from 82% to 88%
+    on new people (`check_words.py`). Tuning now uses 24 people and 30 h of everyday movement (it was 8 people and 10 h, too
+    little to separate the settings) and also scores single words.
+  - **`StreamRecognizer`** (the app's reference, now also used by `live.py` with the glove): accepts `gyro_bias` and
+    `gyro_bias_raw`; handles the glove's 8-bit `seq` (wraps at 255; before, every sample after the first 256, about 5 s,
+    was dropped) and resyncs after a glove restart. With 16-bit `seq` it behaves exactly as before (the kit's gap test passes
+    with the kit's models).
+  - The Random Forest has its own settings in `decider.json` (`eval_live.py --tune --model rf`): sentence WER 70% -> 19%.
+  - "Accuracy on new people" counts only people who recorded signs (not the mining people); int8 calibration uses windows
+    from every class (it used two signs only); Windows support (`run_pipeline.py` / `.ps1`, UTF-8 console, LF files,
+    port detection, speech), see `CHANGES_WINDOWS.md`.
+  - **App team:** `decider.json` has new keys (`pair_level`, `confirm_on_rest`, `rest_conf`, `rest_run`, `rest_null`)
+    and `StreamRecognizer` has the 8-bit `seq` / restart rules. The kit is **not** rebuilt in this change: AI-SPEC and the
+    app's recognizer need these first. Then `python build_kit.py ../../app/Ishara-Mobile-Kit` and `app/tools/sync_kit.sh`.
 - **v3.2.2:** COME is one quick arc of the index toward you (Lifeprint). The old repeated "come here" finger curl is now an everyday movement (`other`). WATER taps the mouth. Retrained from scratch.
 - **v3.2:** signs follow Sign Vocabulary v2 (ASL):
   - `good` and `bad` are replaced by `water` and `bye`;
@@ -39,7 +65,11 @@ Until the glove is finished, everything runs on **simulated data** that has the 
 | `eval_live.py` | Full evaluation: WER on sentences, stray words over hours of everyday movement, latency, per-sign accuracy, stress tests. `--tune` searches Decider settings, `--sessions` measures 3-hour wear sessions |
 | `mine_negatives.py` | Hard-negative mining: finds everyday movements the model mistakes for signs and adds them to `other` |
 | `build_kit.py` | Builds `Ishara-Mobile-Kit` (models, mock glove files, test vectors) for the app |
-| `run_pipeline.sh` | The whole pipeline on simulated data (bash) |
+| `check_words.py` | Every word signed alone (rest, sign, rest): is it said? From every take in `data/`, and from new people |
+| `run_pipeline.py` | The whole pipeline on simulated data, Windows and Ubuntu; stops at the first failing step |
+| `run_pipeline.ps1` / `run_pipeline.sh` | Run `run_pipeline.py` (Windows with the venv's Python / Ubuntu) |
+| `tests/` | `pytest` checks and the independent kit verifier (run in CI) |
+| `CHANGES_WINDOWS.md` | What changed for Windows 11, and how it was verified |
 | `decider.json` | Decider settings (confidence, hold, levels) |
 | `requirements.txt` | Python packages |
 
@@ -114,31 +144,18 @@ python live.py --sim             # watch and hear the demo sentences (--fast: no
 
 ### The full pipeline
 
-On **Ubuntu** (it takes about 1 hour):
+About 3 hours on a CPU (with the Decider tuning). It stops at the first failing step.
 
 ```bash
-bash run_pipeline.sh
+python run_pipeline.py           # any OS
+bash run_pipeline.sh             # Ubuntu
+.\run_pipeline.ps1               # Windows (uses .venv\Scripts\python.exe; no activation needed)
 ```
 
-It writes the kit to `app/Ishara-Mobile-Kit` (or to `KIT=...` if you set it).
+Steps: data -> train -> mine (2 rounds) -> train the ensemble -> tune `decider.json` (CNN and RF) -> evaluate -> kit.
+It writes the kit to `app/Ishara-Mobile-Kit` (or to `--kit ...` / `KIT=...`).
 
-On **Windows**, run the same steps in PowerShell, one after another:
-
-```powershell
-python simulate_data.py
-Remove-Item ishara_cnn*.tflite, ishara_cnn*.keras, ishara_rf.joblib -ErrorAction SilentlyContinue
-python train_rf.py;  python train_cnn.py
-python mine_negatives.py --round 1
-python train_rf.py;  python train_cnn.py
-python mine_negatives.py --round 2
-python train_rf.py;  python train_cnn.py
-python train_cnn.py --member 2;  python train_cnn.py --member 3
-python eval_live.py --hours 30
-python eval_live.py --sessions 20 --no-stress --hours 1
-python build_kit.py ..\..\app\Ishara-Mobile-Kit
-```
-
-(Or run `run_pipeline.sh` in Git Bash.)
+Check every word signed alone (about 2 minutes): `python check_words.py`.
 
 **Note:** `build_kit.py` writes into the kit folder you give it. In the repo that folder is `app/Ishara-Mobile-Kit`. Only the AI team updates it, and the app then copies it with `app/tools/sync_kit.sh`.
 
@@ -168,7 +185,7 @@ python build_kit.py ..\..\app\Ishara-Mobile-Kit
    ```
 
    `--full` runs a complete leave-one-person-out test: slower, and that's the number to present.
-7. **Evaluate:** `python eval_live.py`. Tune with `--tune` only when you have enough real people.
+7. **Evaluate:** `python eval_live.py` and `python check_words.py`. Tune with `--tune` (and `--tune --model rf`) only when you have enough real people.
 8. **Build the kit** and send it to the app team: `python build_kit.py ../../app/Ishara-Mobile-Kit`.
 
 The number to present at the defense is **accuracy on new people** (people the model never saw). Accuracy on your own hand is always higher.
@@ -235,24 +252,37 @@ Both run in CI on every push. After you rebuild the kit, run them before you com
 - **Decider** (`live.py`, settings in `decider.json`). Translation is always on, with no button:
   - **idle:** the first word must be very clear. Otherwise it shows as a **tentative** word, which is confirmed if another word follows or it stays clear, and is removed if nothing comes.
   - **active:** inside a conversation, word-to-word transitions are fast. It goes back to idle after 4 seconds without a word.
+  - **a word that confirms a tentative word** must pass the `tentative` level (`pair_level`).
+  - **a word signed alone** (no word after it) is confirmed when the hand goes back to rest, if it was clear for a while and
+    the not-a-word probability was very low at some moment (`confirm_on_rest`, `rest_conf`, `rest_run`, `rest_null`).
 
 ### Results (simulated data, people the model never saw, always-on translation)
 
-| | v3.1 (vocabulary v1) | v3.2 (ASL v2) | **v3.2.2 (ASL v2.2)** |
-|---|---|---|---|
-| Stray words per minute (60 h of 3-hour wear sessions) | 0.0003 | 0.0014 | **0.0017** (upper 95%: 0.0036) |
-| Stray words in 30 h of everyday movement | 0 | 2 | **2** (0.0011 per minute) |
-| WER | 9.4–10.6% | 9.1–10.3% | **8.8% (sentences), 12.1% (sessions)** |
-| Tentative words shown and removed (per minute) | — | 0.031 | **0.014** |
-| Single-sign accuracy | 94.8% | 95.6% | **96.1%** |
-| Glove worn tilted 30° | 96.1% | 96.0% | **96.2%** |
-| One dead sensor | 83.5% | 85.9% | **87.1%** |
+| | v3.1 (vocabulary v1) | v3.2 (ASL v2) | v3.2.2 (ASL v2.2) | **v3.3** |
+|---|---|---|---|---|
+| Stray words per minute (60 h of 3-hour wear sessions) | 0.0003 | 0.0014 | 0.0017 (upper 95%: 0.0036) | **0.0050** (18 words) |
+| Stray words in 30 h of everyday movement | 0 | 2 | 2 (0.0011 per minute) | **5** (0.0028 per minute) |
+| WER | 9.4–10.6% | 9.1–10.3% | 8.8% (sentences), 12.1% (sessions) | **4.1% (sentences), 6.0% (sessions)** |
+| Each word signed alone (`check_words.py`, new people) | — | — | about 81% | **88.8%** (takes in `data/`: 98.2%) |
+| Tentative words shown and removed (per minute) | — | 0.031 | 0.014 | **0.038** |
+| Single-sign accuracy | 94.8% | 95.6% | 96.1% | **98.8%** |
+| Glove worn tilted 30° | 96.1% | 96.0% | 96.2% | **98.5%** |
+| One dead sensor | 83.5% | 85.9% | 87.1% | **91.4%** |
+| Signs 1.6x faster | — | — | 95.5% | **98.3%** |
+| Accuracy on new people (leave-one-person-out) RF / CNN | — | — | 93.6% / 95.6% | **97.0% / 98.8%** |
+
+On the same 20 new people with the new data, the old models and settings had a sentence WER of 21.8%; v3.3 has 2.9%.
+The price: a few more stray words (about one per 3-4 hours of everyday movement instead of one per 10), chosen on purpose so
+that single words and sentences are said more often. For fewer, `python eval_live.py --tune --target 0` picks stricter
+settings (about one per 20 hours), but single words drop to about 85% and the WER rises to about 5.6%.
 
 Weakest signs:
-- **one / me / you**: same handshape; only the direction differs.
-- **water / two**, a little.
-- **come / drink / hungry** signed on their own, because they look like everyday movements (a cup, a hand moving down the chest).
+- **drink / hungry signed alone** (38% / 47% on new people; about 90% inside sentences): DRINK is the same movement as
+  drinking from a cup, and HUNGRY looks like a hand moving down the chest, so with no word next to them the model can't tell.
+  More training takes, rest-only context and a rest-before rule were tried: none helped without many more stray words.
+- **one** alone (78%), then **me / one** and **water / two** a little.
 
-When recording real data, record these with clear angles, and record many similar everyday movements as `other`.
+When recording real data, record these with clear angles, and record many similar everyday movements as `other`
+(really drinking from a cup, eating, a hand on the stomach).
 
 Simulated data is easier than real data. These numbers compare versions of the system; they are not the accuracy to present.

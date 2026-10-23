@@ -14,7 +14,8 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix
 
-from common import LABELS, context_windows, features, load_takes, transition_windows
+from common import (LABELS, context_windows, features, load_takes, setup_console, show_help, sign_people,
+                    transition_windows)
 
 
 def top_confusions(y_true, y_pred, n=5):
@@ -35,11 +36,11 @@ def fit(X, y, persons):
 def main():
     X, y, persons = load_takes("data")
     F = features(X)
-    print(f"{len(y)} take | {len(set(persons))} أشخاص | {F.shape[1]} feature لكل take\n")
+    print(f"{len(y)} take | {len(sign_people(y, persons))} أشخاص بيعملوا إشارات | {F.shape[1]} feature لكل take\n")
 
     all_true, all_pred = [], []
     print("الاختبار على شخص الموديل مشافوش:")
-    for p in sorted(set(persons)):
+    for p in sign_people(y, persons):           # أشخاص الـ mining (other بس) مش بيتحسبوا في الدقة
         test = persons == p
         clf = fit(X[~test], y[~test], persons[~test])
         pred = clf.predict(F[test])
@@ -62,4 +63,6 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_console()
+    show_help(__doc__)
     main()

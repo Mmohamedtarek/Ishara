@@ -1,9 +1,19 @@
-# Ishara Mobile Kit (v3.2.3)
+# Ishara Mobile Kit (v3.3)
 
 The kit holds everything the mobile app needs to recognize signs today. The app doesn't have to wait for the glove, and needs no rewrite when the glove is ready.
 
 ## What's new
 
+- **v3.3 (spec v3.3, the app's recognizer must change):** new models (ME and YOU have their ASL pointing movement; data,
+  models and `decider.json` from one run), and `AI-SPEC.md` v3.3:
+  - `pair_level`: the word that confirms a tentative word must pass the `tentative` level;
+  - a word signed alone is confirmed when the hand goes back to rest (`confirm_on_rest`, `rest_conf`, `rest_run`, `rest_null`);
+  - more than 10 dropped samples in a row = the glove restarted, treat it as a real gap.
+
+  `model/`, `mock/` and `test/` are rebuilt. Implement the three rules (section 4 and 5 of `AI-SPEC.md`; defaults keep
+  v3.2.1 behaviour), then run `sync_kit.sh` and the tests: `mock/expected.json` and `test_vectors.json` use them.
+  Simulated results on new people: sentence WER 8.8% → 4.1%, single-sign accuracy 96.1% → 98.8%, each word signed alone
+  about 81% → 88.8%; stray words about one per 3–4 hours of everyday movement (was one per ~10 hours).
 - **v3.2.3:** new `mock/A/calibration/` and `mock/B/calibration/` folders with `open.csv`, `fist.csv` and `turn.csv`: what the glove's sensors read during each calibration step, for the same person as the other mock files. The mock glove plays them during `CAL OPEN` / `CAL FIST` / `CAL TURN`. Models, labels, config, spec and every other file are unchanged.
 - **v3.2.2:** new models trained on Sign Vocabulary **v2.2**:
   - COME is one quick arc of the index toward you (Lifeprint);

@@ -1,3 +1,4 @@
+# Python 3.12 (64-bit) على Ubuntu و Windows. على Windows: TensorFlow بيشتغل على الـ CPU بس، وده عادي.
 numpy
 pandas
 scikit-learn

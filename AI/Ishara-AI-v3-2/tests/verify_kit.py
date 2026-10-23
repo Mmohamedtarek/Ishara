@@ -44,6 +44,10 @@ class Decider:
         s.active_until = -1; s.pending = None; s.pending_until = -1; s.blocked = set()
         s.L = {k: cfg[k] for k in ("idle", "tentative", "active")}; s.run = {k: (None, 0) for k in s.L}
         s.act = round(cfg["active_s"] * 5); s.conf_steps = round(cfg["confirm_s"] * 5)
+        # spec v3.3: pair_level and the single-word rule (defaults = v3.2.1 behaviour)
+        s.pair = cfg.get("pair_level", "active"); s.cor = cfg.get("confirm_on_rest", 0)
+        s.r_conf = cfg.get("rest_conf", 0.0); s.r_run = cfg.get("rest_run", 0); s.r_null = cfg.get("rest_null", 1.0)
+        s.p_rest = 0; s.p_peak = 0.0; s.p_run = 0; s.p_best = 0; s.p_null = 1.0
 
     def say(s, l): s.last = l; s.active_until = s.step + s.act
 
@@ -53,11 +57,24 @@ class Decider:
             ev.append(("cancel", s.pending)); s.blocked.add(s.pending); s.pending = None
         s.recent = (s.recent + [np.asarray(p, float)])[-s.smooth:]
         avg = np.mean(s.recent, 0); top = int(np.argmax(avg)); lab = labels[top]; conf = avg[top]
+        null = avg[labels.index("rest")] + avg[labels.index("other")]
+        if s.pending is not None:
+            T = s.L["tentative"]
+            if lab == s.pending:
+                s.p_peak = max(s.p_peak, conf); s.p_null = min(s.p_null, null)
+                ok = conf >= T.get("per_class", {}).get(lab, T["confidence"]) and null <= T["max_null"]
+                s.p_run = s.p_run + 1 if ok else 0; s.p_best = max(s.p_best, s.p_run)
+            else:
+                s.p_run = 0
+            s.p_rest = s.p_rest + 1 if lab == "rest" else 0
         if lab in ("rest", "other"):
+            if (s.pending is not None and s.cor > 0 and s.p_rest >= s.cor and s.p_peak >= s.r_conf
+                    and s.p_best >= s.r_run and s.p_null <= s.r_null):
+                ev.append(("confirm", s.pending)); s.say(s.pending); s.pending = None; s.p_rest = 0
             s.rest_seen += 1
             if s.rest_seen >= 2: s.last = None; s.blocked.clear()
             s.run = {k: (None, 0) for k in s.L}; return ev
-        s.rest_seen = 0; null = avg[labels.index("rest")] + avg[labels.index("other")]
+        s.rest_seen = 0
         passed = {}
         for k, L in s.L.items():
             thr = L.get("per_class", {}).get(lab, L["confidence"])
@@ -70,12 +87,13 @@ class Decider:
         elif s.pending is not None:
             if lab == s.pending:
                 if passed["idle"]: ev.append(("confirm", lab)); s.say(lab); s.pending = None
-            elif passed["active"] and lab != s.last:
+            elif passed[s.pair] and lab != s.last:
                 ev += [("confirm", s.pending), ("word", lab)]; s.say(lab); s.pending = None
         elif lab != s.last:
             if passed["idle"]: ev.append(("word", lab)); s.say(lab)
             elif passed["tentative"] and lab not in s.blocked:
                 ev.append(("tentative", lab)); s.pending = lab; s.pending_until = s.step + s.conf_steps
+                s.p_rest = 0; s.p_peak = conf; s.p_run = 1; s.p_best = 1; s.p_null = null
         return ev
 
 
@@ -112,7 +130,7 @@ want = [(x["step"], x["event"], x["word"]) for x in dt["expected"]]
 bad += got != want
 if "gaps" in tv:
     g = tv["gaps"]; cal_g = g["calibration"]
-    win, n, d, exp_seq, last, got = [], 0, Decider(), None, None, []
+    win, n, d, exp_seq, last, got, dropped = [], 0, Decider(), None, None, [], 0
     def push(raw, i):
         global win, n
         win = (win + [normalize([raw], cal_g)[0]])[-100:]; n += 1
@@ -123,7 +141,11 @@ if "gaps" in tv:
         if exp_seq is not None:
             gap = (seq - exp_seq) % 65536
             if gap >= 32768:
-                continue
+                dropped += 1
+                if dropped <= 10:
+                    continue
+                gap = 11                    # spec v3.3: an 11th drop in a row = the glove restarted
+            dropped = 0
             if 1 <= gap <= 5:
                 for _ in range(gap): push(last, i)
             elif gap > 5:
