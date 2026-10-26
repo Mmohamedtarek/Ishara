@@ -264,6 +264,14 @@ class TalkSpeech extends _$TalkSpeech {
     try {
       final catalogue = await ref.read(signCatalogueProvider.future);
       final segments = SpeechToSign.match(text, catalogue, _language);
+      final trace = ref.read(speechTraceProvider);
+      if (trace.enabled) {
+        trace('match', {
+          'language': _language.name,
+          'heard': text,
+          'segments': SpeechToSign.explain(segments, catalogue, _language),
+        });
+      }
       await _play(segments);
       await conversation.add(
         TalkMessage(side: MessageSide.them, text: text, at: _now()),

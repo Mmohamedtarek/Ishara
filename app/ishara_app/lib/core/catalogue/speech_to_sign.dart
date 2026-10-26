@@ -91,6 +91,28 @@ abstract final class SpeechToSign {
     return out;
   }
 
+  /// For the debug speech log: each segment's words, their normalized form,
+  /// the sign, and why there is none (`punctuation`, `noAvatar`: the
+  /// catalogue has the word but the avatar can't sign it, `notInCatalogue`).
+  static List<Map<String, Object?>> explain(
+    List<SignSegment> segments,
+    SignCatalogue catalogue,
+    SpokenLanguage lang,
+  ) => [
+    for (final s in segments)
+      {
+        'words': s.text,
+        'normalized': WordNormalizer.normalize(s.text),
+        'sign': s.label,
+        if (s.label == null)
+          'why': switch (WordNormalizer.normalize(s.text)) {
+            '' => 'punctuation',
+            final n when catalogue.labelFor(n, lang) != null => 'noAvatar',
+            _ => 'notInCatalogue',
+          },
+      },
+  ];
+
   /// Words i..i+n-1 can form one phrase: none is punctuation only, and no
   /// word before the last ends a sentence or clause.
   static bool _isPhrase(List<String> words, List<String> norm, int i, int n) {

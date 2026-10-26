@@ -628,6 +628,8 @@ public class SpeechToTextPlugin :
                         var supportsLocal = false
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && onDevice) {
                         supportsLocal = SpeechRecognizer.isOnDeviceRecognitionAvailable(pluginContext!!)
+                        // Ishara: debug log (debugLogging only)
+                        debugLog("Ishara: on-device recognizer available=$supportsLocal")
                         if (supportsLocal ) {
                             speechRecognizer = createOnDeviceSpeechRecognizer(pluginContext!!).apply {
                                 debugLog("Setting on device listener")
@@ -710,6 +712,11 @@ public class SpeechToTextPlugin :
                             putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS,
                                     ArrayList(phrases))
                         }
+                        // Ishara: debug log (debugLogging only) of what this intent asks for
+                        debugLog("Ishara: intent lang=$languageTag onDevice=$onDevice " +
+                                "sdk=${Build.VERSION.SDK_INT} biasing=" +
+                                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                                    "${phrases?.size ?: 0}" else "unsupported"))
                     }
                 }
             }

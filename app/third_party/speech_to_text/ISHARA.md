@@ -10,5 +10,9 @@ Changes (Android only, every one marked `// Ishara:`; the full diff is `ISHARA.p
 2. The recognizer intent is rebuilt when `onDevice` or the phrases change (upstream compared only
    the language, partial results, listen mode and pause, so a listen could reuse an intent built
    without the on-device flag).
+3. Two debug lines (only with `initialize(debugLogging: true)`, which the app passes in debug builds
+   with developer mode on): whether the phone has an on-device recognizer, and each intent's
+   language, on-device flag, Android version and number of biasing strings (2026-10-26, Talk
+   words diagnosis).
 
 When upstream supports biasing on Android, drop this copy and the override.

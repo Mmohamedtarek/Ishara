@@ -1,5 +1,5 @@
---- /tmp/orig.kt	2026-10-13 01:00:28
-+++ third_party/speech_to_text/android/src/main/kotlin/com/csdcorp/speech_to_text/SpeechToTextPlugin.kt	2026-10-13 01:00:29
+--- /tmp/orig.kt
++++ third_party/speech_to_text/android/src/main/kotlin/com/csdcorp/speech_to_text/SpeechToTextPlugin.kt
 @@ -127,6 +127,9 @@
      private var previousPartialResults: Boolean = true
      private var previousListenMode: ListenMode = ListenMode.deviceDefault
@@ -40,7 +40,16 @@
          handler.post {
              run {
                  speechRecognizer?.startListening(recognizerIntent)
-@@ -647,20 +653,25 @@
+@@ -622,6 +628,8 @@
+                         var supportsLocal = false
+                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && onDevice) {
+                         supportsLocal = SpeechRecognizer.isOnDeviceRecognitionAvailable(pluginContext!!)
++                        // Ishara: debug log (debugLogging only)
++                        debugLog("Ishara: on-device recognizer available=$supportsLocal")
+                         if (supportsLocal ) {
+                             speechRecognizer = createOnDeviceSpeechRecognizer(pluginContext!!).apply {
+                                 debugLog("Setting on device listener")
+@@ -647,20 +655,25 @@
              }
          }
          debugLog("before setup intent")
@@ -69,7 +78,7 @@
              handler.post {
                  run {
                      recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-@@ -692,6 +703,13 @@
+@@ -692,6 +705,18 @@
                          pauseFor?.also {
                              putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, it)
                          }
@@ -80,6 +89,11 @@
 +                            putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS,
 +                                    ArrayList(phrases))
 +                        }
++                        // Ishara: debug log (debugLogging only) of what this intent asks for
++                        debugLog("Ishara: intent lang=$languageTag onDevice=$onDevice " +
++                                "sdk=${Build.VERSION.SDK_INT} biasing=" +
++                                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
++                                    "${phrases?.size ?: 0}" else "unsupported"))
                      }
                  }
              }

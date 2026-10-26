@@ -10,6 +10,7 @@ import 'package:ishara_app/core/avatar/webview_avatar_page.dart';
 import 'package:ishara_app/core/config/app_rules.dart';
 import 'package:ishara_app/core/conversation/conversation_providers.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
+import 'package:ishara_app/core/logging/log.dart';
 import 'package:ishara_app/core/packs/pack_providers.dart';
 import 'package:ishara_app/core/packs/sign_language.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
@@ -18,6 +19,7 @@ import 'package:ishara_app/core/speech/speech_providers.dart';
 import 'package:ishara_app/core/speech/speech_to_text.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/features/talk/application/talk_speech_controller.dart';
+import 'package:logging/logging.dart';
 
 import '../support/fake_avatar_page.dart';
 import '../support/fake_speech.dart';
@@ -70,6 +72,7 @@ class _Rig {
     bool avatarUp = true,
     bool endsSigns = true,
     bool catalogueFails = false,
+    bool developer = false,
   }) async {
     final library = AvatarLibrary.parse(
       readText('assets/packs/asl/avatar/library.json'),
@@ -85,6 +88,7 @@ class _Rig {
     final kv = MemoryKeyValueStore({
       'setup.spoken': spoken,
       'setup.role': role,
+      'settings.developer': developer,
     });
     final stt = FakeSpeechToText(heard: heard, support: support);
     final p = perms ?? FakeMicPermissions(current: MicPermission.granted);
@@ -483,5 +487,58 @@ void main() {
     r.talk.setClock(() => at);
     await r.say();
     expect(r.feed.single.at, at);
+  });
+
+  group('debug word trace (2026-10-26)', () {
+    Future<List<Map<String, Object?>>> traced({
+      required bool developer,
+      required String heard,
+      String spoken = 'en',
+    }) async {
+      final lines = <Map<String, Object?>>[];
+      final sub = Logger.root.onRecord
+          .where((r) => r.loggerName == 'ishara.stt_trace')
+          .listen((r) => lines.add((r.object! as LogEvent).toJson()));
+      addTearDown(sub.cancel);
+      final r = await _Rig.make(
+        heard: [heard],
+        developer: developer,
+        spoken: spoken,
+      );
+      await r.say();
+      return lines;
+    }
+
+    test('developer mode on: the heard text, each segment normalized, its '
+        'sign or why there is none', () async {
+      final lines = await traced(developer: true, heard: 'Bye, everyday ME');
+      final match = lines.singleWhere((l) => l['event'] == 'trace_match');
+      expect(match['heard'], 'Bye, everyday ME');
+      expect(match['segments'], [
+        {'words': 'Bye,', 'normalized': 'bye', 'sign': 'bye'},
+        {
+          'words': 'everyday',
+          'normalized': 'everyday',
+          'sign': null,
+          'why': 'notInCatalogue',
+        },
+        {'words': 'ME', 'normalized': 'me', 'sign': 'me'},
+      ]);
+    });
+
+    test('Arabic: normalized forms are logged', () async {
+      final lines = await traced(developer: true, heard: 'أنا', spoken: 'ar');
+      final match = lines.singleWhere((l) => l['event'] == 'trace_match');
+      expect(match['language'], 'ar');
+      expect((match['segments']! as List).single, {
+        'words': 'أنا',
+        'normalized': 'انا',
+        'sign': 'me',
+      });
+    });
+
+    test('developer mode off: nothing is logged', () async {
+      expect(await traced(developer: false, heard: 'bye'), isEmpty);
+    });
   });
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/logging/log.dart';
+import 'package:ishara_app/core/speech/speech_trace.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -124,6 +125,7 @@ class PlatformSpeechToText implements SpeechToText {
     stt.SpeechToText? plugin,
     Duration? watchdog,
     this.prepareTimeout = const Duration(seconds: 4),
+    this.trace = SpeechTrace.off,
   }) : _stt = plugin ?? stt.SpeechToText(),
        watchdog = watchdog ?? listenFor + watchdogSlack;
 
@@ -131,6 +133,17 @@ class PlatformSpeechToText implements SpeechToText {
   /// plugin's locale list never answers when the phone's support check
   /// fails, which left the mic stuck in "preparing" (phone test 3).
   final Duration prepareTimeout;
+
+  /// The word-for-word log (debug builds with developer mode on only).
+  final SpeechTrace trace;
+
+  /// Time since the listen started, for [trace].
+  final _clock = Stopwatch();
+
+  /// The quietest and loudest sound level of the listen (plugin units:
+  /// Android dB), for [trace].
+  double? _minLevel;
+  double? _maxLevel;
 
   /// The locale picked for each language, so the phone is asked once, not
   /// on every tap. Dropped when the phone says the language is missing.
@@ -189,7 +202,13 @@ class PlatformSpeechToText implements SpeechToText {
     if (!_initialized) {
       try {
         _initialized = await _stt
-            .initialize(onError: _onError, onStatus: _onStatus)
+            .initialize(
+              onError: _onError,
+              onStatus: _onStatus,
+              // the plugin's own Android log (tag SpeechToTextPlugin):
+              // which recognizer, biasing, errors; only with [trace] on
+              debugLogging: trace.enabled,
+            )
             .timeout(prepareTimeout);
       } on TimeoutException {
         _log.warn('init_timeout');
@@ -263,15 +282,26 @@ class PlatformSpeechToText implements SpeechToText {
     _phrases.clear();
     _lastPartial = '';
     _debug('listen', {'locale': _localeId, 'onDevice': onDevice});
+    _clock
+      ..reset()
+      ..start();
+    _minLevel = _maxLevel = null;
+    trace('listen', {
+      'language': language.name,
+      'locale': _localeId,
+      'onDevice': onDevice,
+      'bias': _bias,
+    });
     _watchdog?.cancel();
     _watchdog = Timer(watchdog, () {
       _log.warn('listen_watchdog');
       unawaited(_stt.cancel());
-      _finish(out, const SpeechFailed(SpeechError.other));
+      _finish(out, const SpeechFailed(SpeechError.other), source: 'watchdog');
     });
     try {
       await _stt.listen(
         onResult: _onResult,
+        onSoundLevelChange: _onLevel,
         listenOptions: stt.SpeechListenOptions(
           // Android wants a BCP-47 tag (`ar-EG`); the plugin lists `ar_EG`,
           // and an unknown tag silently falls back to the phone's language.
@@ -297,6 +327,14 @@ class PlatformSpeechToText implements SpeechToText {
     final out = _out;
     if (out == null || out.isClosed) return;
     final text = r.recognizedWords.trim();
+    trace('result', {
+      'ms': _clock.elapsedMilliseconds,
+      'type': r.resultTypeValue.name,
+      'alternates': [
+        for (final a in r.alternates)
+          {'words': a.recognizedWords, 'confidence': a.confidence},
+      ],
+    });
     _debug('result', {
       'type': r.resultTypeValue.name,
       'words': text.isEmpty ? 0 : text.split(RegExp(r'\s+')).length,
@@ -317,6 +355,7 @@ class PlatformSpeechToText implements SpeechToText {
         text.isEmpty
             ? const SpeechFailed(SpeechError.noSpeech)
             : SpeechFinal(text),
+        source: 'final',
       );
     } else {
       out.add(SpeechPartial(r.recognizedWords));
@@ -327,6 +366,7 @@ class PlatformSpeechToText implements SpeechToText {
     final out = _out;
     if (out == null || out.isClosed) return;
     final error = classifySpeechError(e.errorMsg);
+    trace('error', {'ms': _clock.elapsedMilliseconds, 'code': e.errorMsg});
     _log.info('listen_error', {'code': e.errorMsg, 'onDevice': _onDevice});
     if (error == SpeechError.noSpeech &&
         (_phrases.isNotEmpty || _lastPartial.isNotEmpty)) {
@@ -351,6 +391,7 @@ class PlatformSpeechToText implements SpeechToText {
     final out = _out;
     if (out == null || out.isClosed) return;
     _debug('status', {'status': status, 'onDevice': _onDevice});
+    trace('status', {'ms': _clock.elapsedMilliseconds, 'status': status});
     if (status == stt.SpeechToText.listeningStatus) _ignoreDone = false;
     // `done` without a final result: the finished phrases, or nothing.
     if (status == stt.SpeechToText.doneStatus && !_gotFinal && !_ignoreDone) {
@@ -379,6 +420,11 @@ class PlatformSpeechToText implements SpeechToText {
       heard.isEmpty
           ? const SpeechFailed(SpeechError.noSpeech)
           : SpeechFinal(heard),
+      source: phrases.isNotEmpty
+          ? 'phrases'
+          : heard.isEmpty
+          ? 'none'
+          : 'lastPartial',
     );
   }
 
@@ -387,15 +433,32 @@ class PlatformSpeechToText implements SpeechToText {
     if (kDebugMode) _log.info('stt_$event', data);
   }
 
-  void _finish(StreamController<SpeechEvent> out, SpeechEvent last) {
+  void _onLevel(double level) {
+    if (_minLevel == null || level < _minLevel!) _minLevel = level;
+    if (_maxLevel == null || level > _maxLevel!) _maxLevel = level;
+  }
+
+  void _finish(
+    StreamController<SpeechEvent> out,
+    SpeechEvent last, {
+    String source = 'error',
+  }) {
     _watchdog?.cancel();
     if (out.isClosed) return;
+    trace('end', {
+      'ms': _clock.elapsedMilliseconds,
+      'source': source,
+      'heard': last is SpeechFinal ? last.text : null,
+      'error': last is SpeechFailed ? last.error.name : null,
+      'level': {'min': _minLevel, 'max': _maxLevel},
+    });
     out.add(last);
     unawaited(out.close());
   }
 
   @override
   Future<void> stop() async {
+    trace('stop', {'ms': _clock.elapsedMilliseconds});
     if (_stt.isListening) await _stt.stop();
   }
 
@@ -404,6 +467,9 @@ class PlatformSpeechToText implements SpeechToText {
     final out = _out;
     _out = null;
     _watchdog?.cancel();
+    if (out != null && !out.isClosed) {
+      trace('cancel', {'ms': _clock.elapsedMilliseconds});
+    }
     if (_stt.isListening) await _stt.cancel();
     await out?.close();
   }

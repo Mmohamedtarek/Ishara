@@ -350,6 +350,19 @@ void main() {
           (seg.text, seg.label),
       ];
       expect(m2('bye hungry'), [('bye', 'bye'), ('hungry', null)]);
+      // the debug word trace says why a segment has no sign (2026-10-26)
+      expect(
+        SpeechToSign.explain(
+          SpeechToSign.match(
+            'hungry ... everyday',
+            noHungry,
+            SpokenLanguage.en,
+          ),
+          noHungry,
+          SpokenLanguage.en,
+        ).map((e) => e['why']),
+        ['noAvatar', 'punctuation', 'notInCatalogue'],
+      );
       expect(m('bye hungry', SpokenLanguage.en), [
         ('bye', 'bye'),
         ('hungry', 'hungry'),

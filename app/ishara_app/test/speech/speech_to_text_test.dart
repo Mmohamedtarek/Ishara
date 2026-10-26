@@ -4,7 +4,10 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
+import 'package:ishara_app/core/logging/log.dart';
 import 'package:ishara_app/core/speech/speech_to_text.dart';
+import 'package:ishara_app/core/speech/speech_trace.dart';
+import 'package:logging/logging.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 /// The plugin's method channel, answered here as the phone would.
@@ -75,6 +78,18 @@ class _Phone {
       'resultType': type,
     }),
   );
+
+  /// A result with several alternates (words, confidence), best first.
+  Future<void> alternates(List<(String, double)> alts, {required int type}) =>
+      _send(
+        'textRecognition',
+        jsonEncode({
+          'alternates': [
+            for (final (w, c) in alts) {'recognizedWords': w, 'confidence': c},
+          ],
+          'resultType': type,
+        }),
+      );
 
   Future<void> error(String code) =>
       _send('notifyError', jsonEncode({'errorMsg': code, 'permanent': true}));
@@ -547,5 +562,102 @@ void main() {
         expect((got.single as SpeechFailed).error, SpeechError.other);
       },
     );
+  });
+
+  group('debug word trace (2026-10-26)', () {
+    late _Phone phone;
+    late List<LogRecord> lines;
+    late StreamSubscription<LogRecord> sub;
+
+    setUp(() {
+      phone = _Phone();
+      lines = [];
+      sub = Logger.root.onRecord
+          .where((r) => r.loggerName == 'ishara.stt_trace')
+          .listen(lines.add);
+    });
+
+    tearDown(() async {
+      await sub.cancel();
+      phone.dispose();
+    });
+
+    Map<String, Object?> line(String event) => lines
+        .map((r) => (r.object! as LogEvent).toJson())
+        .firstWhere((m) => m['event'] == 'trace_$event');
+
+    test('on: locale, on-device, bias, every result with its alternates and '
+        'confidences, the end with its source; the plugin log is on', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+        trace: SpeechTrace(() => true),
+      );
+      addTearDown(s.cancel);
+      final done = Completer<void>();
+      s
+          .listen(SpokenLanguage.en, phrases: ['bye', 'i'])
+          .listen(null, onDone: done.complete);
+      await _flush();
+      await _flush();
+      expect(
+        (phone.calls.firstWhere((c) => c.method == 'initialize').arguments
+            as Map)['debugLogging'],
+        isTrue,
+      );
+      await phone.alternates([('boy', .8), ('bye', .4)], type: 0);
+      await phone.status('notListening');
+      await phone.error('error_no_match');
+      await done.future;
+      final listen = line('listen');
+      expect(listen['locale'], 'en_US');
+      expect(listen['onDevice'], isTrue);
+      expect(listen['bias'], ['bye', 'i']);
+      expect(line('result')['alternates'], [
+        {'words': 'boy', 'confidence': .8},
+        {'words': 'bye', 'confidence': .4},
+      ]);
+      expect(line('status')['status'], 'notListening');
+      expect(line('error')['code'], 'error_no_match');
+      final end = line('end');
+      expect(end['source'], 'lastPartial');
+      expect(end['heard'], 'boy');
+      expect(end['error'], isNull);
+    });
+
+    test('nothing heard: the end says so', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+        trace: SpeechTrace(() => true),
+      );
+      addTearDown(s.cancel);
+      final done = Completer<void>();
+      s.listen(SpokenLanguage.en).listen(null, onDone: done.complete);
+      await _flush();
+      await _flush();
+      await phone.error('error_no_match');
+      await done.future;
+      expect(line('error')['code'], 'error_no_match');
+      expect(line('end'), containsPair('source', 'error'));
+      expect(line('end'), containsPair('error', 'noSpeech'));
+    });
+
+    test('off (developer mode off): no trace line, no plugin log', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+      );
+      addTearDown(s.cancel);
+      final done = Completer<void>();
+      s.listen(SpokenLanguage.en).listen(null, onDone: done.complete);
+      await _flush();
+      await _flush();
+      await phone.words('hello', last: true);
+      await done.future;
+      expect(lines, isEmpty);
+      expect(
+        (phone.calls.firstWhere((c) => c.method == 'initialize').arguments
+            as Map)['debugLogging'],
+        isFalse,
+      );
+    });
   });
 }
