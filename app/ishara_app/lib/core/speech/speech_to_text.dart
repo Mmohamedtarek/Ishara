@@ -440,7 +440,14 @@ class PlatformSpeechToText implements SpeechToText {
     trace('status', {'ms': _clock.elapsedMilliseconds, 'status': status});
     if (status == stt.SpeechToText.listeningStatus) _ignoreDone = false;
     // `done` without a final result: the finished phrases, or nothing.
-    if (status == stt.SpeechToText.doneStatus && !_gotFinal && !_ignoreDone) {
+    // After a stop (hold to talk: the mic was let go) the plugin says
+    // `done` at once, before the recognizer's words, which come when the
+    // audio ends (phone run 2, 2026-10-27: ~0.4 s later): wait for them
+    // ([stopGrace]).
+    if (status == stt.SpeechToText.doneStatus &&
+        !_gotFinal &&
+        !_ignoreDone &&
+        !_stopAsked) {
       _finishHeard(out);
     }
   }

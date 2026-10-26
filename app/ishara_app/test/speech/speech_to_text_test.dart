@@ -840,5 +840,49 @@ void main() {
         greaterThan(before),
       );
     });
+
+    test('phone run 2 (2026-10-27): after the stop the plugin reports '
+        '"notListening" and "done" at once, and the recognizer\'s words '
+        'come ~0.4 s later: they are the sentence', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+      );
+      addTearDown(s.cancel);
+      final got = <SpeechEvent>[];
+      final done = Completer<void>();
+      s.listen(SpokenLanguage.en).listen(got.add, onDone: done.complete);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await phone.result('', type: 1);
+      await s.stop();
+      await phone.status('notListening');
+      await phone.status('doneNoResult');
+      await _flush();
+      expect(got.whereType<SpeechFailed>(), isEmpty, reason: 'still waiting');
+      await phone.words('look at me', last: true);
+      await done.future;
+      expect((got.last as SpeechFinal).text, 'look at me');
+    });
+
+    test('...a plain "done" after the stop is ignored too', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+      );
+      addTearDown(s.cancel);
+      final got = <SpeechEvent>[];
+      final done = Completer<void>();
+      s.listen(SpokenLanguage.en).listen(got.add, onDone: done.complete);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await s.stop();
+      await phone.status('done');
+      await _flush();
+      expect(got.whereType<SpeechFailed>(), isEmpty);
+      await phone.words('bye', last: true);
+      await done.future;
+      expect((got.last as SpeechFinal).text, 'bye');
+    });
   });
 }

@@ -698,3 +698,5 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 
 **After the user's answers (2026-10-26):** TV1–TV15 and goldens approved; haptic confirmed (TV-6); finishing shows "One moment…" (test); no-sign marks built (TV-9). `flutter test --concurrency=2`: 1009 passed, 4 skipped, the 28 failures were the golden images now committed from the runner (golden tests 52/52 pass with them). The SOS run (location on over adb, user allowed) waits until after the user's word rerun, because a test run uninstalls the app.
 
+**Phone run 2 (user, 2026-10-27, hold to talk):** nothing signed, sentences included. Cause and fix: TV-10 (the speech layer took the plugin's immediate `done` after a release as "nothing heard"; the words came 0.4 s later). Test replaying the phone's order (fails without the fix). Checks: analyze 0 issues; Talk / speech / settings tests 203 passed; `talk_test` ✓ 2/2 on the phone with `--no-uninstall` (the user's setup kept; the normal debug build reinstalled over the test build; developer mode still on).
+
