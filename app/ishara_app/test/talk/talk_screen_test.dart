@@ -153,6 +153,49 @@ void main() {
     expect(find.text('Ready'), findsOneWidget);
   });
 
+  testWidgets('words with no sign: greyed in the caption and the feed '
+      'bubble, NS2 under it, "no sign yet" for the screen reader', (t) async {
+    final h = t.ensureSemantics();
+    final talk = _Talk(heard: ['Bye everyday']);
+    await talk.pump(t, stored: {'setup.spoken': 'en'});
+    await _hold(t);
+    await _until(t, find.text('everyday'));
+    // caption: the signed word lights up in turn, the other stays grey
+    // the caption is one node for the screen reader: the words in order
+    expect(
+      find.bySemanticsLabel(RegExp(r'Bye\s+everyday, No sign yet')),
+      findsOneWidget,
+    );
+    final grey = t.widget<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('talk-caption')),
+        matching: find.text('everyday'),
+      ),
+    );
+    expect(grey.style!.decorationStyle, TextDecorationStyle.dotted);
+    await _finishSigning(t);
+    // feed
+    expect(find.byKey(const ValueKey('bubble-no-sign')), findsOneWidget);
+    expect(find.text('1 word has no sign yet'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(
+        RegExp(r'^Bye everyday, No sign yet,\. 1 word has no sign yet\. '),
+      ),
+      findsOneWidget,
+    );
+    h.dispose();
+  });
+
+  testWidgets('all words signed: the bubble stays plain (no NS2)', (t) async {
+    final talk = _Talk(heard: ['bye']);
+    await talk.pump(t, stored: {'setup.spoken': 'en'});
+    await _hold(t);
+    await _finishSigning(t);
+    expect(find.text('Signed by Nour'), findsOneWidget);
+    expect(find.byKey(const ValueKey('bubble-no-sign')), findsNothing);
+    expect(find.textContaining('no sign yet'), findsNothing);
+  });
+
   testWidgets('the mic button is labelled for screen readers (TV3)', (t) async {
     final h = t.ensureSemantics();
     await _Talk().pump(t);
@@ -339,6 +382,16 @@ void main() {
       expect(bar(), before);
       await g.up();
       await settle(t, n: 3);
+    });
+
+    testWidgets('released, waiting for the last words: "One moment…" in '
+        'the state and the hint, never "Mic ready"', (t) async {
+      final talk = _Talk(untilStop: true);
+      await talk.pump(t);
+      talk.stt.stopHangs = true;
+      await _hold(t);
+      expect(find.text('One moment…'), findsNWidgets(2));
+      expect(find.text('Mic ready'), findsNothing);
     });
 
     testWidgets('a quick tap does not record (hold to talk)', (t) async {

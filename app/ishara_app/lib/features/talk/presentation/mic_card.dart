@@ -85,7 +85,10 @@ class _MicCardState extends ConsumerState<MicCard> {
                         s.faceToFace ? l.themLabelF2f : l.themLabel,
                       ),
                     ),
-                    _MicStateLabel(listening: listening),
+                    _MicStateLabel(
+                      listening: listening,
+                      finishing: s.mic == MicState.finishing,
+                    ),
                   ],
                 ),
               ),
@@ -178,15 +181,20 @@ class _ZoneLabel extends StatelessWidget {
 /// `.mic-state`: a 7 px dot and "Mic ready" / "Listening…" (11 px w800);
 /// listening: teal-soft, the dot glowing and blinking.
 class _MicStateLabel extends StatelessWidget {
-  const new({required this.listening});
+  const new({required this.listening, this.finishing = false});
 
   final bool listening;
+
+  /// Released, waiting for the last words: "One moment…" (TV11), not "Mic
+  /// ready" (user, 2026-10-26).
+  final bool finishing;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     final l = AppLocalizations.of(context);
-    final color = listening ? c.tealSoft : c.muted;
+    final active = listening || finishing;
+    final color = active ? c.tealSoft : c.muted;
     return Semantics(
       liveRegion: true,
       child: Row(
@@ -199,7 +207,7 @@ class _MicStateLabel extends StatelessWidget {
               height: 7,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: listening ? c.teal : c.muted,
+                color: active ? c.teal : c.muted,
                 boxShadow: listening
                     ? [BoxShadow(color: c.teal, blurRadius: 8)]
                     : null,
@@ -208,7 +216,11 @@ class _MicStateLabel extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            listening ? l.listening : l.micIdle,
+            listening
+                ? l.listening
+                : finishing
+                ? l.micFinishing
+                : l.micIdle,
             style: context.text.chip.copyWith(fontSize: 11, color: color),
           ),
         ],

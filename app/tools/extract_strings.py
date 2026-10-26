@@ -267,7 +267,7 @@ STEP10_DRAFTS = {
     "storageFull": ("Your phone is out of storage, so Ishara can't save new changes. Free up some space.", "مساحة الموبايل خلصت، فإشارة مش قادر يحفظ التغييرات الجديدة. فضّي شوية مساحة.", "N1: once per session, when a change can't be saved (your wording, step 10a review)", None),
 }
 
-# Talk voice (2026-10-26): hold to talk. Drafts until the user approves them
+# Talk voice (2026-10-26): hold to talk. TV1-TV15 approved 2026-10-26
 # (app/tools/out/talk_voice/drafts.html).
 TALKVOICE_DRAFTS = {
     "micHoldStrong": ("Hold the mic and speak.", "دوس مطوّل على الميكروفون واتكلم.", "TV1: mic hint, hold to talk (replaces micHintStrong «Tap the mic and speak.»)", None),
@@ -285,6 +285,12 @@ TALKVOICE_DRAFTS = {
     "micReplyHold": ("Hold the mic to reply", "دوس مطوّل على الميكروفون عشان ترد", "TV13: face to face, under your words (replaces micReply in hold mode)", None),
     "sMicTap": ("Tap to start and stop", "دوسة تبدأ ودوسة توقّف", "TV14: Settings › Accessibility", None),
     "sMicTapS": ("Record with a tap instead of holding the mic. On by itself with TalkBack.", "سجّل بدوسة بدل ما تفضل دايس على الميكروفون. بيشتغل لوحده مع TalkBack.", "TV15: under TV14", None),
+}
+
+# Talk voice: words with no sign (user decision 2026-10-26). Drafts until approved.
+TALKVOICE_NS_DRAFTS = {
+    "noSignYet": ("No sign yet", "لسه مالهاش إشارة", "NS1: screen reader, after a word the avatar has no sign for (caption and feed)", None),
+    "noSignCount": ("{n, plural, =1{1 word has no sign yet} other{{n} words have no sign yet}}", "{n, plural, =1{كلمة واحدة لسه مالهاش إشارة} =2{كلمتين لسه مالهمش إشارة} few{{n} كلمات لسه مالهاش إشارة} other{{n} كلمة لسه مالهاش إشارة}}", "NS2: under a heard sentence in the feed when some words had no sign", {"n": "int"}),
 }
 
 # Prototype texts whose Arabic the user changed (key: (ar, why)).
@@ -569,6 +575,16 @@ def main() -> int:
     for key, (e, a, why, ph) in TALKVOICE_DRAFTS.items():
         if key in out_en:
             print(f"error: talk voice draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"approved new text (talk voice, 2026-10-26): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
+    for key, (e, a, why, ph) in TALKVOICE_NS_DRAFTS.items():
+        if key in out_en:
+            print(f"error: no-sign draft key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
         meta = {"description": f"draft new text (talk voice, 2026-10-26): {why}"}

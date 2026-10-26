@@ -490,6 +490,20 @@ void main() {
     expect(r.stt.phrases, isNot(contains('hello')));
   });
 
+  test('the feed can show how a sentence heard this session was signed; '
+      'older messages: nothing (never a wrong mark)', () async {
+    final r = await _Rig.make(heard: ['bye everyday']);
+    await r.say();
+    final segs = r.talk.segmentsFor(r.feed.single)!;
+    expect([for (final s in segs) s.label], ['bye', null]);
+    expect(
+      r.talk.segmentsFor(
+        TalkMessage(side: MessageSide.them, text: 'bye', at: DateTime(2020)),
+      ),
+      isNull,
+    );
+  });
+
   test('the feed message carries the clock time', () async {
     final r = await _Rig.make(heard: ['yes']);
     final at = DateTime(2026, 10, 12, 10, 5);

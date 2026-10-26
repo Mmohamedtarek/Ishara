@@ -350,6 +350,20 @@ void main() {
           (seg.text, seg.label),
       ];
       expect(m2('bye hungry'), [('bye', 'bye'), ('hungry', null)]);
+      // Talk greys words with no sign; punctuation is not a word (NS1/NS2)
+      final segs = SpeechToSign.match(
+        'Bye, everyday ... me and you',
+        cat,
+        SpokenLanguage.en,
+      );
+      expect(
+        [
+          for (final s in segs)
+            if (SpeechToSign.noSign(s)) s.text,
+        ],
+        ['everyday', 'and'],
+      );
+      expect(SpeechToSign.noSignWords(segs), 2);
       // the debug word trace says why a segment has no sign (2026-10-26)
       expect(
         SpeechToSign.explain(

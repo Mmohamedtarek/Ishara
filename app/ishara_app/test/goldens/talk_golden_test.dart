@@ -60,6 +60,15 @@ class _FixedTalk extends TalkSpeech {
   Future<void> releaseMic({bool checkLength = true}) async {}
   @override
   Future<void> cancelMic() async {}
+
+  // the last heard sentence was signed this session: the feed greys its
+  // words with no sign
+  @override
+  List<SignSegment>? segmentsFor(TalkMessage message) =>
+      fixed.sentence.isNotEmpty &&
+          message.text == fixed.sentence.map((s) => s.text).join(' ')
+      ? fixed.sentence
+      : null;
 }
 
 // Every async provider Talk reads gets its value before the first frame

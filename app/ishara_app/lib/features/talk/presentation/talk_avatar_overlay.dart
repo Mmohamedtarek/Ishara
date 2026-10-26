@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/core/avatar/avatar_card_parts.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/avatar/sign_speed.dart';
+import 'package:ishara_app/core/catalogue/speech_to_sign.dart';
 import 'package:ishara_app/core/settings/app_settings.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/ishara_icon.dart';
@@ -117,9 +118,11 @@ class _Caption extends ConsumerWidget {
     final name = character?.name(arabic: ar) ?? '';
     final gender = character?.icuGender ?? '';
     final label = l.avSigningFor(gender);
-    final words = <(String, bool)>[
+    // a word with no sign stays grey and never lights up (NS1)
+    final words = <(String, bool, bool)>[
       for (var i = 0; i < s.sentence.length; i++)
-        for (final w in s.sentence[i].words) (w, i == s.active),
+        for (final w in s.sentence[i].words)
+          (w, i == s.active, SpeechToSign.noSign(s.sentence[i])),
     ];
     final runtime = ref.watch(avatarRuntimeProvider).value;
     return AvatarCaptionBox(
@@ -136,21 +139,42 @@ class _Caption extends ConsumerWidget {
               alignment: WrapAlignment.center,
               spacing: 4,
               children: [
-                for (final (w, on) in words)
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: on ? const Color(0xFFC9CFFF) : null,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      w,
-                      style: t.caption.copyWith(
-                        color: on ? const Color(0xFF0E1440) : null,
+                for (final (w, on, none) in words)
+                  if (none)
+                    Semantics(
+                      label: '$w, ${l.noSignYet}',
+                      excludeSemantics: true,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: Text(
+                          w,
+                          style: t.caption.copyWith(
+                            color: (t.caption.color ?? Colors.white).withValues(
+                              alpha: .55,
+                            ),
+                            decoration: TextDecoration.underline,
+                            decorationStyle: TextDecorationStyle.dotted,
+                            decorationColor: (t.caption.color ?? Colors.white)
+                                .withValues(alpha: .55),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: on ? const Color(0xFFC9CFFF) : null,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        w,
+                        style: t.caption.copyWith(
+                          color: on ? const Color(0xFF0E1440) : null,
+                        ),
                       ),
                     ),
-                  ),
               ],
             ),
     );

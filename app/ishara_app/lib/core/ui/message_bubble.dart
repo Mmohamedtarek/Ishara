@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
+import 'package:ishara_app/core/catalogue/speech_to_sign.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
 import 'package:ishara_app/core/router/transitions.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
@@ -11,9 +12,13 @@ import 'package:ishara_app/l10n/gen/app_localizations.dart';
 /// corner on the speaker's side 6 (mirrored in RTL), the text and a status
 /// line (hand + "Signed by Nour", or speaker + "Spoken"); pops in (0.3 s).
 class MessageBubble extends ConsumerStatefulWidget {
-  const new(this.message, {this.trailing, super.key});
+  const new(this.message, {this.trailing, this.segments, super.key});
 
   final TalkMessage message;
+
+  /// How a heard sentence was signed (Talk, this session): the words with
+  /// no sign are greyed, with NS2 under the text. Null: plain text.
+  final List<SignSegment>? segments;
 
   /// At the end of the status line (History: the star).
   final Widget? trailing;
@@ -66,6 +71,25 @@ class _MessageBubbleState extends ConsumerState<MessageBubble>
       (false, false) => (const Color(0x296F7CF0), const Color(0x666F7CF0)),
       (false, true) => (const Color(0x1424309A), const Color(0x4D24309A)),
     };
+    final segments = widget.segments;
+    final unsigned = segments == null ? 0 : SpeechToSign.noSignWords(segments);
+    final plain = context.text.message.copyWith(color: c.ink);
+    final grey = plain.copyWith(
+      color: c.muted,
+      decoration: TextDecoration.underline,
+      decorationStyle: TextDecorationStyle.dotted,
+      decorationColor: c.muted,
+    );
+    // the screen reader hears "word, no sign yet" after each such word
+    final spoken = segments == null || unsigned == 0
+        ? widget.message.text
+        : [
+            for (final s in segments)
+              if (SpeechToSign.noSign(s))
+                '${s.text}, ${l.noSignYet},'
+              else
+                s.text,
+          ].join(' ');
     const big = Radius.circular(18);
     const small = Radius.circular(6);
     return LayoutBuilder(
@@ -79,7 +103,9 @@ class _MessageBubbleState extends ConsumerState<MessageBubble>
             animation: CurvedAnimation(parent: _a, curve: Curves.ease),
             child: Semantics(
               container: true,
-              label: '${widget.message.text}. $status',
+              label: unsigned == 0
+                  ? '$spoken. $status'
+                  : '$spoken. ${l.noSignCount(unsigned)}. $status',
               // the trailing control (History's star) keeps its own label
               excludeSemantics: widget.trailing == null,
               child: Container(
@@ -101,10 +127,33 @@ class _MessageBubbleState extends ConsumerState<MessageBubble>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      widget.message.text,
-                      style: context.text.message.copyWith(color: c.ink),
-                    ),
+                    if (segments == null || unsigned == 0)
+                      Text(widget.message.text, style: plain)
+                    else ...[
+                      Text.rich(
+                        key: const ValueKey('bubble-no-sign'),
+                        TextSpan(
+                          children: [
+                            for (final (i, s) in segments.indexed) ...[
+                              if (i > 0) const TextSpan(text: ' '),
+                              TextSpan(
+                                text: s.text,
+                                style: SpeechToSign.noSign(s) ? grey : null,
+                              ),
+                            ],
+                          ],
+                        ),
+                        style: plain,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        l.noSignCount(unsigned),
+                        style: context.text.chip.copyWith(
+                          fontSize: 10.5,
+                          color: c.muted,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Opacity(
                       opacity: .85,

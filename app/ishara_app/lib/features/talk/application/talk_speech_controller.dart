@@ -175,6 +175,16 @@ class TalkSpeech extends _$TalkSpeech {
   // ignore: use_setters_to_change_properties
   void setLevelForTest(double v) => _level.value = v;
 
+  /// The segments of the sentences heard this session, by message (text
+  /// and time), so the feed can grey the words that had no sign. Not
+  /// stored: older messages show plain (never a wrong mark).
+  final _heard = <(String, DateTime), List<SignSegment>>{};
+  static const _heardKept = 200;
+
+  /// How [message] was signed, if it was heard this session.
+  List<SignSegment>? segmentsFor(TalkMessage message) =>
+      _heard[(message.text, message.at)];
+
   /// The mic is held down (or, in tap mode, recording was asked for).
   bool _held = false;
 
@@ -433,8 +443,11 @@ class TalkSpeech extends _$TalkSpeech {
         });
       }
       await _play(segments);
+      final at = _now();
+      _heard[(text, at)] = segments;
+      if (_heard.length > _heardKept) _heard.remove(_heard.keys.first);
       await conversation.add(
-        TalkMessage(side: MessageSide.them, text: text, at: _now()),
+        TalkMessage(side: MessageSide.them, text: text, at: at),
       );
     } on Object catch (e, st) {
       // The catalogue or the avatar couldn't load: say so, never guess.
