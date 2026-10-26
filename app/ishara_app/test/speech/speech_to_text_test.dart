@@ -22,6 +22,10 @@ class _Phone {
 
   bool initOk = true;
 
+  /// Holds `locales` / `listen` until completed (a slow phone).
+  Completer<void>? localesGate;
+  Completer<void>? listenGate;
+
   /// The phone never answers `locales` (Android 13+: its support check
   /// failed, phone test 3).
   bool localesHang = false;
@@ -39,8 +43,10 @@ class _Phone {
         return initOk;
       case 'locales':
         if (localesHang) await Completer<void>().future;
+        await localesGate?.future;
         return locales;
       case 'listen':
+        await listenGate?.future;
         final a = listenAnswers.isEmpty ? true : listenAnswers.removeAt(0);
         if (a is PlatformException) throw a;
         return a;
@@ -90,6 +96,17 @@ class _Phone {
           'resultType': type,
         }),
       );
+
+  /// The microphone's sound level (Android RMS dB).
+  Future<void> level(double db) async {
+    await _messenger.handlePlatformMessage(
+      channel.name,
+      const StandardMethodCodec().encodeMethodCall(
+        MethodCall('soundLevelChange', db),
+      ),
+      (_) {},
+    );
+  }
 
   Future<void> error(String code) =>
       _send('notifyError', jsonEncode({'errorMsg': code, 'permanent': true}));
@@ -255,8 +272,16 @@ void main() {
       expect(phone.listens.single['onDevice'], isTrue);
       // BCP-47 for Android (the plugin lists `ar_EG`)
       expect(phone.listens.single['localeId'], 'ar-EG');
-      expect(phone.listens.single['pauseFor'], 3000);
-      expect(phone.listens.single['listenFor'], 30000);
+      // hold to talk: no pause limit (the user ends the listen), a 65 s
+      // backstop past Talk's 60 s; dictation (search only with the debug
+      // STT_LISTEN_MODE define)
+      // ask the recognizer not to end on a pause (it may ignore it)
+      expect(phone.listens.single['pauseFor'], 65000);
+      expect(phone.listens.single['listenFor'], 65000);
+      expect(
+        phone.listens.single['listenMode'],
+        stt.ListenMode.dictation.index,
+      );
       await phone.words('شكرا', last: false);
       await phone.words('شكرا جدا', last: true);
       await done.future;
@@ -549,7 +574,7 @@ void main() {
         expect(
           PlatformSpeechToText(plugin: stt.SpeechToText.withMethodChannel())
               .watchdog,
-          const Duration(seconds: 35),
+          const Duration(seconds: 70),
         );
         await s.cancel();
         s = PlatformSpeechToText(
@@ -657,6 +682,162 @@ void main() {
         (phone.calls.firstWhere((c) => c.method == 'initialize').arguments
             as Map)['debugLogging'],
         isFalse,
+      );
+    });
+  });
+
+  group('hold to talk: stop and level (2026-10-26)', () {
+    late _Phone phone;
+
+    setUp(() => phone = _Phone());
+    tearDown(() => phone.dispose());
+
+    test('stop asks the plugin even before it reports "listening"', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+      );
+      addTearDown(s.cancel);
+      s.listen(SpokenLanguage.en).listen(null);
+      await _flush();
+      await _flush();
+      await s.stop();
+      expect(phone.calls.map((c) => c.method), contains('stop'));
+    });
+
+    test('the phone never answers a stop: after the grace, the last words '
+        'heard are the sentence', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+        stopGrace: const Duration(milliseconds: 50),
+      );
+      addTearDown(s.cancel);
+      final got = <SpeechEvent>[];
+      final done = Completer<void>();
+      s.listen(SpokenLanguage.en).listen(got.add, onDone: done.complete);
+      await _flush();
+      await _flush();
+      await phone.result('bye', type: 0);
+      await s.stop();
+      await done.future;
+      expect((got.last as SpeechFinal).text, 'bye');
+      // ...and the phone's mic is closed
+      expect(phone.calls.map((c) => c.method), contains('cancel'));
+    });
+
+    test('...and with nothing heard: "nothing heard"', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+        stopGrace: const Duration(milliseconds: 50),
+      );
+      addTearDown(s.cancel);
+      final got = <SpeechEvent>[];
+      final done = Completer<void>();
+      s.listen(SpokenLanguage.en).listen(got.add, onDone: done.complete);
+      await _flush();
+      await _flush();
+      await s.stop();
+      await done.future;
+      expect((got.single as SpeechFailed).error, SpeechError.noSpeech);
+    });
+
+    test('a final result after the stop wins; the grace timer then does '
+        'nothing', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+        stopGrace: const Duration(milliseconds: 50),
+      );
+      addTearDown(s.cancel);
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.result('by', type: 0);
+      await s.stop();
+      await phone.words('bye', last: true);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(got.whereType<SpeechFinal>().single.text, 'bye');
+    });
+
+    test('sound levels come as 0..1 while listening', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+      );
+      addTearDown(s.cancel);
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await phone.level(4);
+      await _flush();
+      expect(got.whereType<SpeechLevel>().single.level, .5);
+    });
+
+    test('levelFromDb: about -2 (silence) to 10 (loud), clamped', () {
+      expect(levelFromDb(-2), 0);
+      expect(levelFromDb(-10), 0);
+      expect(levelFromDb(10), 1);
+      expect(levelFromDb(22), 1);
+      expect(levelFromDb(4), .5);
+    });
+
+    test('cancelled while getting ready: the mic is never opened', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+      );
+      phone.localesGate = Completer<void>();
+      final done = Completer<void>();
+      s.listen(SpokenLanguage.en).listen(null, onDone: done.complete);
+      await _flush();
+      await s.cancel();
+      phone.localesGate!.complete();
+      await done.future;
+      for (var i = 0; i < 5; i++) {
+        await _flush();
+      }
+      expect(phone.listens, isEmpty);
+    });
+
+    test('cancelled while the plugin is starting: the plugin is told to '
+        'cancel once it has started', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+      );
+      await s.prepare(SpokenLanguage.en);
+      phone.listenGate = Completer<void>();
+      s.listen(SpokenLanguage.en).listen(null);
+      await _flush();
+      await s.cancel();
+      final before = phone.calls.where((c) => c.method == 'cancel').length;
+      phone.listenGate!.complete();
+      for (var i = 0; i < 5; i++) {
+        await _flush();
+      }
+      expect(
+        phone.calls.where((c) => c.method == 'cancel').length,
+        greaterThan(before),
+      );
+    });
+
+    test('let go while the plugin is starting: the plugin is told to stop '
+        'once it has started', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+      );
+      addTearDown(s.cancel);
+      await s.prepare(SpokenLanguage.en);
+      phone.listenGate = Completer<void>();
+      s.listen(SpokenLanguage.en).listen(null);
+      await _flush();
+      await s.stop();
+      final before = phone.calls.where((c) => c.method == 'stop').length;
+      phone.listenGate!.complete();
+      for (var i = 0; i < 5; i++) {
+        await _flush();
+      }
+      expect(
+        phone.calls.where((c) => c.method == 'stop').length,
+        greaterThan(before),
       );
     });
   });

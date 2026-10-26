@@ -616,6 +616,8 @@ class _Haptics implements Haptics {
   new(this.pulses);
   final List<String> pulses;
   @override
+  Future<void> tap() async => pulses.add('tap');
+  @override
   Future<void> short() async => pulses.add('short');
   @override
   Future<void> long() async => pulses.add('long');

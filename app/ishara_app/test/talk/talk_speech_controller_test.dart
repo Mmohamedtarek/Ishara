@@ -73,6 +73,7 @@ class _Rig {
     bool endsSigns = true,
     bool catalogueFails = false,
     bool developer = false,
+    bool untilStop = false,
   }) async {
     final library = AvatarLibrary.parse(
       readText('assets/packs/asl/avatar/library.json'),
@@ -90,7 +91,11 @@ class _Rig {
       'setup.role': role,
       'settings.developer': developer,
     });
-    final stt = FakeSpeechToText(heard: heard, support: support);
+    final stt = FakeSpeechToText(
+      heard: heard,
+      support: support,
+      untilStop: untilStop,
+    );
     final p = perms ?? FakeMicPermissions(current: MicPermission.granted);
     final c = ProviderContainer(
       overrides: [
@@ -342,8 +347,12 @@ void main() {
       expect(r.stt.calls, isEmpty, reason: 'never listens without it');
       perms.answer = MicPermission.granted;
       await r.talk.allowMic();
-      await _until(() => r.feed.isNotEmpty);
       expect(perms.requests, 2);
+      // hold to talk: Allow doesn't record; the next press does
+      expect(r.state.mic, MicState.idle);
+      expect(r.stt.calls, isEmpty);
+      await r.say();
+      expect(r.played, ['yes']);
     });
 
     test('refused for good (D5): Open settings; granted there → cleared on '
@@ -539,6 +548,198 @@ void main() {
 
     test('developer mode off: nothing is logged', () async {
       expect(await traced(developer: false, heard: 'bye'), isEmpty);
+    });
+  });
+
+  group('hold to talk (2026-10-26)', () {
+    late DateTime now;
+
+    Future<_Rig> held({List<Object>? heard}) async {
+      final r = await _Rig.make(heard: heard ?? ['yes'], untilStop: true);
+      now = DateTime(2026, 10, 26, 12);
+      r.talk.setClock(() => now);
+      return r;
+    }
+
+    test('press → recording (time noted); release → the last words are '
+        'signed', () async {
+      final r = await held();
+      await r.talk.pressMic();
+      expect(r.state.mic, MicState.listening);
+      expect(r.state.recordingSince, now);
+      now = now.add(const Duration(seconds: 2));
+      await r.talk.releaseMic();
+      expect(r.stt.calls.last, 'stop');
+      await _until(() => r.feed.isNotEmpty);
+      expect(r.played, ['yes']);
+      expect(r.state.mic, MicState.idle);
+      expect(r.state.recordingSince, isNull);
+    });
+
+    test('released, waiting for the last words: "finishing"; a press then '
+        'does nothing', () async {
+      final r = await _Rig.make(untilStop: true);
+      final now = DateTime(2026, 10, 26, 12);
+      var t = now;
+      r.talk.setClock(() => t);
+      await r.talk.pressMic();
+      t = now.add(const Duration(seconds: 1));
+      // the recognizer hasn't answered the stop yet
+      r.stt.stopHangs = true;
+      await r.talk.releaseMic();
+      expect(r.state.mic, MicState.finishing);
+      final listens = r.stt.calls.where((c) => c.startsWith('listen')).length;
+      await r.talk.pressMic();
+      expect(r.stt.calls.where((c) => c.startsWith('listen')).length, listens);
+    });
+
+    test('a listen that closes with no final result: never stuck '
+        '(nothing heard)', () async {
+      final r = await held(heard: []);
+      await r.talk.pressMic();
+      now = now.add(const Duration(seconds: 1));
+      r.stt.onStop = const SpeechPartial('…');
+      await r.talk.releaseMic();
+      await _until(() => r.state.mic == MicState.idle);
+      expect(r.state.notice, MicNotice.nothingHeard);
+    });
+
+    test('under 0.4 s: thrown away, "too short", nothing signed', () async {
+      final r = await held();
+      await r.talk.pressMic();
+      now = now.add(const Duration(milliseconds: 399));
+      await r.talk.releaseMic();
+      expect(r.stt.calls.last, 'cancel');
+      expect(r.state.notice, MicNotice.tooShort);
+      expect(r.state.mic, MicState.idle);
+      expect(r.played, isEmpty);
+      expect(r.stt.heard, ['yes']);
+    });
+
+    test('exactly 0.4 s is long enough', () async {
+      final r = await held();
+      await r.talk.pressMic();
+      now = now.add(TalkSpeech.minHold);
+      await r.talk.releaseMic();
+      expect(r.stt.calls.last, 'stop');
+      await _until(() => r.feed.isNotEmpty);
+    });
+
+    test('let go before recording started: never listens, "too short"', () {
+      return held().then((r) async {
+        final press = r.talk.pressMic();
+        await r.talk.releaseMic();
+        await press;
+        expect(r.stt.calls.where((c) => c.startsWith('listen')), isEmpty);
+        expect(r.state.notice, MicNotice.tooShort);
+        expect(r.state.mic, MicState.idle);
+      });
+    });
+
+    test('slid to cancel before recording started: never listens, no '
+        'notice', () async {
+      final r = await held();
+      final press = r.talk.pressMic();
+      await r.talk.cancelMic();
+      await press;
+      expect(r.stt.calls.where((c) => c.startsWith('listen')), isEmpty);
+      expect(r.state.notice, MicNotice.none);
+    });
+
+    test('slide to cancel: thrown away, no notice, nothing signed', () async {
+      final r = await held();
+      await r.talk.pressMic();
+      now = now.add(const Duration(seconds: 3));
+      await r.talk.cancelMic();
+      expect(r.stt.calls.last, 'cancel');
+      expect(r.state.mic, MicState.idle);
+      expect(r.state.notice, MicNotice.none);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(r.played, isEmpty);
+      expect(r.feed, isEmpty);
+    });
+
+    test('the maximum length: stops as if released', () async {
+      final r = await held();
+      r.talk.maxRecordingForTest = const Duration(milliseconds: 30);
+      await r.talk.pressMic();
+      now = now.add(const Duration(seconds: 60));
+      await _until(() => r.stt.calls.contains('stop'));
+      await _until(() => r.feed.isNotEmpty);
+      expect(r.played, ['yes']);
+      // the finger comes up later: nothing more happens
+      await r.talk.releaseMic();
+      expect(r.stt.calls.where((c) => c == 'stop'), hasLength(1));
+    });
+
+    test('let go and pressed again while getting ready: it is held, so '
+        'it records', () async {
+      final r = await held();
+      r.stt.prepareGate = Completer<void>();
+      final first = r.talk.pressMic();
+      await Future<void>.delayed(Duration.zero);
+      await r.talk.releaseMic();
+      await r.talk.pressMic();
+      r.stt.prepareGate!.complete();
+      await first;
+      expect(r.state.mic, MicState.listening);
+      expect(r.state.notice, MicNotice.none);
+    });
+
+    test('maximum length is 60 s', () {
+      expect(TalkSpeech.maxRecording, const Duration(seconds: 60));
+      expect(TalkSpeech.minHold, const Duration(milliseconds: 400));
+    });
+
+    test('the live level follows the microphone and drops to 0 at the '
+        'end', () async {
+      final r = await held();
+      await r.talk.pressMic();
+      r.stt.level(.6);
+      await Future<void>.delayed(Duration.zero);
+      expect(r.talk.level.value, .6);
+      now = now.add(const Duration(seconds: 1));
+      await r.talk.releaseMic();
+      await _until(() => r.feed.isNotEmpty);
+      expect(r.talk.level.value, 0);
+    });
+
+    test('tap mode: a tap starts, the next sends, with no length '
+        'check', () async {
+      final r = await held();
+      await r.talk.tapMic();
+      expect(r.state.mic, MicState.listening);
+      await r.talk.tapMic();
+      expect(r.stt.calls.last, 'stop');
+      await _until(() => r.feed.isNotEmpty);
+    });
+
+    test('permission refused on press: no recording; the release does '
+        'nothing', () async {
+      final perms = FakeMicPermissions(answer: MicPermission.denied);
+      final r = await _Rig.make(perms: perms, untilStop: true);
+      await r.talk.pressMic();
+      await r.talk.releaseMic();
+      expect(r.state.mic, MicState.permissionNeeded);
+      expect(r.stt.calls, isEmpty);
+    });
+
+    test('no recognizer / language missing on press: the S8 states', () async {
+      var r = await _Rig.make(
+        support: SpeechSupport.unavailable,
+        untilStop: true,
+      );
+      await r.talk.pressMic();
+      expect(r.state.mic, MicState.unavailable);
+      r = await _Rig.make(
+        support: SpeechSupport.languageMissing,
+        untilStop: true,
+      );
+      await r.talk.pressMic();
+      expect(r.state.mic, MicState.languageMissing);
+      r = await _Rig.make(support: SpeechSupport.busy, untilStop: true);
+      await r.talk.pressMic();
+      expect(r.state.notice, MicNotice.failed);
     });
   });
 }

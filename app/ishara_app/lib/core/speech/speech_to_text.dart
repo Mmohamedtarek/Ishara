@@ -57,6 +57,13 @@ final class SpeechFinal extends SpeechEvent {
   final String text;
 }
 
+/// The microphone's loudness now, 0 (quiet) to 1 (loud), for the live
+/// level indicator. Comes between the other events, any number of times.
+final class SpeechLevel extends SpeechEvent {
+  const new(this.level);
+  final double level;
+}
+
 final class SpeechFailed extends SpeechEvent {
   const new(this.error);
   final SpeechError error;
@@ -69,7 +76,9 @@ abstract interface class SpeechToText {
   /// permission is asked for separately).
   Future<SpeechSupport> prepare(SpokenLanguage language);
 
-  /// Listens once (see [SpeechEvent]). Only one listen at a time.
+  /// Listens once (see [SpeechEvent]) until [stop] or [cancel]: hold to
+  /// talk, the user decides when speech ends (2026-10-26), so a pause
+  /// doesn't end it. Only one listen at a time.
   /// [phrases] bias the recognizer toward the app's words (S7-27; Android
   /// 13+, ignored elsewhere). Matching stays exact (sign rule 7).
   Stream<SpeechEvent> listen(
@@ -77,7 +86,9 @@ abstract interface class SpeechToText {
     List<String> phrases = const [],
   });
 
-  /// Ends the listen early: what was heard so far comes as [SpeechFinal].
+  /// Ends the listen: what was heard comes as [SpeechFinal] (or "nothing
+  /// heard"), also when the phone never answers
+  /// ([PlatformSpeechToText.stopGrace]).
   Future<void> stop();
 
   /// Ends the listen without a result (the stream just closes).
@@ -126,6 +137,7 @@ class PlatformSpeechToText implements SpeechToText {
     Duration? watchdog,
     this.prepareTimeout = const Duration(seconds: 4),
     this.trace = SpeechTrace.off,
+    this.stopGrace = const Duration(milliseconds: 2500),
   }) : _stt = plugin ?? stt.SpeechToText(),
        watchdog = watchdog ?? listenFor + watchdogSlack;
 
@@ -149,9 +161,24 @@ class PlatformSpeechToText implements SpeechToText {
   /// on every tap. Dropped when the phone says the language is missing.
   final Map<SpokenLanguage, String> _picked = {};
 
-  /// Q-T3 / Q10: stop after 3 s of silence or 30 s in all.
-  static const pauseFor = Duration(seconds: 3);
-  static const listenFor = Duration(seconds: 30);
+  /// Hold to talk (2026-10-26): no pause limit, the user ends the listen.
+  /// Talk stops at 60 s (its maximum recording); this is the backstop
+  /// just past it.
+  static const listenFor = Duration(seconds: 65);
+
+  /// After [stop], how long the phone has to send the last result; then
+  /// what was heard so far is the sentence (never stuck after a release).
+  final Duration stopGrace;
+
+  /// Debug builds only, for the phone test (2026-10-26):
+  /// `--dart-define=STT_LISTEN_MODE=search` asks the recognizer for its
+  /// short-query model instead of dictation.
+  static const _listenModeDefine = String.fromEnvironment('STT_LISTEN_MODE');
+
+  static stt.ListenMode get _listenMode =>
+      kDebugMode && _listenModeDefine == 'search'
+      ? stt.ListenMode.search
+      : stt.ListenMode.dictation;
 
   /// Debug builds only, for the phone test: `--dart-define=STT_ON_DEVICE=false`
   /// skips the phone's on-device recognizer (Q-T3 prefers it).
@@ -195,6 +222,10 @@ class PlatformSpeechToText implements SpeechToText {
   /// Earlier partials are replaced as they come, so they never are.
   String _lastPartial = '';
   Timer? _watchdog;
+  Timer? _stopTimer;
+
+  /// [stop] was asked for this listen (maybe before the plugin started).
+  bool _stopAsked = false;
 
   @override
   Future<SpeechSupport> prepare(SpokenLanguage language) async {
@@ -253,6 +284,7 @@ class PlatformSpeechToText implements SpeechToText {
     _bias = phrases;
     unawaited(_out?.close());
     _ignoreDone = false;
+    _stopAsked = false;
     final out = _out = StreamController<SpeechEvent>();
     unawaited(_start(language, out, onDevice: !kDebugMode || _onDeviceDefine));
     return out.stream;
@@ -276,6 +308,8 @@ class PlatformSpeechToText implements SpeechToText {
         );
         return;
       }
+      // cancelled (or ended) while getting ready: never open the mic
+      if (!identical(_out, out) || out.isClosed) return;
     }
     _onDevice = onDevice;
     _gotFinal = false;
@@ -290,6 +324,7 @@ class PlatformSpeechToText implements SpeechToText {
       'language': language.name,
       'locale': _localeId,
       'onDevice': onDevice,
+      'mode': _listenMode.name,
       'bias': _bias,
     });
     _watchdog?.cancel();
@@ -307,12 +342,23 @@ class PlatformSpeechToText implements SpeechToText {
           // and an unknown tag silently falls back to the phone's language.
           localeId: _localeId?.replaceAll('_', '-'),
           onDevice: onDevice,
-          listenMode: stt.ListenMode.dictation,
-          pauseFor: pauseFor,
+          listenMode: _listenMode,
           listenFor: listenFor,
+          // hold to talk: ask the recognizer not to end on a pause (Android
+          // EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS); the user ends
+          // the listen. Recognizers may ignore it (phone check).
+          pauseFor: listenFor,
           contextualPhrases: _bias.isEmpty ? null : _bias,
         ),
       );
+      if (!identical(_out, out) || out.isClosed) {
+        // cancelled or ended while the plugin was starting: close the mic
+        // (unless a newer listen already owns it)
+        if (_out == null || identical(_out, out)) await _stt.cancel();
+        return;
+      }
+      // let go while the plugin was starting: end it now
+      if (_stopAsked) unawaited(_stt.stop());
     } on Object catch (e) {
       _log.warn('listen_failed', {'error': e.toString()});
       if (onDevice) {
@@ -436,6 +482,9 @@ class PlatformSpeechToText implements SpeechToText {
   void _onLevel(double level) {
     if (_minLevel == null || level < _minLevel!) _minLevel = level;
     if (_maxLevel == null || level > _maxLevel!) _maxLevel = level;
+    final out = _out;
+    if (out == null || out.isClosed) return;
+    out.add(SpeechLevel(levelFromDb(level)));
   }
 
   void _finish(
@@ -444,6 +493,7 @@ class PlatformSpeechToText implements SpeechToText {
     String source = 'error',
   }) {
     _watchdog?.cancel();
+    _stopTimer?.cancel();
     if (out.isClosed) return;
     trace('end', {
       'ms': _clock.elapsedMilliseconds,
@@ -458,8 +508,24 @@ class PlatformSpeechToText implements SpeechToText {
 
   @override
   Future<void> stop() async {
+    final out = _out;
+    if (out == null || out.isClosed) return;
     trace('stop', {'ms': _clock.elapsedMilliseconds});
-    if (_stt.isListening) await _stt.stop();
+    _stopTimer?.cancel();
+    _stopAsked = true;
+    _stopTimer = Timer(stopGrace, () {
+      if (!identical(out, _out) || out.isClosed) return;
+      _finishHeard(out);
+      // the phone never answered: make sure its mic is closed
+      unawaited(_stt.cancel());
+    });
+    // Always asked, also before the plugin reports "listening": a release
+    // right after the press must still end the listen.
+    try {
+      await _stt.stop();
+    } on Object catch (e) {
+      _log.warn('stop_failed', {'error': '$e'});
+    }
   }
 
   @override
@@ -467,10 +533,19 @@ class PlatformSpeechToText implements SpeechToText {
     final out = _out;
     _out = null;
     _watchdog?.cancel();
+    _stopTimer?.cancel();
     if (out != null && !out.isClosed) {
       trace('cancel', {'ms': _clock.elapsedMilliseconds});
+      // always, also before the plugin reports "listening": a cancel right
+      // after the press must close the mic (_start checks [_out] too)
+      try {
+        await _stt.cancel();
+      } on Object catch (e) {
+        _log.warn('cancel_failed', {'error': '$e'});
+      }
+    } else if (_stt.isListening) {
+      await _stt.cancel();
     }
-    if (_stt.isListening) await _stt.cancel();
     await out?.close();
   }
 }
@@ -487,3 +562,7 @@ SpeechError classifySpeechError(String code) => switch (code) {
   'error_speech_recognizer_request_not_authorized' => SpeechError.permission,
   _ => SpeechError.other,
 };
+
+/// The plugin's sound level (Android: the recognizer's RMS in dB, about -2
+/// in silence to 10 when speaking loudly) as 0..1 for the level indicator.
+double levelFromDb(double db) => ((db + 2) / 12).clamp(0, 1).toDouble();

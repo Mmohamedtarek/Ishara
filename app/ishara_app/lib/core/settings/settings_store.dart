@@ -26,6 +26,9 @@ class SettingsStore {
   static const kCharacter = 'settings.character';
   static const kDeveloper = 'settings.developer';
 
+  /// Settings › Tap to start and stop (Talk's mic, 2026-10-26).
+  static const kMicTap = 'settings.micTap';
+
   static const List<String> _all = [
     kVersion,
     kLanguage,
@@ -37,6 +40,7 @@ class SettingsStore {
     kSignSpeed,
     kCharacter,
     kDeveloper,
+    kMicTap,
   ];
 
   String? getString(String key) => _kv.getString(key);

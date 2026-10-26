@@ -2043,5 +2043,65 @@
   "storageFull": "Your phone is out of storage, so Ishara can't save new changes. Free up some space.",
   "@storageFull": {
     "description": "approved new text (step 10, 2026-10-17): N1: once per session, when a change can't be saved (your wording, step 10a review)"
+  },
+  "micHoldStrong": "Hold the mic and speak.",
+  "@micHoldStrong": {
+    "description": "draft new text (talk voice, 2026-10-26): TV1: mic hint, hold to talk (replaces micHintStrong «Tap the mic and speak.»)"
+  },
+  "micTapStrong": "Tap the mic, speak, then tap again.",
+  "@micTapStrong": {
+    "description": "draft new text (talk voice, 2026-10-26): TV2: mic hint in tap mode (screen reader, Switch Access, or the setting)"
+  },
+  "micHoldLabel": "Hold to talk",
+  "@micHoldLabel": {
+    "description": "draft new text (talk voice, 2026-10-26): TV3: screen reader, mic button, hold to talk (replaces D18 «Tap and speak»)"
+  },
+  "micStartLabel": "Start recording",
+  "@micStartLabel": {
+    "description": "draft new text (talk voice, 2026-10-26): TV4: screen reader, mic button in tap mode, not recording"
+  },
+  "micStopLabel": "Stop and send",
+  "@micStopLabel": {
+    "description": "draft new text (talk voice, 2026-10-26): TV5: screen reader, mic button in tap mode, recording"
+  },
+  "micCancelAction": "Cancel recording",
+  "@micCancelAction": {
+    "description": "draft new text (talk voice, 2026-10-26): TV6: screen reader action while recording (throws it away)"
+  },
+  "micCancelled": "Recording cancelled",
+  "@micCancelled": {
+    "description": "draft new text (talk voice, 2026-10-26): TV7: screen reader announcement after a cancel"
+  },
+  "micSlideCancel": "Slide to cancel",
+  "@micSlideCancel": {
+    "description": "draft new text (talk voice, 2026-10-26): TV8: while holding (your wording)"
+  },
+  "micReleaseCancel": "Release to cancel",
+  "@micReleaseCancel": {
+    "description": "draft new text (talk voice, 2026-10-26): TV9: after sliding far enough"
+  },
+  "micTooShort": "Hold the mic while you speak.",
+  "@micTooShort": {
+    "description": "draft new text (talk voice, 2026-10-26): TV10: released under 0.4 s, nothing sent"
+  },
+  "micFinishing": "One moment…",
+  "@micFinishing": {
+    "description": "draft new text (talk voice, 2026-10-26): TV11: after release, waiting for the last words"
+  },
+  "sttNothingHeardHold": "Didn't catch that. Hold the mic and try again.",
+  "@sttNothingHeardHold": {
+    "description": "draft new text (talk voice, 2026-10-26): TV12: D9 for hold to talk (tap mode keeps D9)"
+  },
+  "micReplyHold": "Hold the mic to reply",
+  "@micReplyHold": {
+    "description": "draft new text (talk voice, 2026-10-26): TV13: face to face, under your words (replaces micReply in hold mode)"
+  },
+  "sMicTap": "Tap to start and stop",
+  "@sMicTap": {
+    "description": "draft new text (talk voice, 2026-10-26): TV14: Settings › Accessibility"
+  },
+  "sMicTapS": "Record with a tap instead of holding the mic. On by itself with TalkBack.",
+  "@sMicTapS": {
+    "description": "draft new text (talk voice, 2026-10-26): TV15: under TV14"
   }
 }

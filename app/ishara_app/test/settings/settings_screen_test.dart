@@ -120,6 +120,7 @@ void main() {
         ('settings-vibrate', () => s().vibrate),
         ('settings-big-text', () => s().bigText),
         ('settings-contrast', () => s().highContrast),
+        ('settings-mic-tap', () => s().micTap),
       ]) {
         await _scrollTo(t, key);
         final before = read();

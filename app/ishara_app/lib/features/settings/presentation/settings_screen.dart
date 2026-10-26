@@ -116,6 +116,15 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () =>
                         ctl.setHighContrast(on: !settings.highContrast),
                   ),
+                  const SizedBox(height: 8),
+                  ActionRow(
+                    key: const ValueKey('settings-mic-tap'),
+                    icon: 'mic',
+                    title: l.sMicTap,
+                    subtitle: l.sMicTapS,
+                    toggled: settings.micTap,
+                    onTap: () => ctl.setMicTap(on: !settings.micTap),
+                  ),
                   SectionLabel(l.secApp),
                   ActionRow(
                     icon: 'eye',

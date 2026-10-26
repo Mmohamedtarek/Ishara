@@ -189,7 +189,12 @@ void main() {
     }
     mark('avatar ready');
     await waitFor(t, find.byKey(const ValueKey('talk-mic')));
-    await tapAndWait(t, find.byKey(const ValueKey('talk-mic')));
+    // hold to talk: press, speak, let go
+    final mic = find.byKey(const ValueKey('talk-mic'));
+    await waitFor(t, mic);
+    final hold = await t.startGesture(t.getCenter(mic));
+    await t.pump(const Duration(seconds: 1));
+    await hold.up();
     final end = DateTime.now().add(const Duration(seconds: 30));
     while (plays.isEmpty) {
       if (DateTime.now().isAfter(end)) throw TimeoutException('no play');

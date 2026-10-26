@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/avatar/sign_sequencer.dart';
@@ -27,7 +28,12 @@ enum MicState {
 
   /// Checking the permission and getting the recognizer ready.
   preparing,
+
+  /// Recording: the mic is held (or, in tap mode, was tapped on).
   listening,
+
+  /// Released: waiting for the recognizer's last words.
+  finishing,
 
   /// The microphone was refused this time (D4: "Allow").
   permissionNeeded,
@@ -51,6 +57,10 @@ enum MicNotice {
 
   /// The recognizer failed for another reason (network, busy…).
   failed,
+
+  /// Released before recording really started (under [TalkSpeech.minHold]):
+  /// nothing was sent; hold the mic while speaking.
+  tooShort,
 }
 
 /// Speech → sign on Talk (sign rule 7, Q-T3).
@@ -64,7 +74,11 @@ class TalkSpeechState {
     this.signing = false,
     this.faceToFace = false,
     this.privacyNotice = false,
+    this.recordingSince,
   });
+
+  /// When recording started (the timer on the mic card), while listening.
+  final DateTime? recordingSince;
 
   final MicState mic;
   final MicNotice notice;
@@ -90,6 +104,7 @@ class TalkSpeechState {
     bool? signing,
     bool? faceToFace,
     bool? privacyNotice,
+    DateTime? Function()? recordingSince,
   }) => TalkSpeechState(
     mic: mic ?? this.mic,
     notice: notice ?? this.notice,
@@ -98,6 +113,9 @@ class TalkSpeechState {
     signing: signing ?? this.signing,
     faceToFace: faceToFace ?? this.faceToFace,
     privacyNotice: privacyNotice ?? this.privacyNotice,
+    recordingSince: recordingSince == null
+        ? this.recordingSince
+        : recordingSince(),
   );
 }
 
@@ -112,7 +130,7 @@ class TalkSpeech extends _$TalkSpeech {
 
   SignSequencer? _sequencer;
   StreamSubscription<SpeechEvent>? _listen;
-  DateTime Function() _now = DateTime.now;
+  DateTime Function() _now = clock.now;
 
   /// Tests fix the clock.
   @visibleForTesting
@@ -123,6 +141,8 @@ class TalkSpeech extends _$TalkSpeech {
   @override
   TalkSpeechState build() {
     ref.onDispose(() {
+      _maxTimer?.cancel();
+      _level.dispose();
       unawaited(_listen?.cancel());
       unawaited(_sequencer?.dispose());
     });
@@ -134,24 +154,66 @@ class TalkSpeech extends _$TalkSpeech {
 
   SpokenLanguage get _language => ref.read(profileControllerProvider).spoken;
 
-  /// The mic button: listens, or stops listening (what was heard is used).
-  Future<void> tapMic() async {
-    if (state.mic == MicState.listening) {
-      await ref.read(speechToTextProvider).stop();
+  /// Recording shorter than this is thrown away ([MicNotice.tooShort]).
+  static const minHold = Duration(milliseconds: 400);
+
+  /// Recording stops by itself after this, as if released.
+  static const maxRecording = Duration(seconds: 60);
+
+  /// Tests shorten [maxRecording].
+  @visibleForTesting
+  Duration maxRecordingForTest = maxRecording;
+
+  /// The microphone's loudness while recording, 0..1 (the live level
+  /// indicator; kept out of [state] so the screen doesn't rebuild with it).
+  ValueListenable<double> get level => _level;
+  final _level = ValueNotifier<double>(0);
+
+  /// Goldens show a fixed level.
+  @visibleForTesting
+  // A setter would need a getter; this is a test hook.
+  // ignore: use_setters_to_change_properties
+  void setLevelForTest(double v) => _level.value = v;
+
+  /// The mic is held down (or, in tap mode, recording was asked for).
+  bool _held = false;
+
+  /// Slid away to cancel before recording started.
+  bool _cancelledEarly = false;
+  Timer? _maxTimer;
+
+  /// Hold to talk (2026-10-26): the mic is pressed. Recording starts as
+  /// soon as the permission and the recognizer are ready, if the mic is
+  /// still held then.
+  Future<void> pressMic() async {
+    if (state.mic == MicState.preparing) {
+      // pressed again while still getting ready: it is held now
+      _held = true;
+      _cancelledEarly = false;
       return;
     }
-    if (state.mic == MicState.preparing) return;
+    if (state.mic == MicState.listening || state.mic == MicState.finishing) {
+      return;
+    }
+    _held = true;
+    _cancelledEarly = false;
     _sequencer?.cancel();
     state = state.copyWith(mic: MicState.preparing, notice: MicNotice.none);
-    if (!await _ensurePermission()) return;
+    if (!await _ensurePermission()) {
+      _held = false;
+      return;
+    }
     _showPrivacyOnce();
     final stt = ref.read(speechToTextProvider);
     final support = await stt.prepare(_language);
+    if (!ref.mounted) return;
     if (support == SpeechSupport.busy) {
+      _held = false;
       state = state.copyWith(mic: MicState.idle, notice: MicNotice.failed);
       return;
     }
     if (support != SpeechSupport.ready) {
+      _held = false;
       state = state.copyWith(
         mic: support == SpeechSupport.unavailable
             ? MicState.unavailable
@@ -159,15 +221,87 @@ class TalkSpeech extends _$TalkSpeech {
       );
       return;
     }
-    state = state.copyWith(mic: MicState.listening);
+    final phrases = await _phrases();
+    if (!ref.mounted) return;
+    // the last listen's subscription goes before the new one (no await
+    // between the checks below and the listen)
     await _listen?.cancel();
+    _listen = null;
+    if (!ref.mounted) return;
+    if (!_held) {
+      // let go (or cancelled) before recording started: nothing recorded
+      state = state.copyWith(
+        mic: MicState.idle,
+        notice: _cancelledEarly ? MicNotice.none : MicNotice.tooShort,
+      );
+      return;
+    }
+    _level.value = 0;
+    state = state.copyWith(
+      mic: MicState.listening,
+      recordingSince: () => _now(),
+    );
+    ref.read(hapticsProvider).tap().ignore();
+    _maxTimer?.cancel();
+    _maxTimer = Timer(maxRecordingForTest, () => unawaited(releaseMic()));
     _listen = stt
-        .listen(_language, phrases: await _phrases())
-        .listen(_onSpeech);
+        .listen(_language, phrases: phrases)
+        .listen(_onSpeech, onDone: _onListenDone);
   }
 
-  /// D4's "Allow": asks again.
-  Future<void> allowMic() => tapMic();
+  /// The mic is let go: under [minHold] the recording is thrown away,
+  /// otherwise the recognizer's last words are the sentence.
+  Future<void> releaseMic({bool checkLength = true}) async {
+    _held = false;
+    if (state.mic != MicState.listening) return;
+    _maxTimer?.cancel();
+    final since = state.recordingSince;
+    if (checkLength && since != null && _now().difference(since) < minHold) {
+      await _discard(MicNotice.tooShort);
+      return;
+    }
+    state = state.copyWith(mic: MicState.finishing, recordingSince: () => null);
+    await ref.read(speechToTextProvider).stop();
+  }
+
+  /// Slide to cancel (or the screen reader's "Cancel recording"): the
+  /// recording is thrown away.
+  Future<void> cancelMic() async {
+    _held = false;
+    if (state.mic == MicState.preparing) _cancelledEarly = true;
+    if (state.mic != MicState.listening) return;
+    await _discard(MicNotice.none);
+  }
+
+  Future<void> _discard(MicNotice notice) async {
+    _maxTimer?.cancel();
+    await _listen?.cancel();
+    _listen = null;
+    state = state.copyWith(
+      mic: MicState.idle,
+      notice: notice,
+      recordingSince: () => null,
+    );
+    _level.value = 0;
+    await ref.read(speechToTextProvider).cancel();
+  }
+
+  /// Tap mode (screen reader, Switch Access, or Settings › Tap to start and
+  /// stop): a tap starts recording, the next one sends it.
+  Future<void> tapMic() async {
+    if (state.mic == MicState.listening) {
+      await releaseMic(checkLength: false);
+      return;
+    }
+    await pressMic();
+  }
+
+  /// D4's "Allow": asks again. Recording then needs a new press.
+  Future<void> allowMic() async {
+    if (await _ensurePermission()) {
+      state = state.copyWith(mic: MicState.idle, notice: MicNotice.none);
+    }
+  }
 
   /// D5's "Open settings".
   Future<void> openSettings() =>
@@ -226,12 +360,38 @@ class TalkSpeech extends _$TalkSpeech {
     }
   }
 
+  /// The listen closed without a final result or a failure (never
+  /// expected from [PlatformSpeechToText]): never stay stuck recording.
+  void _onListenDone() {
+    if (!ref.mounted) return;
+    if (state.mic != MicState.listening && state.mic != MicState.finishing) {
+      return;
+    }
+    _held = false;
+    _maxTimer?.cancel();
+    _level.value = 0;
+    state = state.copyWith(
+      mic: MicState.idle,
+      notice: MicNotice.nothingHeard,
+      recordingSince: () => null,
+    );
+  }
+
   void _onSpeech(SpeechEvent e) {
+    if (e is! SpeechPartial && e is! SpeechLevel) {
+      // the listen is over (a final result, or a failure)
+      _held = false;
+      _maxTimer?.cancel();
+      _level.value = 0;
+      state = state.copyWith(recordingSince: () => null);
+    }
     switch (e) {
       case SpeechPartial():
         // The prototype shows "Listening…" only; the sentence is signed
         // when it is complete.
         break;
+      case SpeechLevel(:final level):
+        _level.value = level;
       case SpeechFinal(:final text):
         state = state.copyWith(mic: MicState.idle);
         unawaited(_sign(text));
@@ -293,7 +453,11 @@ class TalkSpeech extends _$TalkSpeech {
 
   /// The avatar card's Replay: the last sentence again (not added twice).
   Future<void> replay() async {
-    if (state.sentence.isEmpty || state.mic == MicState.listening) return;
+    if (state.sentence.isEmpty ||
+        state.mic == MicState.listening ||
+        state.mic == MicState.finishing) {
+      return;
+    }
     await _play(state.sentence);
   }
 

@@ -232,6 +232,17 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | C12 | Fixed in vocabulary v2.1 (Please = flat B, Sorry = A fist, I love you held still). |
 | C14 | See Q-T3. |
 
+## Talk voice (2026-10-26, branch `talk-voice`)
+| ID | Decision | Reason |
+|---|---|---|
+| TV-1 | Cause of "single words get no sign" (English, phone run 1): the phone's recognizer (Android System Intelligence, on-device SODA, `en-GB`, `AMBIENT_CONTINUOUS`) heard speech (`onStartOfSpeech` → `onEndOfSpeech`) and finished with an **empty** result (`#onResults empty final recognition results`, `withSpeech: false`, `NO_SPEECH_DETECTED`) for every word said alone; in a sentence it returned the words. Not cut off (the empty result came before any stop), not a catalogue or matcher miss, not dropped by Talk. Biasing does reach it (`Adding phrases biasing...` on every listen). | `words_full.log`, 46 listens, 22:05–22:10. |
+| TV-2 | Hold to talk replaces tap-to-listen (user): press = recording at once (touch haptic, the mic grows ×1.3, "Listening…", a m:ss timer, a live level from the recognizer's RMS); release = stop, the last words are the sentence; slide toward the start side (left; right in Arabic; the person opposite's left when face to face) ≥ 90 px and release = thrown away; released under 0.4 s = nothing sent + TV10; 60 s = stops as if released. No pause limit any more: the user ends the listen (65 s backstop in the speech layer). | User request; WhatsApp-like. |
+| TV-3 | Accessibility (user, option "Auto + setting"): tap mode (tap to start, tap to send, no length check) when a screen reader or Switch Access is on (`MediaQuery.accessibleNavigation`), or with Settings › Accessibility › "Tap to start and stop" (off by default). The screen reader always gets tap actions and, while recording, "Cancel recording" (announced TV7). | User decision 2026-10-26. |
+| TV-4 | Debug builds only: `--dart-define=STT_LISTEN_MODE=search` asks the recognizer for its short-query model instead of dictation, to compare on the phone (user). Release builds always use dictation. | User decision 2026-10-26; TV-1. |
+| TV-5 | Debug word trace: in debug builds with developer mode on only, `stt_trace` lines log the heard words (every result with its alternatives and confidences, the end and its source, the sound level, each segment normalized with its sign or why none), and the plugin's own Android log is turned on. The only exception to the logging privacy rule; compiled out of release builds. | User request (1a). |
+| TV-6 | The recording haptic is the phone's touch feedback (`HapticFeedback.lightImpact`, follows Android's own touch-feedback setting), not Settings › Vibrate (S9-1, off by default). **To confirm.** | The request asks for a haptic on every press; S9-1 would make it off for most users. |
+| TV-7 | After a release, the speech layer waits up to 2.5 s for the recognizer's last result, then uses what it heard so far (or "nothing heard"); a stop is always sent to the plugin, even before it reports "listening". Talk never stays in "finishing" if a listen closes without a result. | The plugin holds back `done` after a partial until its own 2 s timeout; a release right after the press must still end the listen. |
+
 ## Technical decisions (mine)
 | Date | Decision | Reason |
 |---|---|---|

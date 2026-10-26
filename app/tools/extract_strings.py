@@ -267,6 +267,26 @@ STEP10_DRAFTS = {
     "storageFull": ("Your phone is out of storage, so Ishara can't save new changes. Free up some space.", "مساحة الموبايل خلصت، فإشارة مش قادر يحفظ التغييرات الجديدة. فضّي شوية مساحة.", "N1: once per session, when a change can't be saved (your wording, step 10a review)", None),
 }
 
+# Talk voice (2026-10-26): hold to talk. Drafts until the user approves them
+# (app/tools/out/talk_voice/drafts.html).
+TALKVOICE_DRAFTS = {
+    "micHoldStrong": ("Hold the mic and speak.", "دوس مطوّل على الميكروفون واتكلم.", "TV1: mic hint, hold to talk (replaces micHintStrong «Tap the mic and speak.»)", None),
+    "micTapStrong": ("Tap the mic, speak, then tap again.", "دوس على الميكروفون، اتكلم، وبعدين دوس تاني.", "TV2: mic hint in tap mode (screen reader, Switch Access, or the setting)", None),
+    "micHoldLabel": ("Hold to talk", "دوس مطوّل واتكلم", "TV3: screen reader, mic button, hold to talk (replaces D18 «Tap and speak»)", None),
+    "micStartLabel": ("Start recording", "ابدأ التسجيل", "TV4: screen reader, mic button in tap mode, not recording", None),
+    "micStopLabel": ("Stop and send", "وقّف وابعت", "TV5: screen reader, mic button in tap mode, recording", None),
+    "micCancelAction": ("Cancel recording", "الغي التسجيل", "TV6: screen reader action while recording (throws it away)", None),
+    "micCancelled": ("Recording cancelled", "التسجيل اتلغى", "TV7: screen reader announcement after a cancel", None),
+    "micSlideCancel": ("Slide to cancel", "اسحب للإلغاء", "TV8: while holding (your wording)", None),
+    "micReleaseCancel": ("Release to cancel", "سيب عشان تلغي", "TV9: after sliding far enough", None),
+    "micTooShort": ("Hold the mic while you speak.", "خليك دايس على الميكروفون وانت بتتكلم.", "TV10: released under 0.4 s, nothing sent", None),
+    "micFinishing": ("One moment…", "لحظة…", "TV11: after release, waiting for the last words", None),
+    "sttNothingHeardHold": ("Didn't catch that. Hold the mic and try again.", "مسمعتش كويس. دوس مطوّل على الميكروفون وجرّب تاني.", "TV12: D9 for hold to talk (tap mode keeps D9)", None),
+    "micReplyHold": ("Hold the mic to reply", "دوس مطوّل على الميكروفون عشان ترد", "TV13: face to face, under your words (replaces micReply in hold mode)", None),
+    "sMicTap": ("Tap to start and stop", "دوسة تبدأ ودوسة توقّف", "TV14: Settings › Accessibility", None),
+    "sMicTapS": ("Record with a tap instead of holding the mic. On by itself with TalkBack.", "سجّل بدوسة بدل ما تفضل دايس على الميكروفون. بيشتغل لوحده مع TalkBack.", "TV15: under TV14", None),
+}
+
 # Prototype texts whose Arabic the user changed (key: (ar, why)).
 AR_CHANGED = {
     "starred": ("المحفوظة", "Starred = «المحفوظة» everywhere (step 9 review, 2026-10-15)"),
@@ -542,6 +562,16 @@ def main() -> int:
             return 1
         out_en[key], out_ar[key] = e, a
         meta = {"description": f"approved new text (step 10, 2026-10-17): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
+    for key, (e, a, why, ph) in TALKVOICE_DRAFTS.items():
+        if key in out_en:
+            print(f"error: talk voice draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"draft new text (talk voice, 2026-10-26): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta

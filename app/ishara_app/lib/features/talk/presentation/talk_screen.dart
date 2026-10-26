@@ -43,10 +43,13 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   /// Kept: [dispose] can't use `ref` (the widget is unmounting).
   late final KeepScreenOn _keepOn = ref.read(keepScreenOnProvider);
   late final TalkGlove _glove = ref.read(talkGloveProvider.notifier);
+  late final TalkSpeech _speech;
 
   @override
   void initState() {
     super.initState();
+    // read now: [dispose] can't use `ref`
+    _speech = ref.read(talkSpeechProvider.notifier);
     _life = AppLifecycleListener(
       onStateChange: (s) {
         _foreground = s == AppLifecycleState.resumed;
@@ -70,6 +73,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   void _syncScreen() {
     final on = _visible && _foreground;
     _glove.setActive(active: _visible);
+    // hold to talk: a recording never goes on out of sight (another tab,
+    // the app in the background): it is thrown away
+    if (!on) _speech.cancelMic().ignore();
     if (on == _screenOn) return;
     _screenOn = on;
     _keepOn.set(on: on).ignore();
@@ -81,6 +87,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     if (_screenOn ?? false) _keepOn.set(on: false).ignore();
     // Talk is gone: the glove's words are not Talk's any more.
     _glove.setActive(active: false);
+    _speech.cancelMic().ignore();
     super.dispose();
   }
 
