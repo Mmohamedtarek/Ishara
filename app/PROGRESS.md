@@ -675,13 +675,13 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 | 1a-1 | Debug-only word log (developer mode): locale, on-device, partials, final, alternatives + confidences, normalized tokens, matches | user brief 1a | ✓ `SpeechTrace` (`lib/core/speech/speech_trace.dart`), plugin Android log with it (TV-5); 10 tests |
 | 1a-2 | Word script, phone run, diagnosis word by word | user brief 1a | ✓ English run 1 (Arabic not run yet): see TV-1. The word trace stayed off (developer mode was never saved on the phone); the diagnosis comes from the recognizer's own log |
 | 1a-3 | "bye" heard as "boy": biasing reaches the recognizer? | brief; S7-27 | ✓ biasing reaches it (`Adding phrases biasing...` every listen); "boy" itself not seen in run 1 (the word trace was off): rerun |
-| 1a-4 | Words with no sign: propose how Talk shows them, ask | brief | proposal sent, not built |
+| 1a-4 | Words with no sign: propose how Talk shows them, ask | brief | ✓ built after the user's answer (TV-9), NS1/NS2 drafts; tests: caption, bubble, NS2, screen reader, all signed → plain, session only |
 | 2 | Hold to talk: press/haptic/grow/timer/level, release, slide to cancel (RTL right), too short 0.4 s, 60 s, face to face, S8 states | brief §2 | ✓ TV-2, TV-7; tests below |
 | 2-a11y | Screen reader / Switch Access alternative, asked first | brief §2 | ✓ asked: "Auto + setting" (TV-3) |
-| 2-texts | Every new text a draft, EN + Egyptian Arabic, drafts page | brief; CLAUDE.md | ✓ 15 drafts TV1–TV15, `tools/out/talk_voice/drafts.html` (`tools/talk_voice_drafts.py`) |
+| 2-texts | Every new text a draft, EN + Egyptian Arabic, drafts page | brief; CLAUDE.md | ✓ TV1–TV15 approved 2026-10-26; NS1/NS2 drafts; `tools/out/talk_voice/drafts.html` (`tools/talk_voice_drafts.py`) |
 | 3 | Unit + widget tests for each state, EN/AR, light/dark, TalkBack labels | brief §3 | ✓ |
 | 3-it | `talk_test.dart` for hold to talk, on the phone | brief §3 | ✓ 2/2 |
-| 3-gold | Goldens for the new mic states on the runner, approved before commit | brief §3 | rendered locally for review only; not committed; runner render after push |
+| 3-gold | Goldens for the new mic states on the runner, approved before commit | brief §3 | ✓ approved (TV-8); runner run 40400106229 (after the finishing fix and the no-sign marks), 14 images × ci/linux committed; local golden tests pass with them |
 | 3-table | Same word script again, before → after table from the phone | brief §3 | waiting for the user's rerun |
 
 **Diagnosis (English, run 1, 46 listens, `en-GB`, on-device):** for every word said alone, Android System Intelligence's recognizer (SODA, `AMBIENT_CONTINUOUS`) detected speech and returned an empty final result (`withSpeech: false`, `NO_SPEECH_DETECTED`); the app got only empty `intermediate` results and showed "Didn't catch that". In sentences it returned the words. Not cut off, not a matching problem, not Talk dropping it. The phone's default service is `com.google.android.tts` (Speech Recognition & Synthesis); the app's on-device request goes to Android System Intelligence.
@@ -695,3 +695,6 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 **Integration (Galaxy A52, one file at a time):** talk ✓ 2/2 (new hold-to-talk test: hold → "hello" signed, too short, slide to cancel, face to face cancel to the right, tap mode → "thank you"); settings ✓ 1/1; flow ✓ 1/1 (both now hold the mic); onboarding ✓ 2/2, learn ✓ 3/3, avatar ✓ 1/1, history ✓ 1/1 (all on the final code); sos ✗ 0/1: location is off on the phone ("Couldn't get your location"), not related to this work (asked).
 
 **Open questions:** see the summary to the user (no-sign display, haptic vs Vibrate, SOS location, golden approval, drafts approval, the Arabic run).
+
+**After the user's answers (2026-10-26):** TV1–TV15 and goldens approved; haptic confirmed (TV-6); finishing shows "One moment…" (test); no-sign marks built (TV-9). `flutter test --concurrency=2`: 1009 passed, 4 skipped, the 28 failures were the golden images now committed from the runner (golden tests 52/52 pass with them). The SOS run (location on over adb, user allowed) waits until after the user's word rerun, because a test run uninstalls the app.
+
