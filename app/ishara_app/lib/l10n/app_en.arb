@@ -2106,11 +2106,11 @@
   },
   "noSignYet": "No sign yet",
   "@noSignYet": {
-    "description": "draft new text (talk voice, 2026-10-26): NS1: screen reader, after a word the avatar has no sign for (caption and feed)"
+    "description": "approved new text (talk voice, 2026-10-27): NS1: screen reader, after a word the avatar has no sign for (caption and feed)"
   },
   "noSignCount": "{n, plural, =1{1 word has no sign yet} other{{n} words have no sign yet}}",
   "@noSignCount": {
-    "description": "draft new text (talk voice, 2026-10-26): NS2: under a heard sentence in the feed when some words had no sign",
+    "description": "approved new text (talk voice, 2026-10-27): NS2: under a heard sentence in the feed when some words had no sign",
     "placeholders": {
       "n": {
         "type": "int"

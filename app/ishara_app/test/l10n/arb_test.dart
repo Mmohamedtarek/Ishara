@@ -114,4 +114,18 @@ void main() {
     expect(l.continueLabel, 'Continue');
     expect(l.qSayDeaf, 'I am deaf. I use this app to talk.');
   });
+
+  test('NS2 plural forms (user, 2026-10-27): plural verb for 2 and 3-10', () {
+    final ar = lookupAppLocalizations(const Locale('ar'));
+    expect(ar.noSignCount(1), 'كلمة واحدة لسه مالهاش إشارة');
+    expect(ar.noSignCount(2), 'كلمتين لسه مالهمش إشارة');
+    expect(ar.noSignCount(3), '3 كلمات لسه مالهمش إشارة');
+    expect(ar.noSignCount(10), '10 كلمات لسه مالهمش إشارة');
+    expect(ar.noSignCount(11), '11 كلمة لسه مالهاش إشارة');
+    final en = lookupAppLocalizations(const Locale('en'));
+    expect(en.noSignCount(1), '1 word has no sign yet');
+    expect(en.noSignCount(3), '3 words have no sign yet');
+    expect(en.noSignYet, 'No sign yet');
+    expect(ar.noSignYet, 'لسه مالهاش إشارة');
+  });
 }

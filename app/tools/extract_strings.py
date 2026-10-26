@@ -287,10 +287,11 @@ TALKVOICE_DRAFTS = {
     "sMicTapS": ("Record with a tap instead of holding the mic. On by itself with TalkBack.", "سجّل بدوسة بدل ما تفضل دايس على الميكروفون. بيشتغل لوحده مع TalkBack.", "TV15: under TV14", None),
 }
 
-# Talk voice: words with no sign (user decision 2026-10-26). Drafts until approved.
+# Talk voice: words with no sign (user decision 2026-10-26). NS1 approved, NS2 approved
+# with the "few" form changed to «مالهمش» (user, 2026-10-27).
 TALKVOICE_NS_DRAFTS = {
     "noSignYet": ("No sign yet", "لسه مالهاش إشارة", "NS1: screen reader, after a word the avatar has no sign for (caption and feed)", None),
-    "noSignCount": ("{n, plural, =1{1 word has no sign yet} other{{n} words have no sign yet}}", "{n, plural, =1{كلمة واحدة لسه مالهاش إشارة} =2{كلمتين لسه مالهمش إشارة} few{{n} كلمات لسه مالهاش إشارة} other{{n} كلمة لسه مالهاش إشارة}}", "NS2: under a heard sentence in the feed when some words had no sign", {"n": "int"}),
+    "noSignCount": ("{n, plural, =1{1 word has no sign yet} other{{n} words have no sign yet}}", "{n, plural, =1{كلمة واحدة لسه مالهاش إشارة} =2{كلمتين لسه مالهمش إشارة} few{{n} كلمات لسه مالهمش إشارة} other{{n} كلمة لسه مالهاش إشارة}}", "NS2: under a heard sentence in the feed when some words had no sign", {"n": "int"}),
 }
 
 # Prototype texts whose Arabic the user changed (key: (ar, why)).
@@ -587,7 +588,7 @@ def main() -> int:
             print(f"error: no-sign draft key {key} clashes with an existing key", file=sys.stderr)
             return 1
         out_en[key], out_ar[key] = e, a
-        meta = {"description": f"draft new text (talk voice, 2026-10-26): {why}"}
+        meta = {"description": f"approved new text (talk voice, 2026-10-27): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta

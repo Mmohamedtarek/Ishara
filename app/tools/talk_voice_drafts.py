@@ -37,7 +37,7 @@ td[dir=rtl]{{font-size:15px}}</style></head><body>
 <h1>Talk voice: hold to talk, texts ({len(TALKVOICE_DRAFTS)}), approved 2026-10-26</h1>
 <table><tr><th>ID / key</th><th>English</th><th>Egyptian Arabic</th><th>Where / why</th></tr>
 {rows}</table>
-<h1>Words with no sign: draft texts ({len(TALKVOICE_NS_DRAFTS)}), for approval</h1>
+<h1>Words with no sign: texts ({len(TALKVOICE_NS_DRAFTS)}), approved 2026-10-27 (NS2: «مالهمش» for 3–10)</h1>
 <table><tr><th>ID / key</th><th>English</th><th>Egyptian Arabic</th><th>Where / why</th></tr>
 {ns_rows}</table>
 </body></html>"""
