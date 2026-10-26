@@ -147,7 +147,7 @@ void main() {
 
     // 1. hold 1.5 s and let go: "hello" is signed and goes to the feed
     var g = await t.startGesture(t.getCenter(mic));
-    await waitFor(t, find.text('‹ Slide to cancel'));
+    await waitFor(t, find.text('Slide to cancel'));
     await t.pump(const Duration(milliseconds: 1500));
     expect(find.text('0:01'), findsOneWidget);
     expect(find.text('Listening…'), findsOneWidget);

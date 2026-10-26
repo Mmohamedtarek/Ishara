@@ -489,7 +489,11 @@ class _RecordingStripState extends State<_RecordingStrip>
     final since = widget.since;
     final s = since == null
         ? elapsed.inSeconds
-        : clock.now().difference(since).inSeconds.clamp(0, 3600);
+        : clock
+              .now()
+              .difference(since)
+              .inSeconds
+              .clamp(0, TalkSpeech.maxRecording.inSeconds);
     if (s != _seconds) setState(() => _seconds = s);
   }
 
@@ -550,12 +554,21 @@ class _RecordingStripState extends State<_RecordingStrip>
                   valueListenable: widget.slide,
                   builder: (context, slide, _) {
                     final armed = slide >= MicButton.cancelDistance;
-                    // '‹' is mirrored in Arabic: it points right there
-                    return Text(
-                      armed ? l.micReleaseCancel : '‹ ${l.micSlideCancel}',
+                    final text = Text(
+                      armed ? l.micReleaseCancel : l.micSlideCancel,
                       key: const ValueKey('talk-mic-slide'),
                       overflow: TextOverflow.ellipsis,
                       style: base.copyWith(color: armed ? c.danger : c.sub),
+                    );
+                    if (armed) return text;
+                    // the start-side arrow (mirrored in Arabic: it points
+                    // right there)
+                    return Row(
+                      children: [
+                        IsharaIcon('back', size: 13, color: c.sub),
+                        const SizedBox(width: 3),
+                        Flexible(child: text),
+                      ],
                     );
                   },
                 ),

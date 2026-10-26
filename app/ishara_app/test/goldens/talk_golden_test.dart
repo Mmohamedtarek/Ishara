@@ -254,20 +254,14 @@ Future<void> main() async {
   );
   await _screen(
     'listening_f2f',
-    (_) => TalkSpeechState(
-      mic: MicState.listening,
-      faceToFace: true,
-      recordingSince: DateTime(2026, 10, 26),
-    ),
+    (_) => const TalkSpeechState(mic: MicState.listening, faceToFace: true),
     glove: _words,
     level: .6,
   );
   // hold to talk (2026-10-26): recording, sliding to cancel, tap mode,
   // released too soon, waiting for the last words
-  final recording = TalkSpeechState(
-    mic: MicState.listening,
-    recordingSince: DateTime(2026, 10, 26),
-  );
+  // no start time: the timer counts the golden's own frames (0:01)
+  const recording = TalkSpeechState(mic: MicState.listening);
   await _screen('recording', (_) => recording, level: .6);
   await _screen(
     'recording_cancel',

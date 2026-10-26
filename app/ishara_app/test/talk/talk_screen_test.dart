@@ -171,7 +171,7 @@ void main() {
       expect(talk.pulses, ['tap']);
       expect(find.text('Listening…'), findsOneWidget);
       expect(find.text('0:00'), findsOneWidget);
-      expect(find.text('‹ Slide to cancel'), findsOneWidget);
+      expect(find.text('Slide to cancel'), findsOneWidget);
       expect(_scale(t), 1.3, reason: 'the mic grows');
       double bar() => t
           .widget<Transform>(
@@ -207,7 +207,7 @@ void main() {
       await t.pump(const Duration(seconds: 1));
       await g.moveBy(const Offset(-40, 0));
       await t.pump();
-      expect(find.text('‹ Slide to cancel'), findsOneWidget);
+      expect(find.text('Slide to cancel'), findsOneWidget);
       await g.moveBy(const Offset(-60, 0));
       await t.pump();
       expect(find.text('Release to cancel'), findsOneWidget);
@@ -228,7 +228,7 @@ void main() {
       await t.pump();
       await g.moveBy(const Offset(100, 0));
       await t.pump();
-      expect(find.text('‹ Slide to cancel'), findsOneWidget);
+      expect(find.text('Slide to cancel'), findsOneWidget);
       await g.up();
       await settle(t, n: 3);
       expect(talk.stt.calls.last, 'stop');
@@ -240,7 +240,7 @@ void main() {
       final talk = _Talk(untilStop: true);
       await talk.pump(t, language: AppLanguage.ar);
       final g = await _press(t);
-      expect(find.text('‹ اسحب للإلغاء'), findsOneWidget);
+      expect(find.text('اسحب للإلغاء'), findsOneWidget);
       await t.pump(const Duration(seconds: 1));
       await g.moveBy(const Offset(-120, 0));
       await t.pump();
@@ -380,7 +380,7 @@ void main() {
       expect(talk.stt.listening, isTrue);
       expect(find.bySemanticsLabel('Stop and send'), findsOneWidget);
       expect(find.text('Stop and send'), findsOneWidget);
-      expect(find.text('‹ Slide to cancel'), findsNothing);
+      expect(find.text('Slide to cancel'), findsNothing);
       await t.pump(const Duration(milliseconds: 100));
       await tapIt(t, _mic);
       expect(talk.stt.calls.last, 'stop', reason: 'never "too short"');
