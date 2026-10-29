@@ -20,3 +20,7 @@ hardware/**/fp-info-cache
 .DS_Store
 # app: regenerated outputs
 app/tools/out/
+
+# AI: evaluation caches (hundreds of MB, rebuilt by _work/bench_cache.py)
+AI/**/_work/*.pkl
+AI/**/_work/*.log

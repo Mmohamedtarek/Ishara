@@ -1,0 +1,46 @@
+{
+  "cnn": {
+    "smooth": 3,
+    "confirm_rf": false,
+    "confirm_s": 3.5,
+    "pair_level": "tentative",
+    "confirm_on_rest": 2,
+    "rest_conf": 0.7,
+    "rest_run": 3,
+    "tentative": {
+      "confidence": 0.6,
+      "hold": 1,
+      "max_null": 0.3,
+      "per_class": {}
+    },
+    "models": [
+      "ishara_cnn.tflite",
+      "ishara_cnn_2.tflite",
+      "ishara_cnn_3.tflite"
+    ],
+    "active_s": 4,
+    "idle": {
+      "confidence": 0.85,
+      "hold": 2,
+      "max_null": 0.02,
+      "per_class": {}
+    },
+    "active": {
+      "confidence": 0.5,
+      "hold": 1,
+      "max_null": 0.6,
+      "per_class": {
+        "one": 0.6,
+        "you": 0.7
+      }
+    },
+    "rest_null": 0.03,
+    "rest_per_class": {
+      "one": {
+        "null": 0.05,
+        "conf": 0.6,
+        "run": 1
+      }
+    }
+  }
+}

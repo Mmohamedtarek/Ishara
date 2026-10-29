@@ -1,0 +1,8 @@
+# Python 3.12 (64-bit) على Ubuntu و Windows. على Windows: TensorFlow بيشتغل على الـ CPU بس، وده عادي.
+numpy
+pandas
+scikit-learn
+joblib
+pyserial
+tensorflow    # CNN training and the .tflite models; needs Python 3.12 or older
+pytest        # tests/ (python -m pytest tests -q)
