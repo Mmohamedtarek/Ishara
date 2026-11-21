@@ -142,6 +142,7 @@ class TalkSpeech extends _$TalkSpeech {
   TalkSpeechState build() {
     ref.onDispose(() {
       _maxTimer?.cancel();
+      _silenceTimer?.cancel();
       _level.dispose();
       unawaited(_listen?.cancel());
       unawaited(_sequencer?.dispose());
@@ -163,6 +164,15 @@ class TalkSpeech extends _$TalkSpeech {
   /// Tests shorten [maxRecording].
   @visibleForTesting
   Duration maxRecordingForTest = maxRecording;
+
+  /// Hold to talk: with the mic held and no word heard for this long, the
+  /// recording ends as if released (user decision 2026-11-21, TV-17). Tap
+  /// mode has no finger on the mic and keeps only [maxRecording].
+  static const silenceLimit = Duration(seconds: 5);
+
+  /// Tests shorten [silenceLimit].
+  @visibleForTesting
+  Duration silenceLimitForTest = silenceLimit;
 
   /// The microphone's loudness while recording, 0..1 (the live level
   /// indicator; kept out of [state] so the screen doesn't rebuild with it).
@@ -191,23 +201,43 @@ class TalkSpeech extends _$TalkSpeech {
   /// Slid away to cancel before recording started.
   bool _cancelledEarly = false;
   Timer? _maxTimer;
+  Timer? _silenceTimer;
+
+  /// This recording was started by a tap (tap mode): no silence limit.
+  bool _tapStarted = false;
+
+  /// Pressed (or tapped) again while the last sentence was finishing: a
+  /// new recording starts when it is done, if the mic is still held (user
+  /// decision 2026-11-21, TV-18).
+  bool _queued = false;
+  bool _queuedTap = false;
 
   /// Hold to talk (2026-10-26): the mic is pressed. Recording starts as
   /// soon as the permission and the recognizer are ready, if the mic is
   /// still held then.
-  Future<void> pressMic() async {
+  Future<void> pressMic() => _press(tap: false);
+
+  Future<void> _press({required bool tap, bool keepSigning = false}) async {
     if (state.mic == MicState.preparing) {
       // pressed again while still getting ready: it is held now
       _held = true;
       _cancelledEarly = false;
       return;
     }
-    if (state.mic == MicState.listening || state.mic == MicState.finishing) {
+    if (state.mic == MicState.finishing) {
+      // the last sentence is still finishing: record as soon as it is
+      // done, so it comes out whole ([_startQueued])
+      _queued = true;
+      _queuedTap = tap;
       return;
     }
+    if (state.mic == MicState.listening) return;
     _held = true;
     _cancelledEarly = false;
-    _sequencer?.cancel();
+    _tapStarted = tap;
+    // a new sentence stops the one being signed, unless this press waited
+    // for it to be heard
+    if (!keepSigning) _sequencer?.cancel();
     state = state.copyWith(mic: MicState.preparing, notice: MicNotice.none);
     if (!await _ensurePermission()) {
       _held = false;
@@ -254,6 +284,7 @@ class TalkSpeech extends _$TalkSpeech {
     ref.read(hapticsProvider).tap().ignore();
     _maxTimer?.cancel();
     _maxTimer = Timer(maxRecordingForTest, () => unawaited(releaseMic()));
+    _armSilence();
     _listen = stt
         .listen(_language, phrases: phrases)
         .listen(_onSpeech, onDone: _onListenDone);
@@ -263,6 +294,8 @@ class TalkSpeech extends _$TalkSpeech {
   /// otherwise the recognizer's last words are the sentence.
   Future<void> releaseMic({bool checkLength = true}) async {
     _held = false;
+    _queued = false;
+    _silenceTimer?.cancel();
     if (state.mic != MicState.listening) return;
     _maxTimer?.cancel();
     final since = state.recordingSince;
@@ -278,6 +311,7 @@ class TalkSpeech extends _$TalkSpeech {
   /// recording is thrown away.
   Future<void> cancelMic() async {
     _held = false;
+    _queued = false;
     if (state.mic == MicState.preparing) _cancelledEarly = true;
     if (state.mic != MicState.listening) return;
     await _discard(MicNotice.none);
@@ -285,6 +319,7 @@ class TalkSpeech extends _$TalkSpeech {
 
   Future<void> _discard(MicNotice notice) async {
     _maxTimer?.cancel();
+    _silenceTimer?.cancel();
     await _listen?.cancel();
     _listen = null;
     state = state.copyWith(
@@ -303,7 +338,28 @@ class TalkSpeech extends _$TalkSpeech {
       await releaseMic(checkLength: false);
       return;
     }
-    await pressMic();
+    await _press(tap: true);
+  }
+
+  /// (Re)starts the silence limit: a hold with no word heard for
+  /// [silenceLimitForTest] ends as if released.
+  void _armSilence() {
+    _silenceTimer?.cancel();
+    if (_tapStarted) return;
+    _silenceTimer = Timer(silenceLimitForTest, () {
+      if (!ref.mounted || state.mic != MicState.listening) return;
+      _log.info('silence_stop');
+      unawaited(releaseMic(checkLength: false));
+    });
+  }
+
+  /// A press made while the last sentence was finishing, still held (or a
+  /// tap, in tap mode): record now. The last sentence is still signed.
+  void _startQueued() {
+    if (!_queued) return;
+    _queued = false;
+    if (!ref.mounted || state.mic != MicState.idle) return;
+    unawaited(_press(tap: _queuedTap, keepSigning: true));
   }
 
   /// D4's "Allow": asks again. Recording then needs a new press.
@@ -379,12 +435,14 @@ class TalkSpeech extends _$TalkSpeech {
     }
     _held = false;
     _maxTimer?.cancel();
+    _silenceTimer?.cancel();
     _level.value = 0;
     state = state.copyWith(
       mic: MicState.idle,
       notice: MicNotice.nothingHeard,
       recordingSince: () => null,
     );
+    _startQueued();
   }
 
   void _onSpeech(SpeechEvent e) {
@@ -392,14 +450,17 @@ class TalkSpeech extends _$TalkSpeech {
       // the listen is over (a final result, or a failure)
       _held = false;
       _maxTimer?.cancel();
+      _silenceTimer?.cancel();
       _level.value = 0;
       state = state.copyWith(recordingSince: () => null);
     }
     switch (e) {
-      case SpeechPartial():
+      case SpeechPartial(:final text):
         // The prototype shows "Listening…" only; the sentence is signed
-        // when it is complete.
-        break;
+        // when it is complete. A word heard starts the silence limit again.
+        if (text.trim().isNotEmpty && state.mic == MicState.listening) {
+          _armSilence();
+        }
       case SpeechLevel(:final level):
         _level.value = level;
       case SpeechFinal(:final text):
@@ -424,6 +485,7 @@ class TalkSpeech extends _$TalkSpeech {
           ),
         };
     }
+    if (e is SpeechFinal || e is SpeechFailed) _startQueued();
   }
 
   /// Signs [text] and adds it to the feed when the avatar is done with it

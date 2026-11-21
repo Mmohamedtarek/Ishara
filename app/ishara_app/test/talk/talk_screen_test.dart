@@ -308,11 +308,17 @@ void main() {
       expect(talk.stt.heard, ['hello']);
     });
 
-    testWidgets('60 s: stops as if released', (t) async {
+    testWidgets('60 s of talking: stops as if released', (t) async {
       final talk = _Talk(heard: ['hello'], untilStop: true);
       await talk.pump(t);
       final g = await _press(t);
-      await t.pump(const Duration(seconds: 59));
+      // words keep coming, so the silence limit (TV-17) never ends it
+      for (var s = 0; s < 56; s += 4) {
+        talk.stt.partial('hello $s');
+        await t.pump(const Duration(seconds: 4));
+      }
+      talk.stt.partial('hello 56');
+      await t.pump(const Duration(seconds: 3));
       expect(talk.stt.calls.last, isNot('stop'));
       await t.pump(const Duration(seconds: 1));
       await settle(t, n: 3);

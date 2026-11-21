@@ -723,3 +723,21 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 
 **Open:** (1) phone run with the word trace, English and Arabic, holding through a pause; also listen for a start sound at each new session; (2) a CI run of the branch for the 63 Windows-only failures.
 
+## Talk voice: the tester's phone run, answers (2026-11-21, Windows laptop; results relayed by the user)
+
+**Tester's results** (branch at `7b2ef5c`): sentences come out whole when the finger stays ~1 s after speaking; the end is lost in 4 of 5 sentences released right after speaking; the mic stayed open through 20 s of silence (tester: a bug); "Didn't catch that" while talking, 5 times in quick presses; numbers said alone are not signed.
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Keep listening after the release | tester (500–800 ms); user picked 800 ms | ✓ TV-16 (`PlatformSpeechToText.stopTail`) |
+| 2 | Silence ends a hold | tester; user picked 5 s | ✓ TV-17, changes TV-2 (`TalkSpeech.silenceLimit`) |
+| 3 | Quick presses | tester; user | ✓ TV-18. Cause found in the code: the mic button and Talk both dropped a press during "One moment…" |
+| 4 | Numbers said alone | tester | ✗ not changed: needs the phone log (TV-1: the recognizer drops single words; or it hears "for" / "to" / "won") |
+| 5 | Phone rerun | protocol | ✗ not done |
+
+**Tests (Windows laptop):** analyze 0 issues, format clean; speech 70/70; Talk + speech 207/207; mutation-checked: removing each of 5 new behaviors (the silence limit, a word restarting it, the queued press, the moment after the release, a session ending in that moment) fails its test. Full suite `CI=true flutter test`: **938 passed, 4 skipped, 62 failed**: the same Windows-only failures as before today's changes (CI goldens, checksums, architecture scans, and `open_storage_test`, where Windows can't delete a temp folder still in use); none in speech or Talk. Android build not rerun (no native change since `7b2ef5c`).
+
+**Review:** line by line, then `/code-review` (high): 4 findings: DECISIONS updated (fixed); the silence limit counts words heard, not sound (to check on the phone, TV-17); TalkBack gets no feedback for a queued tap (skipped: the recording starts within seconds with the usual haptic); the dimmed mic slides while a press is queued (no change: sliding away drops it, as it should).
+
+**Not run:** integration tests, phone. **Open:** phone rerun with the word trace (numbers alone; the 5 s limit with a recognizer that sends few partials).
+

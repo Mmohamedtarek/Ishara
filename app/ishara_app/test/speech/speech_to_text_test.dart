@@ -574,6 +574,11 @@ void main() {
     });
 
     test('stop and cancel reach the plugin while listening', () async {
+      await s.cancel();
+      s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+        stopTail: Duration.zero,
+      );
       final done = Completer<void>();
       s.listen(SpokenLanguage.en).listen((_) {}, onDone: done.complete);
       await _flush();
@@ -726,6 +731,7 @@ void main() {
     test('stop asks the plugin even before it reports "listening"', () async {
       final s = PlatformSpeechToText(
         plugin: stt.SpeechToText.withMethodChannel(),
+        stopTail: Duration.zero,
       );
       addTearDown(s.cancel);
       s.listen(SpokenLanguage.en).listen(null);
@@ -740,6 +746,7 @@ void main() {
       final s = PlatformSpeechToText(
         plugin: stt.SpeechToText.withMethodChannel(),
         stopGrace: const Duration(milliseconds: 50),
+        stopTail: Duration.zero,
       );
       addTearDown(s.cancel);
       final got = <SpeechEvent>[];
@@ -759,6 +766,7 @@ void main() {
       final s = PlatformSpeechToText(
         plugin: stt.SpeechToText.withMethodChannel(),
         stopGrace: const Duration(milliseconds: 50),
+        stopTail: Duration.zero,
       );
       addTearDown(s.cancel);
       final got = <SpeechEvent>[];
@@ -875,8 +883,11 @@ void main() {
     test('phone run 2 (2026-10-27): after the stop the plugin reports '
         '"notListening" and "done" at once, and the recognizer\'s words '
         'come ~0.4 s later: they are the sentence', () async {
+      // the plugin's answer to the stop itself, so no moment after the
+      // release here (stopTail: see the 2026-11-21 group)
       final s = PlatformSpeechToText(
         plugin: stt.SpeechToText.withMethodChannel(),
+        stopTail: Duration.zero,
       );
       addTearDown(s.cancel);
       final got = <SpeechEvent>[];
@@ -899,6 +910,7 @@ void main() {
     test('...a plain "done" after the stop is ignored too', () async {
       final s = PlatformSpeechToText(
         plugin: stt.SpeechToText.withMethodChannel(),
+        stopTail: Duration.zero,
       );
       addTearDown(s.cancel);
       final got = <SpeechEvent>[];
@@ -1226,6 +1238,116 @@ void main() {
       await _flush();
       await Future<void>.delayed(const Duration(milliseconds: 80));
       expect(phone.listens, hasLength(2));
+    });
+  });
+
+  group('hold to talk: a moment more after the release (user decision '
+      '2026-11-21, TV-16)', () {
+    late _Phone phone;
+
+    setUp(() => phone = _Phone());
+    tearDown(() => phone.dispose());
+
+    PlatformSpeechToText make({
+      Duration stopTail = const Duration(milliseconds: 60),
+    }) {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+        stopTail: stopTail,
+        stopGrace: const Duration(seconds: 5),
+      );
+      addTearDown(s.cancel);
+      return s;
+    }
+
+    int stops() => phone.calls.where((c) => c.method == 'stop').length;
+
+    test('800 ms by default', () {
+      expect(
+        PlatformSpeechToText(plugin: stt.SpeechToText.withMethodChannel())
+            .stopTail,
+        const Duration(milliseconds: 800),
+      );
+    });
+
+    test('the recognizer keeps listening after the release, the words of '
+        'that moment count, then the plugin is told to stop', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await phone.result('hello', type: 0);
+      await s.stop();
+      expect(stops(), 0, reason: 'still listening for the last word');
+      await phone.result('hello there', type: 0);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(stops(), 1);
+      await phone.words('hello there', last: true);
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'hello there');
+    });
+
+    test('a final result in that moment is the sentence at once', () async {
+      final s = make(stopTail: const Duration(seconds: 5));
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await s.stop();
+      await phone.words('thank you', last: true);
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'thank you');
+      expect(stops(), 0, reason: 'nothing left to stop');
+    });
+
+    test('the session ends by itself in that moment with no final result: '
+        'what was heard, at once', () async {
+      final s = make(stopTail: const Duration(seconds: 5));
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await phone.result('please', type: 0);
+      await s.stop();
+      await phone.status('notListening');
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'please');
+    });
+
+    test('cancelled in that moment: nothing heard is sent, and the plugin '
+        'is never told to stop', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await phone.result('hello', type: 0);
+      await s.stop();
+      await s.cancel();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(got.whereType<SpeechFinal>(), isEmpty);
+      expect(stops(), 0);
+    });
+
+    test('a final result while the mic is held also counts as words heard '
+        '(Talk\'s silence limit)', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.words('hello', last: true);
+      await _flush();
+      expect(
+        got.whereType<SpeechPartial>().map((p) => p.text),
+        contains('hello'),
+      );
+      expect(got.whereType<SpeechFinal>(), isEmpty, reason: 'still held');
     });
   });
 }

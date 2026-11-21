@@ -69,9 +69,15 @@ class FakeSpeechToText implements SpeechToText {
   @override
   Future<void> stop() async {
     calls.add('stop');
+    if (stopHangs) return;
+    await answerStop();
+  }
+
+  /// Answers the last [stop] (one that hung, [stopHangs]) as [stop] does:
+  /// the next scripted entry, or [onStop]; then the listen closes.
+  Future<void> answerStop() async {
     final out = _open;
     if (out == null || out.isClosed) return;
-    if (stopHangs) return;
     if (untilStop && heard.isNotEmpty) {
       final next = heard.removeAt(0);
       out.add(next is SpeechEvent ? next : SpeechFinal(next as String));
@@ -85,6 +91,12 @@ class FakeSpeechToText implements SpeechToText {
   void level(double v) {
     final out = _open;
     if (out != null && !out.isClosed) out.add(SpeechLevel(v));
+  }
+
+  /// Words heard so far during the open listen.
+  void partial(String text) {
+    final out = _open;
+    if (out != null && !out.isClosed) out.add(SpeechPartial(text));
   }
 
   /// Whether a listen is open now.

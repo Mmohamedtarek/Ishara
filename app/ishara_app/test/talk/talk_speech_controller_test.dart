@@ -590,21 +590,145 @@ void main() {
       expect(r.state.recordingSince, isNull);
     });
 
-    test('released, waiting for the last words: "finishing"; a press then '
-        'does nothing', () async {
-      final r = await _Rig.make(untilStop: true);
-      final now = DateTime(2026, 10, 26, 12);
-      var t = now;
-      r.talk.setClock(() => t);
-      await r.talk.pressMic();
-      t = now.add(const Duration(seconds: 1));
-      // the recognizer hasn't answered the stop yet
-      r.stt.stopHangs = true;
-      await r.talk.releaseMic();
-      expect(r.state.mic, MicState.finishing);
-      final listens = r.stt.calls.where((c) => c.startsWith('listen')).length;
-      await r.talk.pressMic();
-      expect(r.stt.calls.where((c) => c.startsWith('listen')).length, listens);
+    group('pressed again while the last sentence finishes (user decision '
+        '2026-11-21, TV-18)', () {
+      late DateTime t;
+
+      int listens(_Rig r) =>
+          r.stt.calls.where((c) => c.startsWith('listen')).length;
+
+      /// Recorded "yes", released; the recognizer hasn't answered yet.
+      Future<_Rig> finishing({List<Object>? heard}) async {
+        final r = await _Rig.make(
+          heard: heard ?? ['yes', 'no'],
+          untilStop: true,
+        );
+        t = DateTime(2026, 11, 21, 12);
+        r.talk.setClock(() => t);
+        await r.talk.pressMic();
+        t = t.add(const Duration(seconds: 1));
+        r.stt.stopHangs = true;
+        await r.talk.releaseMic();
+        expect(r.state.mic, MicState.finishing);
+        r.stt.stopHangs = false;
+        return r;
+      }
+
+      test('still held when the last sentence is in: it is signed and a '
+          'new recording starts', () async {
+        final r = await finishing();
+        await r.talk.pressMic();
+        expect(listens(r), 1, reason: 'waits for the last sentence');
+        await r.stt.answerStop();
+        await _until(() => r.state.mic == MicState.listening);
+        expect(listens(r), 2);
+        await _until(() => r.feed.isNotEmpty);
+        expect(r.feed.single.text, 'yes');
+        expect(r.played, contains('yes'));
+        // the new recording works as usual
+        t = t.add(const Duration(seconds: 1));
+        await r.talk.releaseMic();
+        await _until(() => r.feed.length == 2);
+        expect(r.feed.last.text, 'no');
+      });
+
+      test('let go before the last sentence is in: no new recording', () async {
+        final r = await finishing();
+        await r.talk.pressMic();
+        await r.talk.releaseMic();
+        await r.stt.answerStop();
+        await _until(() => r.feed.isNotEmpty);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(listens(r), 1);
+        expect(r.state.mic, MicState.idle);
+      });
+
+      test('slid away to cancel before it is in: no new recording', () async {
+        final r = await finishing();
+        await r.talk.pressMic();
+        await r.talk.cancelMic();
+        await r.stt.answerStop();
+        await _until(() => r.feed.isNotEmpty);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(listens(r), 1);
+      });
+
+      test(
+        'the last one heard nothing: the new recording still starts',
+        () async {
+          final r = await finishing(
+            heard: [const SpeechFailed(SpeechError.noSpeech), 'no'],
+          );
+          await r.talk.pressMic();
+          await r.stt.answerStop();
+          await _until(() => r.state.mic == MicState.listening);
+          expect(listens(r), 2);
+        },
+      );
+
+      test('tap mode: a tap while it finishes records when it is in', () async {
+        final r = await finishing();
+        await r.talk.tapMic();
+        expect(listens(r), 1);
+        await r.stt.answerStop();
+        await _until(() => r.state.mic == MicState.listening);
+        expect(listens(r), 2);
+        // a tap sends it (tap mode: no finger to lift)
+        await r.talk.tapMic();
+        await _until(() => r.feed.length == 2);
+      });
+    });
+
+    group('silence limit (user decision 2026-11-21, TV-17)', () {
+      test('5 s', () {
+        expect(TalkSpeech.silenceLimit, const Duration(seconds: 5));
+      });
+
+      test('held with no word heard: ends as if released', () async {
+        final r = await held();
+        r.talk.silenceLimitForTest = const Duration(milliseconds: 40);
+        await r.talk.pressMic();
+        await _until(() => r.stt.calls.contains('stop'));
+        await _until(() => r.feed.isNotEmpty);
+        expect(r.played, ['yes']);
+        expect(r.state.mic, MicState.idle);
+        // the finger comes up later: nothing more happens
+        await r.talk.releaseMic();
+        expect(r.stt.calls.where((c) => c == 'stop'), hasLength(1));
+      });
+
+      test('a word heard starts the limit again', () async {
+        final r = await held();
+        r.talk.silenceLimitForTest = const Duration(milliseconds: 150);
+        await r.talk.pressMic();
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        r.stt.partial('hello');
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(
+          r.stt.calls,
+          isNot(contains('stop')),
+          reason: 'heard 100 ms ago',
+        );
+        expect(r.state.mic, MicState.listening);
+        await _until(() => r.stt.calls.contains('stop'));
+      });
+
+      test('an empty partial is not a word', () async {
+        final r = await held();
+        r.talk.silenceLimitForTest = const Duration(milliseconds: 60);
+        await r.talk.pressMic();
+        r.stt.partial('  ');
+        await _until(() => r.stt.calls.contains('stop'));
+      });
+
+      test('tap mode has no silence limit', () async {
+        final r = await held();
+        r.talk.silenceLimitForTest = const Duration(milliseconds: 20);
+        await r.talk.tapMic();
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        expect(r.stt.calls, isNot(contains('stop')));
+        expect(r.state.mic, MicState.listening);
+      });
     });
 
     test('a listen that closes with no final result: never stuck '

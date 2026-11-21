@@ -334,7 +334,9 @@ class _MicButtonState extends State<MicButton>
   }
 
   void _onDown(PointerDownEvent e) {
-    if (widget.tapMode || widget.finishing || _pointer != null) return;
+    // a press while the last sentence finishes is passed on too: Talk
+    // records as soon as it is done (TV-18)
+    if (widget.tapMode || _pointer != null) return;
     _pointer = e.pointer;
     _down = e.localPosition;
     _setSlide(0);
@@ -429,8 +431,9 @@ class _MicButtonState extends State<MicButton>
         child: InkWell(
           customBorder: const CircleBorder(),
           // hold to talk works on the raw pointer (below); a tap only
-          // records in tap mode
-          onTap: widget.tapMode && !widget.finishing ? widget.onTap : null,
+          // records in tap mode (while the last sentence finishes too: it
+          // starts when that one is done, TV-18)
+          onTap: widget.tapMode ? widget.onTap : null,
           child: Center(child: IsharaIcon('mic', size: 24, color: fg)),
         ),
       ),
@@ -438,9 +441,9 @@ class _MicButtonState extends State<MicButton>
     return Semantics(
       button: true,
       label: label,
-      enabled: !widget.finishing,
+      enabled: true,
       excludeSemantics: true,
-      onTap: widget.finishing ? null : widget.onTap,
+      onTap: widget.onTap,
       customSemanticsActions: widget.listening
           ? {CustomSemanticsAction(label: l.micCancelAction): _cancelAction}
           : null,

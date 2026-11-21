@@ -90,7 +90,8 @@ abstract interface class SpeechToText {
 
   /// Ends the listen: what was heard comes as [SpeechFinal] (or "nothing
   /// heard"), also when the phone never answers
-  /// ([PlatformSpeechToText.stopGrace]).
+  /// ([PlatformSpeechToText.stopGrace]). The recognizer first keeps
+  /// listening a moment for the last word ([PlatformSpeechToText.stopTail]).
   Future<void> stop();
 
   /// Ends the listen without a result (the stream just closes).
@@ -148,8 +149,19 @@ class PlatformSpeechToText implements SpeechToText {
     this.stopGrace = const Duration(milliseconds: 2500),
     this.restartDelay = const Duration(milliseconds: 300),
     this.maxRestarts = 20,
+    this.stopTail = const Duration(milliseconds: 800),
   }) : _stt = plugin ?? stt.SpeechToText(),
        watchdog = watchdog ?? listenFor + watchdogSlack;
+
+  /// How long the recognizer keeps listening after [stop] (the mic let go)
+  /// before it is told to stop (user decision 2026-11-21, TV-16): the last
+  /// word is often still being said when the finger comes up (phone test:
+  /// 4 of 5 sentences lost their end; waiting a second kept them). A
+  /// final result in this time is the sentence at once.
+  final Duration stopTail;
+
+  /// The moment after [stop] while the recognizer still listens.
+  Timer? _tailTimer;
 
   /// How long getting the recognizer ready may take. On Android 13+ the
   /// plugin's locale list never answers when the phone's support check
@@ -329,6 +341,8 @@ class PlatformSpeechToText implements SpeechToText {
     _restarts = 0;
     _restartTimer?.cancel();
     _restartTimer = null;
+    _tailTimer?.cancel();
+    _tailTimer = null;
     final out = _out = StreamController<SpeechEvent>();
     unawaited(_start(language, out, onDevice: !kDebugMode || _onDeviceDefine));
     return out.stream;
@@ -432,8 +446,11 @@ class PlatformSpeechToText implements SpeechToText {
           unawaited(_cancelPlugin());
           _finishHeard(out);
         } else {
-          // let go while the plugin was starting: end it now
-          unawaited(_stt.stop());
+          // let go while the plugin was starting: nothing was said into
+          // it, so it is ended now (no moment after the release)
+          _tailTimer?.cancel();
+          _tailTimer = null;
+          unawaited(_stopPlugin(out));
         }
       }
     } on Object catch (e) {
@@ -548,6 +565,8 @@ class PlatformSpeechToText implements SpeechToText {
         _finishHeard(out, source: 'final');
       } else {
         // the phone ended the session on a pause; the mic is still held
+        // (the words count as heard: Talk's silence limit starts again)
+        if (text.isNotEmpty) out.add(SpeechPartial(text));
         _restart(out, reason: 'final');
       }
     } else {
@@ -620,8 +639,15 @@ class PlatformSpeechToText implements SpeechToText {
     final ended =
         status == stt.SpeechToText.notListeningStatus ||
         status == stt.SpeechToText.doneStatus;
-    if (ended && !_gotFinal && !_ignoreDone && !_stopAsked) {
-      _restart(out, reason: status);
+    if (ended && !_gotFinal && !_ignoreDone) {
+      if (!_stopAsked) {
+        _restart(out, reason: status);
+      } else if (_tailTimer != null) {
+        // the session ended by itself in the moment after the release,
+        // with no final result: nothing more will come, so what was heard
+        // is the sentence now
+        _finishHeard(out);
+      }
     }
   }
 
@@ -687,6 +713,8 @@ class PlatformSpeechToText implements SpeechToText {
     _stopTimer?.cancel();
     _restartTimer?.cancel();
     _restartTimer = null;
+    _tailTimer?.cancel();
+    _tailTimer = null;
     trace('end', {
       'ms': _clock.elapsedMilliseconds,
       'source': source,
@@ -701,9 +729,8 @@ class PlatformSpeechToText implements SpeechToText {
   @override
   Future<void> stop() async {
     final out = _out;
-    if (out == null || out.isClosed) return;
+    if (out == null || out.isClosed || _stopAsked) return;
     trace('stop', {'ms': _clock.elapsedMilliseconds});
-    _stopTimer?.cancel();
     _stopAsked = true;
     if (_restartTimer != null) {
       // let go between two sessions of the hold: none is running, so what
@@ -711,6 +738,22 @@ class PlatformSpeechToText implements SpeechToText {
       _finishHeard(out);
       return;
     }
+    if (stopTail <= Duration.zero) {
+      await _stopPlugin(out);
+      return;
+    }
+    // the recognizer keeps listening a moment ([stopTail]) for the last word
+    _tailTimer = Timer(stopTail, () {
+      _tailTimer = null;
+      unawaited(_stopPlugin(out));
+    });
+  }
+
+  /// Tells the plugin to stop: its last result (or, after [stopGrace], what
+  /// was heard so far) is the sentence.
+  Future<void> _stopPlugin(StreamController<SpeechEvent> out) async {
+    if (!identical(out, _out) || out.isClosed) return;
+    _stopTimer?.cancel();
     _stopTimer = Timer(stopGrace, () {
       if (!identical(out, _out) || out.isClosed) return;
       _finishHeard(out);
@@ -734,6 +777,8 @@ class PlatformSpeechToText implements SpeechToText {
     _stopTimer?.cancel();
     _restartTimer?.cancel();
     _restartTimer = null;
+    _tailTimer?.cancel();
+    _tailTimer = null;
     if (out != null && !out.isClosed) {
       trace('cancel', {'ms': _clock.elapsedMilliseconds});
       // always, also before the plugin reports "listening": a cancel right
