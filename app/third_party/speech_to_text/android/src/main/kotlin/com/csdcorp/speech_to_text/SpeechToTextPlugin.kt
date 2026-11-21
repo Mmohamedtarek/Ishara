@@ -750,7 +750,15 @@ public class SpeechToTextPlugin :
 
 
     override fun onPartialResults(results: Bundle?) = updateResults(results, false)
-    override fun onResults(results: Bundle?) = updateResults(results, true)
+    override fun onResults(results: Bundle?) {
+        updateResults(results, true)
+        // Ishara: the recognizer has ended its session: say so now ("notListening"
+        // then "done" / "doneNoResult"), also after an empty result, which sends
+        // nothing. Upstream waits for the onEndOfSpeech timer (pauseFor: 65 s for
+        // hold to talk), so the app never knew the session was over and every
+        // new listen was refused meanwhile (isListening() still true).
+        notifyListening(isRecording = false)
+    }
     override fun onBeginningOfSpeech() {
         if (timer != null) {
             timer?.cancel()

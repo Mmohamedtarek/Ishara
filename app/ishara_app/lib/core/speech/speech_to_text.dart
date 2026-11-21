@@ -78,7 +78,9 @@ abstract interface class SpeechToText {
 
   /// Listens once (see [SpeechEvent]) until [stop] or [cancel]: hold to
   /// talk, the user decides when speech ends (2026-10-26), so a pause
-  /// doesn't end it. Only one listen at a time.
+  /// doesn't end it, and neither does the phone ending its own session
+  /// (listening goes on, what was heard is kept, 2026-11-20). Only one
+  /// listen at a time.
   /// [phrases] bias the recognizer toward the app's words (S7-27; Android
   /// 13+, ignored elsewhere). Matching stays exact (sign rule 7).
   Stream<SpeechEvent> listen(
@@ -129,8 +131,14 @@ String? pickSpeechLocale(
 ///
 /// Q-T3: each listen first asks for recognition on the phone. Android falls
 /// back to the normal recognizer when the phone has no on-device one; if
-/// the on-device one can't do the language, the listen is retried once
-/// without it.
+/// the on-device one can't do the language (or refuses at the start, iOS),
+/// the listen goes on without it. Any other error keeps the recognizer
+/// (user decision 2026-11-20).
+///
+/// Hold to talk (2026-11-20): while the mic is held, a session the phone
+/// ends by itself (a pause, nothing understood, a busy recognizer) is
+/// started again after [restartDelay], keeping what was heard; only [stop]
+/// or [cancel] end the listen.
 class PlatformSpeechToText implements SpeechToText {
   new({
     stt.SpeechToText? plugin,
@@ -138,6 +146,8 @@ class PlatformSpeechToText implements SpeechToText {
     this.prepareTimeout = const Duration(seconds: 4),
     this.trace = SpeechTrace.off,
     this.stopGrace = const Duration(milliseconds: 2500),
+    this.restartDelay = const Duration(milliseconds: 300),
+    this.maxRestarts = 20,
   }) : _stt = plugin ?? stt.SpeechToText(),
        watchdog = watchdog ?? listenFor + watchdogSlack;
 
@@ -212,8 +222,9 @@ class PlatformSpeechToText implements SpeechToText {
 
   /// Phrases the recognizer marked as finished (`intermediate` results:
   /// Google's on-device recognizer sends each one with `final_result` and
-  /// keeps listening through the pause). If the session then ends with no
-  /// final result, they are the sentence (before any partial).
+  /// keeps listening through the pause), and what each earlier session of
+  /// the hold heard. If a session ends with no final result, its phrases
+  /// are what it heard (before any partial).
   final List<String> _phrases = [];
 
   /// The recognizer's last partial result. When the session ends with no
@@ -226,6 +237,36 @@ class PlatformSpeechToText implements SpeechToText {
 
   /// [stop] was asked for this listen (maybe before the plugin started).
   bool _stopAsked = false;
+
+  /// Hold to talk (2026-11-20): how long after the phone ended its session
+  /// the next one starts, while the mic is held (Android refuses a new
+  /// session right away).
+  final Duration restartDelay;
+
+  /// At most this many new sessions per listen (a recognizer that ends
+  /// every session at once); then what was heard is the sentence.
+  final int maxRestarts;
+
+  int _restarts = 0;
+
+  /// The next session of the hold, while waiting for it to start.
+  Timer? _restartTimer;
+
+  /// Where this session's phrases start in [_phrases] (earlier sessions of
+  /// the same hold come before).
+  int _sessionFrom = 0;
+
+  /// Errors that only mean the phone ended its session (nothing, or
+  /// nothing more, was understood; the recognizer was busy): while the mic
+  /// is held, listening goes on. Any other error ends the listen.
+  static const _sessionEndErrors = {
+    'error_no_match',
+    'error_speech_timeout',
+    'error_busy',
+    'error_client',
+  };
+
+  bool get _heardSomething => _phrases.isNotEmpty || _lastPartial.isNotEmpty;
 
   @override
   Future<SpeechSupport> prepare(SpokenLanguage language) async {
@@ -285,15 +326,22 @@ class PlatformSpeechToText implements SpeechToText {
     unawaited(_out?.close());
     _ignoreDone = false;
     _stopAsked = false;
+    _restarts = 0;
+    _restartTimer?.cancel();
+    _restartTimer = null;
     final out = _out = StreamController<SpeechEvent>();
     unawaited(_start(language, out, onDevice: !kDebugMode || _onDeviceDefine));
     return out.stream;
   }
 
+  /// Starts a recognizer session for [out]: the listen's first one, or with
+  /// [resume] a new one of the same hold (what was heard is kept; the clock
+  /// and the watchdog go on).
   Future<void> _start(
     SpokenLanguage language,
     StreamController<SpeechEvent> out, {
     required bool onDevice,
+    bool resume = false,
   }) async {
     if (language != _language || _localeId == null) {
       final support = await prepare(language);
@@ -313,25 +361,45 @@ class PlatformSpeechToText implements SpeechToText {
     }
     _onDevice = onDevice;
     _gotFinal = false;
-    _phrases.clear();
     _lastPartial = '';
-    _debug('listen', {'locale': _localeId, 'onDevice': onDevice});
-    _clock
-      ..reset()
-      ..start();
-    _minLevel = _maxLevel = null;
+    if (resume) {
+      // same hold: keep what earlier sessions heard
+      _sessionFrom = _phrases.length;
+    } else {
+      _phrases.clear();
+      _sessionFrom = 0;
+      _clock
+        ..reset()
+        ..start();
+      _minLevel = _maxLevel = null;
+      _watchdog?.cancel();
+      _watchdog = Timer(watchdog, () {
+        _log.warn('listen_watchdog');
+        unawaited(_stt.cancel());
+        if (_heardSomething) {
+          _finishHeard(out);
+        } else {
+          _finish(
+            out,
+            const SpeechFailed(SpeechError.other),
+            source: 'watchdog',
+          );
+        }
+      });
+    }
+    _debug('listen', {
+      'locale': _localeId,
+      'onDevice': onDevice,
+      'resume': resume,
+    });
     trace('listen', {
       'language': language.name,
       'locale': _localeId,
       'onDevice': onDevice,
       'mode': _listenMode.name,
+      'resume': resume,
+      'restarts': _restarts,
       'bias': _bias,
-    });
-    _watchdog?.cancel();
-    _watchdog = Timer(watchdog, () {
-      _log.warn('listen_watchdog');
-      unawaited(_stt.cancel());
-      _finish(out, const SpeechFailed(SpeechError.other), source: 'watchdog');
     });
     try {
       await _stt.listen(
@@ -357,15 +425,87 @@ class PlatformSpeechToText implements SpeechToText {
         if (_out == null || identical(_out, out)) await _stt.cancel();
         return;
       }
-      // let go while the plugin was starting: end it now
-      if (_stopAsked) unawaited(_stt.stop());
+      if (_stopAsked) {
+        if (resume) {
+          // let go while a new session of the hold was starting: it has
+          // heard nothing yet, so what came before is the sentence
+          unawaited(_cancelPlugin());
+          _finishHeard(out);
+        } else {
+          // let go while the plugin was starting: end it now
+          unawaited(_stt.stop());
+        }
+      }
     } on Object catch (e) {
       _log.warn('listen_failed', {'error': e.toString()});
-      if (onDevice) {
+      if (resume) {
+        // a new session of the hold couldn't start (the recognizer may
+        // still be busy): try again, or end with what was heard
+        if (_stopAsked) {
+          _finishHeard(out);
+        } else {
+          _restart(out, reason: 'start_failed');
+        }
+      } else if (onDevice) {
+        // Q-T3: the phone's own recognizer refused to start (iOS): the
+        // normal one
         await _start(language, out, onDevice: false);
       } else {
         _finish(out, const SpeechFailed(SpeechError.other));
       }
+    }
+  }
+
+  /// The phone ended its session while the mic is still held: a new one
+  /// after [restartDelay], keeping what was heard.
+  void _restart(StreamController<SpeechEvent> out, {required String reason}) {
+    if (_stopAsked || !identical(_out, out) || out.isClosed) return;
+    if (_restartTimer != null) return; // one at a time
+    // the ended session's last words count before the next one starts
+    _keepSessionPartial();
+    // the ended session's late `done` is not the end of the listen
+    _ignoreDone = true;
+    // Android keeps a session that sent its final result "listening" until
+    // its pause timer (65 s here) and refuses a new one meanwhile: end it
+    unawaited(_cancelPlugin());
+    if (_restarts >= maxRestarts) {
+      _finishHeard(out);
+      return;
+    }
+    _restarts++;
+    trace('restart', {
+      'ms': _clock.elapsedMilliseconds,
+      'reason': reason,
+      'n': _restarts,
+    });
+    _debug('restart', {'reason': reason, 'n': _restarts});
+    _restartTimer = Timer(restartDelay, () {
+      _restartTimer = null;
+      final language = _language;
+      if (_stopAsked || !identical(_out, out) || out.isClosed) return;
+      if (language == null) {
+        _finishHeard(out);
+        return;
+      }
+      unawaited(_start(language, out, onDevice: _onDevice, resume: true));
+    });
+  }
+
+  /// A session that ends with no finished phrase: its last partial is what
+  /// it heard (user rule, 2026-10-12), kept for the sentence.
+  void _keepSessionPartial() {
+    if (_phrases.length == _sessionFrom && _lastPartial.isNotEmpty) {
+      _phrases.add(_lastPartial);
+    }
+    _lastPartial = '';
+  }
+
+  /// Ends the plugin's session (also one the phone already ended).
+  Future<void> _cancelPlugin() async {
+    try {
+      await _stt.cancel();
+    } on Object catch (e) {
+      _log.warn('cancel_failed', {'error': '$e'});
     }
   }
 
@@ -395,14 +535,21 @@ class PlatformSpeechToText implements SpeechToText {
     }
     if (r.finalResult) {
       _gotFinal = true;
-      final text = r.recognizedWords.trim();
-      _finish(
-        out,
-        text.isEmpty
-            ? const SpeechFailed(SpeechError.noSpeech)
-            : SpeechFinal(text),
-        source: 'final',
-      );
+      if (text.isNotEmpty) {
+        // the final result wins over its own session's phrases and partial
+        // (2026-10-12); the earlier sessions of the hold stay
+        _phrases
+          ..removeRange(_sessionFrom, _phrases.length)
+          ..add(text);
+        _lastPartial = '';
+      }
+      if (_stopAsked) {
+        // let go: everything heard during the hold is the sentence
+        _finishHeard(out, source: 'final');
+      } else {
+        // the phone ended the session on a pause; the mic is still held
+        _restart(out, reason: 'final');
+      }
     } else {
       out.add(SpeechPartial(r.recognizedWords));
     }
@@ -414,22 +561,45 @@ class PlatformSpeechToText implements SpeechToText {
     final error = classifySpeechError(e.errorMsg);
     trace('error', {'ms': _clock.elapsedMilliseconds, 'code': e.errorMsg});
     _log.info('listen_error', {'code': e.errorMsg, 'onDevice': _onDevice});
-    if (error == SpeechError.noSpeech &&
-        (_phrases.isNotEmpty || _lastPartial.isNotEmpty)) {
-      // The session ended badly after finished phrases: they were heard.
+    if (error == SpeechError.permission) {
+      _finish(out, const SpeechFailed(SpeechError.permission));
+      return;
+    }
+    if (error == SpeechError.languageMissing) {
+      final language = _language;
+      if (_onDevice && language != null) {
+        if (_stopAsked) {
+          // let go meanwhile: what was heard is the sentence
+          _finishHeard(out);
+          return;
+        }
+        // Q-T3: the phone's own recognizer can't do this language: the
+        // normal one for the rest of the hold, keeping what was heard
+        _restartTimer?.cancel();
+        _restartTimer = null;
+        _keepSessionPartial();
+        _ignoreDone = true;
+        unawaited(_start(language, out, onDevice: false, resume: true));
+        return;
+      }
+      _picked.remove(language);
+      _finish(out, const SpeechFailed(SpeechError.languageMissing));
+      return;
+    }
+    if (!_stopAsked && _sessionEndErrors.contains(e.errorMsg)) {
+      // between a restart and the new session's "listening": a late error
+      // of the session just cancelled, not the end of the new one
+      if (_ignoreDone) return;
+      // the phone ended its session (nothing more understood, busy) while
+      // the mic is held: listen again, keeping what was heard
+      _restart(out, reason: e.errorMsg);
+      return;
+    }
+    if (_heardSomething) {
+      // the session ended badly after words: they were heard
       _finishHeard(out);
       return;
     }
-    if (error == SpeechError.languageMissing &&
-        _onDevice &&
-        _language != null) {
-      // Q-T3: the phone's own recognizer can't do this language; try the
-      // normal one once.
-      _ignoreDone = true;
-      unawaited(_start(_language!, out, onDevice: false));
-      return;
-    }
-    if (error == SpeechError.languageMissing) _picked.remove(_language);
     _finish(out, SpeechFailed(error));
   }
 
@@ -439,45 +609,57 @@ class PlatformSpeechToText implements SpeechToText {
     _debug('status', {'status': status, 'onDevice': _onDevice});
     trace('status', {'ms': _clock.elapsedMilliseconds, 'status': status});
     if (status == stt.SpeechToText.listeningStatus) _ignoreDone = false;
-    // `done` without a final result: the finished phrases, or nothing.
-    // After a stop (hold to talk: the mic was let go) the plugin says
-    // `done` at once, before the recognizer's words, which come when the
-    // audio ends (phone run 2, 2026-10-27: ~0.4 s later): wait for them
-    // ([stopGrace]).
-    if (status == stt.SpeechToText.doneStatus &&
-        !_gotFinal &&
-        !_ignoreDone &&
-        !_stopAsked) {
-      _finishHeard(out);
+    // The session is over while the mic is held, with no final result: the
+    // phone ended it by itself; listen again, keeping what was heard
+    // (2026-11-20). The plugin says so with `notListening` (also after an
+    // empty result: ISHARA.md item 4), then `done`, which it holds back
+    // after a partial result, so `notListening` is the signal to trust.
+    // After a stop (the mic was let go) the plugin says both at once, before
+    // the recognizer's words, which come when the audio ends (phone run 2,
+    // 2026-10-27: ~0.4 s later): wait for them ([stopGrace]).
+    final ended =
+        status == stt.SpeechToText.notListeningStatus ||
+        status == stt.SpeechToText.doneStatus;
+    if (ended && !_gotFinal && !_ignoreDone && !_stopAsked) {
+      _restart(out, reason: status);
     }
   }
 
   void _addPhrase(String text) {
     if (text.isEmpty) return;
-    final sofar = _phrases.join(' ');
-    // Some recognizers resend the whole text so far, others each phrase.
+    final from = _sessionFrom.clamp(0, _phrases.length);
+    final mine = _phrases.sublist(from);
+    final sofar = mine.join(' ');
+    // Some recognizers resend the whole text so far, others each phrase
+    // (within this session; earlier sessions of the hold stay).
     if (sofar.isNotEmpty && text.startsWith(sofar)) {
       _phrases
-        ..clear()
+        ..removeRange(from, _phrases.length)
         ..add(text);
-    } else if (!_phrases.contains(text)) {
+    } else if (!mine.contains(text)) {
       _phrases.add(text);
     }
   }
 
-  void _finishHeard(StreamController<SpeechEvent> out) {
-    final phrases = _phrases.join(' ').trim();
-    final heard = phrases.isEmpty ? _lastPartial : phrases;
+  void _finishHeard(StreamController<SpeechEvent> out, {String? source}) {
+    final sessionHasPhrase = _phrases.length > _sessionFrom;
+    final parts = [
+      ..._phrases,
+      if (!sessionHasPhrase && _lastPartial.isNotEmpty) _lastPartial,
+    ];
+    final heard = parts.join(' ').replaceAll(RegExp(r'\s+'), ' ').trim();
     _finish(
       out,
       heard.isEmpty
           ? const SpeechFailed(SpeechError.noSpeech)
           : SpeechFinal(heard),
-      source: phrases.isNotEmpty
-          ? 'phrases'
-          : heard.isEmpty
-          ? 'none'
-          : 'lastPartial',
+      source:
+          source ??
+          (_phrases.isNotEmpty
+              ? 'phrases'
+              : heard.isEmpty
+              ? 'none'
+              : 'lastPartial'),
     );
   }
 
@@ -499,9 +681,12 @@ class PlatformSpeechToText implements SpeechToText {
     SpeechEvent last, {
     String source = 'error',
   }) {
+    // a listen already over (or replaced) leaves the current one's timers
+    if (out.isClosed) return;
     _watchdog?.cancel();
     _stopTimer?.cancel();
-    if (out.isClosed) return;
+    _restartTimer?.cancel();
+    _restartTimer = null;
     trace('end', {
       'ms': _clock.elapsedMilliseconds,
       'source': source,
@@ -520,6 +705,12 @@ class PlatformSpeechToText implements SpeechToText {
     trace('stop', {'ms': _clock.elapsedMilliseconds});
     _stopTimer?.cancel();
     _stopAsked = true;
+    if (_restartTimer != null) {
+      // let go between two sessions of the hold: none is running, so what
+      // was heard is the sentence now (no grace to wait for)
+      _finishHeard(out);
+      return;
+    }
     _stopTimer = Timer(stopGrace, () {
       if (!identical(out, _out) || out.isClosed) return;
       _finishHeard(out);
@@ -541,15 +732,13 @@ class PlatformSpeechToText implements SpeechToText {
     _out = null;
     _watchdog?.cancel();
     _stopTimer?.cancel();
+    _restartTimer?.cancel();
+    _restartTimer = null;
     if (out != null && !out.isClosed) {
       trace('cancel', {'ms': _clock.elapsedMilliseconds});
       // always, also before the plugin reports "listening": a cancel right
       // after the press must close the mic (_start checks [_out] too)
-      try {
-        await _stt.cancel();
-      } on Object catch (e) {
-        _log.warn('cancel_failed', {'error': '$e'});
-      }
+      await _cancelPlugin();
     } else if (_stt.isListening) {
       await _stt.cancel();
     }

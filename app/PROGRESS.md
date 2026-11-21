@@ -700,3 +700,26 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 
 **Phone run 2 (user, 2026-10-27, hold to talk):** nothing signed, sentences included. Cause and fix: TV-10 (the speech layer took the plugin's immediate `done` after a release as "nothing heard"; the words came 0.4 s later). Test replaying the phone's order (fails without the fix). Checks: analyze 0 issues; Talk / speech / settings tests 203 passed; `talk_test` ✓ 2/2 on the phone with `--no-uninstall` (the user's setup kept; the normal debug build reinstalled over the test build; developer mode still on).
 
+## Talk voice: the mic stays open while held; "no word heard" (2026-11-20 → 21, Windows laptop `D:\ishara_project\Ishara`; no device connected)
+
+**Checklist (source → status)**
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Review the user's uncommitted mic fix (the mic closed while held) line by line, fix what is wrong | user 2026-11-20 | ✓ the idea kept (TV-2: the user ends the listen); 7 problems fixed (TV-11); with the fix as found, 21 of 49 speech tests failed |
+| 2 | A lower recognizer guess that has a sign word replaced the first guess | user decision | ✓ removed, with its second normalizer (TV-12) |
+| 3 | On-device → normal recognizer on any error before the first word | user decision | ✓ back to Q-T3 as recorded (TV-13) |
+| 4 | `kotlin.incremental=false` (Windows build) | user decision | ✓ committed with a comment (TV-14) |
+| 5 | "No word heard at all": find the cause in the code | user 2026-11-21 | ✓ found in the plugin + speech layer and fixed (TV-15, ISHARA.md item 4); ✗ not yet confirmed with a phone log |
+| 6 | Phone run: hold with a pause and go on, English and Arabic, word trace (developer mode) | protocol; TV-1 | ✗ not done: no phone connected to this laptop |
+
+**Built:** `PlatformSpeechToText` (`lib/core/speech/speech_to_text.dart`): while the mic is held, a session the phone ends (final result, `notListening`, `done`, `error_no_match`, `error_speech_timeout`, `error_busy`, `error_client`) is followed by a new one after `restartDelay` (300 ms; at most `maxRestarts` 20), with the plugin's session cancelled first; the words of every session of the hold are kept; a final result replaces only its own session's phrases; release between two sessions or while one starts gives the sentence at once; other errors end the listen with the words heard. The patched plugin (`app/third_party/speech_to_text`, `ISHARA.patch` regenerated and checked to apply on upstream 7.5.0): `onResults` reports the end of the session at once.
+
+**Tests (Windows laptop):** `dart format` clean; `flutter analyze --fatal-infos --fatal-warnings` 0 issues; `test/speech/speech_to_text_test.dart` **64/64** (21 tests adapted to hold to talk: the phone ending a session no longer ends the listen, the release does; 17 new). Mutation-checked: removing each of 6 fixes (cancel before a new session, final replaces its own session, release between sessions, only session-end errors restart, `notListening` as the end, late errors ignored) fails its test. Full suite, `CI=true flutter test --coverage`, run before the review fixes (since then only the speech layer and its test changed): **920 passed, 4 skipped, 63 failed**, all in files that don't use the speech layer: CI goldens (calibrate, Learn, onboarding…), the kit / three.js / prototype checksum tests, the architecture scans. Likely this Windows checkout (`core.autocrlf=true` writes CRLF, so the checksums differ; goldens rendered on Windows); not yet run on Linux / CI. Android debug build (`--dart-define=GLOVE=mock`): ✓ built (the plugin's Kotlin change compiles; Kotlin's compile daemon couldn't start on this laptop and Gradle compiled without it).
+
+**Review:** line by line, then `/code-review` (high): 5 findings; 3 fixed (a late error of a cancelled session restarted the new one: now ignored until "listening", test; any error after words now signs them: recorded in TV-11; a duplicated cancel helper), 1 no change (the cancel before a new session stays in the speech layer), 1 skipped (the debug trace calls a kept partial "phrases").
+
+**Integration:** not run (no device; the emulator image `google_apis` has no Google speech service, and these tests use a fake recognizer).
+
+**Open:** (1) phone run with the word trace, English and Arabic, holding through a pause; also listen for a start sound at each new session; (2) a CI run of the branch for the 63 Windows-only failures.
+

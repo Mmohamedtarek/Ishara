@@ -262,8 +262,8 @@ void main() {
       expect(await s.prepare(SpokenLanguage.en), SpeechSupport.unavailable);
     });
 
-    test('listen: on the phone first, in the picked locale; partial then '
-        'final', () async {
+    test('listen: on the phone first, in the picked locale; partial, the '
+        'release, then the final', () async {
       final got = <SpeechEvent>[];
       final done = Completer<void>();
       s.listen(SpokenLanguage.ar).listen(got.add, onDone: done.complete);
@@ -283,6 +283,8 @@ void main() {
         stt.ListenMode.dictation.index,
       );
       await phone.words('شكرا', last: false);
+      // hold to talk: let go, then the recognizer's last words
+      await s.stop();
       await phone.words('شكرا جدا', last: true);
       await done.future;
       expect(got[0], isA<SpeechPartial>());
@@ -294,6 +296,7 @@ void main() {
       s.listen(SpokenLanguage.en).listen(got.add);
       await _flush();
       await _flush();
+      await s.stop();
       await phone.words('  ', last: true);
       await _flush();
       expect((got.single as SpeechFailed).error, SpeechError.noSpeech);
@@ -309,6 +312,7 @@ void main() {
       await _flush();
       await _flush();
       expect([for (final l in phone.listens) l['onDevice']], [true, false]);
+      await s.stop();
       await phone.words('مية', last: true);
       await _flush();
       expect((got.last as SpeechFinal).text, 'مية');
@@ -327,6 +331,7 @@ void main() {
       await _flush();
       expect(got, isEmpty, reason: 'the retry is still listening');
       await phone.status('listening');
+      await s.stop();
       await phone.words('مية', last: true);
       await _flush();
       expect((got.single as SpeechFinal).text, 'مية');
@@ -353,6 +358,7 @@ void main() {
         await _flush();
       }
       expect([for (final l in phone.listens) l['onDevice']], [true, false]);
+      await s.stop();
       await phone.words('hello', last: true);
       await _flush();
       expect((got.single as SpeechFinal).text, 'hello');
@@ -371,11 +377,13 @@ void main() {
       expect((got.single as SpeechFailed).error, SpeechError.other);
     });
 
-    test('no match, permission, other errors', () async {
+    test('while the mic is held: permission and other errors (not a session '
+        'the phone ended) end the listen', () async {
       for (final (code, want) in [
-        ('error_no_match', SpeechError.noSpeech),
         ('error_permission', SpeechError.permission),
         ('error_network', SpeechError.other),
+        ('error_server', SpeechError.other),
+        ('error_audio_error', SpeechError.other),
       ]) {
         final got = <SpeechEvent>[];
         s.listen(SpokenLanguage.en).listen(got.add);
@@ -385,26 +393,37 @@ void main() {
         await _flush();
         expect((got.single as SpeechFailed).error, want, reason: code);
       }
+      expect(phone.listens, hasLength(4), reason: 'never listened again');
     });
 
-    test('done with no result → nothing heard', () async {
+    test('done with no result while the mic is held: listening goes on; let '
+        'go with nothing heard → nothing heard', () async {
       final got = <SpeechEvent>[];
       s.listen(SpokenLanguage.en).listen(got.add);
       await _flush();
       await _flush();
       await phone.status('doneNoResult');
       await _flush();
+      expect(got, isEmpty, reason: 'still listening');
+      await s.stop();
+      await _flush();
       expect((got.single as SpeechFailed).error, SpeechError.noSpeech);
     });
 
-    group('finished phrases, then the session ends with no final result '
-        '(Samsung, Google on-device recognizer, 2026-10-12)', () {
+    group('finished phrases, then the phone ends the session with no final '
+        'result while the mic is held (Samsung, Google on-device recognizer, '
+        '2026-10-12); the release gives the sentence (2026-11-20)', () {
       Future<List<SpeechEvent>> session(Future<void> Function() phone_) async {
         final got = <SpeechEvent>[];
         s.listen(SpokenLanguage.en).listen(got.add);
         await _flush();
         await _flush();
         await phone_();
+        await _flush();
+        // the mic is still held: listening goes on, nothing ends yet
+        expect(got.where((e) => e is! SpeechPartial), isEmpty);
+        // let go between two sessions: what was heard is the sentence
+        await s.stop();
         await _flush();
         return got;
       }
@@ -630,8 +649,13 @@ void main() {
         isTrue,
       );
       await phone.alternates([('boy', .8), ('bye', .4)], type: 0);
-      await phone.status('notListening');
+      // Android's order: the error, then "notListening" (plugin onError)
       await phone.error('error_no_match');
+      await phone.status('notListening');
+      await _flush();
+      // the mic is still held: a new session, the partial kept
+      expect(line('restart'), containsPair('reason', 'error_no_match'));
+      await s.stop();
       await done.future;
       final listen = line('listen');
       expect(listen['locale'], 'en_US');
@@ -644,7 +668,10 @@ void main() {
       expect(line('status')['status'], 'notListening');
       expect(line('error')['code'], 'error_no_match');
       final end = line('end');
-      expect(end['source'], 'lastPartial');
+      // the ended session's last partial was kept as what it heard
+      expect(end['source'], 'phrases');
+      // the phone's first guess, never a lower one that has a sign
+      // (user decision 2026-11-20)
       expect(end['heard'], 'boy');
       expect(end['error'], isNull);
     });
@@ -660,9 +687,12 @@ void main() {
       await _flush();
       await _flush();
       await phone.error('error_no_match');
+      await _flush();
+      // still held: listening goes on until the release
+      await s.stop();
       await done.future;
       expect(line('error')['code'], 'error_no_match');
-      expect(line('end'), containsPair('source', 'error'));
+      expect(line('end'), containsPair('source', 'none'));
       expect(line('end'), containsPair('error', 'noSpeech'));
     });
 
@@ -675,6 +705,7 @@ void main() {
       s.listen(SpokenLanguage.en).listen(null, onDone: done.complete);
       await _flush();
       await _flush();
+      await s.stop();
       await phone.words('hello', last: true);
       await done.future;
       expect(lines, isEmpty);
@@ -883,6 +914,318 @@ void main() {
       await phone.words('bye', last: true);
       await done.future;
       expect((got.last as SpeechFinal).text, 'bye');
+    });
+  });
+
+  group('hold to talk: the phone ends its session while the mic is held '
+      '(2026-11-20)', () {
+    late _Phone phone;
+
+    setUp(() => phone = _Phone());
+    tearDown(() => phone.dispose());
+
+    PlatformSpeechToText make({
+      Duration restartDelay = Duration.zero,
+      int maxRestarts = 20,
+    }) {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+        restartDelay: restartDelay,
+        maxRestarts: maxRestarts,
+        stopGrace: const Duration(seconds: 5),
+      );
+      addTearDown(s.cancel);
+      return s;
+    }
+
+    /// Lets the short timers and the plugin's answers run.
+    Future<void> settle() =>
+        Future<void>.delayed(const Duration(milliseconds: 50));
+
+    List<String> methods() => [for (final c in phone.calls) c.method];
+    int count(String method) => methods().where((m) => m == method).length;
+    Iterable<SpeechEvent> ends(List<SpeechEvent> got) =>
+        got.where((e) => e is SpeechFinal || e is SpeechFailed);
+
+    test('no match: a new session with the same recognizer and bias, the '
+        'words kept; the release gives all of them', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s
+          .listen(SpokenLanguage.en, phrases: ['hello', 'thank you'])
+          .listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.result('hello', type: 1);
+      await phone.error('error_no_match');
+      await settle();
+      expect(ends(got), isEmpty, reason: 'still listening');
+      expect(phone.listens, hasLength(2));
+      expect(phone.listens.last['onDevice'], isTrue);
+      expect(phone.listens.last['contextualPhrases'], ['hello', 'thank you']);
+      await phone.status('listening');
+      await phone.result('thank you', type: 1);
+      await s.stop();
+      await phone.words('thank you', last: true);
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'hello thank you');
+    });
+
+    test("Q-T3 (user decision 2026-11-20): the phone's own recognizer ending "
+        'a session before any word (silence, busy, a client error) stays in '
+        'use', () async {
+      for (final code in [
+        'error_no_match',
+        'error_speech_timeout',
+        'error_busy',
+        'error_client',
+      ]) {
+        final s = make();
+        final got = <SpeechEvent>[];
+        final before = phone.listens.length;
+        s.listen(SpokenLanguage.en).listen(got.add);
+        await _flush();
+        await _flush();
+        await phone.error(code);
+        await settle();
+        expect(phone.listens.length, before + 2, reason: code);
+        expect(phone.listens.last['onDevice'], isTrue, reason: code);
+        expect(ends(got), isEmpty, reason: code);
+        await s.cancel();
+      }
+    });
+
+    test('a final result while held: the ended session is cancelled before '
+        'the next listen (Android keeps it "listening" after its final '
+        'result and would refuse a new one)', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.words('hello', last: true);
+      await settle();
+      expect(ends(got), isEmpty, reason: 'still listening');
+      final m = methods();
+      expect(count('listen'), 2);
+      expect(m.indexOf('cancel'), isNonNegative);
+      expect(m.indexOf('cancel'), lessThan(m.lastIndexOf('listen')));
+      await phone.status('listening');
+      await phone.words('thank you', last: false);
+      await s.stop();
+      await phone.words('thank you', last: true);
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'hello thank you');
+    });
+
+    test('a final result replaces the phrases of its own session (no word '
+        'twice); the earlier sessions stay', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.result('come', type: 1);
+      await phone.error('error_no_match');
+      await settle();
+      await phone.status('listening');
+      await phone.result('hello', type: 1);
+      await s.stop();
+      await phone.words('Hello there', last: true);
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'come Hello there');
+    });
+
+    test("only the phone's first guess is heard, never a lower guess that "
+        'has a sign (user decision 2026-11-20)', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en, phrases: ['bye']).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.alternates([('boy', .8), ('bye', .4)], type: 1);
+      await s.stop();
+      await phone.alternates([('boy', .8), ('bye', .4)], type: 2);
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'boy');
+    });
+
+    test('let go between two sessions: the sentence at once, no new session '
+        'and no grace to wait for', () async {
+      final s = make(restartDelay: const Duration(seconds: 5));
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.result('hello', type: 1);
+      await phone.status('done');
+      await _flush();
+      expect(ends(got), isEmpty, reason: 'waiting for the next session');
+      await s.stop();
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'hello');
+      expect(phone.listens, hasLength(1));
+      expect(count('stop'), 0, reason: 'no session to stop');
+    });
+
+    test('let go while the next session is starting: it is cancelled and '
+        'the words before it are the sentence at once', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.result('hello', type: 1);
+      phone.listenGate = Completer<void>();
+      await phone.error('error_no_match');
+      await settle();
+      expect(phone.listens, hasLength(2), reason: 'the next one is starting');
+      await s.stop();
+      final cancels = count('cancel');
+      phone.listenGate!.complete();
+      await settle();
+      expect(got.whereType<SpeechFinal>().single.text, 'hello');
+      expect(count('cancel'), greaterThan(cancels));
+    });
+
+    test('a next session that cannot start is tried again on the same '
+        'recognizer', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.result('hello', type: 1);
+      phone.listenAnswers.add(PlatformException(code: 'busy'));
+      await phone.error('error_no_match');
+      await settle();
+      await settle();
+      expect(phone.listens, hasLength(3), reason: 'failed once, then started');
+      expect(phone.listens.last['onDevice'], isTrue);
+      expect(ends(got), isEmpty);
+      await phone.status('listening');
+      await s.stop();
+      await phone.words('please', last: true);
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'hello please');
+    });
+
+    test(
+      'another error while held ends the listen with what was heard',
+      () async {
+        final s = make();
+        final got = <SpeechEvent>[];
+        s.listen(SpokenLanguage.en).listen(got.add);
+        await _flush();
+        await _flush();
+        await phone.result('hello', type: 1);
+        await phone.error('error_network');
+        await _flush();
+        expect(got.whereType<SpeechFinal>().single.text, 'hello');
+        expect(phone.listens, hasLength(1));
+      },
+    );
+
+    test('at most maxRestarts new sessions, then what was heard is the '
+        'sentence', () async {
+      final s = make(maxRestarts: 2);
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.result('hello', type: 1);
+      for (var i = 0; i < 3; i++) {
+        if (i > 0) await phone.status('listening');
+        await phone.error('error_no_match');
+        await settle();
+      }
+      expect(phone.listens, hasLength(3), reason: 'the first and 2 more');
+      expect(got.whereType<SpeechFinal>().single.text, 'hello');
+    });
+
+    test('the phone ends its session after a partial (an empty final: the '
+        'plugin sends only "notListening" and holds "done" back): a new '
+        'session at once, the partial kept (ISHARA.md item 4)', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await phone.result('hello', type: 0);
+      await phone.status('notListening');
+      await phone.status('done');
+      await settle();
+      expect(ends(got), isEmpty, reason: 'still listening');
+      expect(phone.listens, hasLength(2));
+      await phone.status('listening');
+      await s.stop();
+      await phone.words('thank you', last: true);
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'hello thank you');
+    });
+
+    test('our own cancel before a new session ("notListening", "done") does '
+        'not start another one', () async {
+      final s = make(restartDelay: const Duration(milliseconds: 30));
+      s.listen(SpokenLanguage.en).listen(null);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await phone.error('error_no_match');
+      // what the plugin says for the cancel of the ended session
+      await phone.status('notListening');
+      await phone.status('doneNoResult');
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      expect(phone.listens, hasLength(2), reason: 'one new session only');
+    });
+
+    test('a late error of the cancelled session (before the new one says '
+        '"listening") does not end the new session', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.words('hello', last: true);
+      await settle();
+      expect(phone.listens, hasLength(2));
+      await phone.error('error_client');
+      await settle();
+      expect(phone.listens, hasLength(2), reason: 'no restart for it');
+      await phone.status('listening');
+      await s.stop();
+      await phone.words('thank you', last: true);
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'hello thank you');
+    });
+
+    test(
+      'cancelled while waiting for the next session: it never starts',
+      () async {
+        final s = make(restartDelay: const Duration(milliseconds: 30));
+        s.listen(SpokenLanguage.en).listen(null);
+        await _flush();
+        await _flush();
+        await phone.error('error_no_match');
+        await s.cancel();
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        expect(phone.listens, hasLength(1));
+      },
+    );
+
+    test('a new listen while waiting for the next session: the old one never '
+        'starts', () async {
+      final s = make(restartDelay: const Duration(milliseconds: 30));
+      s.listen(SpokenLanguage.en).listen(null);
+      await _flush();
+      await _flush();
+      await phone.error('error_no_match');
+      s.listen(SpokenLanguage.en).listen(null);
+      await _flush();
+      await _flush();
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      expect(phone.listens, hasLength(2));
     });
   });
 }
