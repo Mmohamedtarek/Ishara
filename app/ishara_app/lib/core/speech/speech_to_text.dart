@@ -150,8 +150,16 @@ class PlatformSpeechToText implements SpeechToText {
     this.restartDelay = const Duration(milliseconds: 300),
     this.maxRestarts = 20,
     this.stopTail = const Duration(milliseconds: 800),
+    this.finalWait = const Duration(seconds: 1),
   }) : _stt = plugin ?? stt.SpeechToText(),
        watchdog = watchdog ?? listenFor + watchdogSlack;
+
+  /// After the plugin is told to stop, how long it waits for the phone's
+  /// final result before it makes one from the last result it got (the
+  /// plugin's `finalTimeout`, 2 s by default). User decision 2026-11-21,
+  /// TV-20: a Galaxy A56 never sent a final result, so every sentence came
+  /// 2 s late; the Galaxy A52 sent it ~0.4 s after the stop.
+  final Duration finalWait;
 
   /// How long the recognizer keeps listening after [stop] (the mic let go)
   /// before it is told to stop (user decision 2026-11-21, TV-16): the last
@@ -297,6 +305,7 @@ class PlatformSpeechToText implements SpeechToText {
               // the plugin's own Android log (tag SpeechToTextPlugin):
               // which recognizer, biasing, errors; only with [trace] on
               debugLogging: trace.enabled,
+              finalTimeout: finalWait,
             )
             .timeout(prepareTimeout);
       } on TimeoutException {
@@ -558,7 +567,13 @@ class PlatformSpeechToText implements SpeechToText {
     }
     if (r.finalResult) {
       _gotFinal = true;
-      if (text.isNotEmpty) {
+      final mine = _phrases.sublist(_sessionFrom);
+      if (text.isNotEmpty && mine.contains(text)) {
+        // only one of this session's phrases again: the plugin made the
+        // final from its last result when the phone sent none (Galaxy A56),
+        // so the session's phrases stay as they are
+        _lastPartial = '';
+      } else if (text.isNotEmpty) {
         // the final result wins over its own session's phrases and partial
         // (2026-10-12); the earlier sessions of the hold stay
         _phrases

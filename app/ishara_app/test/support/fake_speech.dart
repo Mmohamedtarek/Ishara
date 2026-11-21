@@ -21,6 +21,11 @@ class FakeSpeechToText implements SpeechToText {
   /// Scripted words come when the mic is released, not at once.
   final bool untilStop;
 
+  /// Each listen starts with a sound level, as the phone's microphone does
+  /// once it really records (Talk waits for it, TV-19). Off: the test sends
+  /// the first [level] itself.
+  bool micOnAtStart = true;
+
   SpeechSupport support;
   final List<Object> heard;
 
@@ -54,6 +59,7 @@ class FakeSpeechToText implements SpeechToText {
     calls.add('listen ${language.name}');
     this.phrases = phrases;
     final out = _open = StreamController<SpeechEvent>();
+    if (micOnAtStart) out.add(const SpeechLevel(0));
     if (heard.isNotEmpty && !untilStop) {
       final next = heard.removeAt(0);
       scheduleMicrotask(() {

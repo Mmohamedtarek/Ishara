@@ -143,6 +143,7 @@ class TalkSpeech extends _$TalkSpeech {
     ref.onDispose(() {
       _maxTimer?.cancel();
       _silenceTimer?.cancel();
+      _micTimer?.cancel();
       _level.dispose();
       unawaited(_listen?.cancel());
       unawaited(_sequencer?.dispose());
@@ -174,6 +175,16 @@ class TalkSpeech extends _$TalkSpeech {
   @visibleForTesting
   Duration silenceLimitForTest = silenceLimit;
 
+  /// Recording starts for the user (the haptic, "Listening…", the timer)
+  /// when the microphone really records: its first sound level (user
+  /// decision 2026-11-21, TV-19; phone log: ~0.9 s after the listen is
+  /// asked for). If no level comes in this time, it starts anyway.
+  static const micOnWait = Duration(seconds: 2);
+
+  /// Tests shorten [micOnWait].
+  @visibleForTesting
+  Duration micOnWaitForTest = micOnWait;
+
   /// The microphone's loudness while recording, 0..1 (the live level
   /// indicator; kept out of [state] so the screen doesn't rebuild with it).
   ValueListenable<double> get level => _level;
@@ -203,6 +214,11 @@ class TalkSpeech extends _$TalkSpeech {
   Timer? _maxTimer;
   Timer? _silenceTimer;
 
+  /// The listen has started but the microphone doesn't record yet: the mic
+  /// still shows "preparing" (TV-19).
+  bool _awaitingMic = false;
+  Timer? _micTimer;
+
   /// This recording was started by a tap (tap mode): no silence limit.
   bool _tapStarted = false;
 
@@ -213,8 +229,8 @@ class TalkSpeech extends _$TalkSpeech {
   bool _queuedTap = false;
 
   /// Hold to talk (2026-10-26): the mic is pressed. Recording starts as
-  /// soon as the permission and the recognizer are ready, if the mic is
-  /// still held then.
+  /// soon as the permission and the recognizer are ready and the microphone
+  /// really records (TV-19), if the mic is still held then.
   Future<void> pressMic() => _press(tap: false);
 
   Future<void> _press({required bool tap, bool keepSigning = false}) async {
@@ -277,6 +293,23 @@ class TalkSpeech extends _$TalkSpeech {
       return;
     }
     _level.value = 0;
+    // still "preparing" until the microphone really records ([_micOn])
+    _awaitingMic = true;
+    _micTimer?.cancel();
+    _micTimer = Timer(micOnWaitForTest, _micOn);
+    _listen = stt
+        .listen(_language, phrases: phrases)
+        .listen(_onSpeech, onDone: _onListenDone);
+  }
+
+  /// The microphone records now: recording starts for the user (the haptic,
+  /// "Listening…", the timer, the limits), so what they say from the haptic
+  /// on is heard (TV-19).
+  void _micOn() {
+    _micTimer?.cancel();
+    if (!_awaitingMic || !ref.mounted) return;
+    _awaitingMic = false;
+    if (state.mic != MicState.preparing) return;
     state = state.copyWith(
       mic: MicState.listening,
       recordingSince: () => _now(),
@@ -285,9 +318,6 @@ class TalkSpeech extends _$TalkSpeech {
     _maxTimer?.cancel();
     _maxTimer = Timer(maxRecordingForTest, () => unawaited(releaseMic()));
     _armSilence();
-    _listen = stt
-        .listen(_language, phrases: phrases)
-        .listen(_onSpeech, onDone: _onListenDone);
   }
 
   /// The mic is let go: under [minHold] the recording is thrown away,
@@ -296,6 +326,11 @@ class TalkSpeech extends _$TalkSpeech {
     _held = false;
     _queued = false;
     _silenceTimer?.cancel();
+    if (_awaitingMic) {
+      // let go before the microphone recorded anything: nothing to send
+      await _discard(MicNotice.tooShort);
+      return;
+    }
     if (state.mic != MicState.listening) return;
     _maxTimer?.cancel();
     final since = state.recordingSince;
@@ -312,6 +347,10 @@ class TalkSpeech extends _$TalkSpeech {
   Future<void> cancelMic() async {
     _held = false;
     _queued = false;
+    if (_awaitingMic) {
+      await _discard(MicNotice.none);
+      return;
+    }
     if (state.mic == MicState.preparing) _cancelledEarly = true;
     if (state.mic != MicState.listening) return;
     await _discard(MicNotice.none);
@@ -320,6 +359,8 @@ class TalkSpeech extends _$TalkSpeech {
   Future<void> _discard(MicNotice notice) async {
     _maxTimer?.cancel();
     _silenceTimer?.cancel();
+    _micTimer?.cancel();
+    _awaitingMic = false;
     await _listen?.cancel();
     _listen = null;
     state = state.copyWith(
@@ -430,12 +471,16 @@ class TalkSpeech extends _$TalkSpeech {
   /// expected from [PlatformSpeechToText]): never stay stuck recording.
   void _onListenDone() {
     if (!ref.mounted) return;
-    if (state.mic != MicState.listening && state.mic != MicState.finishing) {
+    if (state.mic != MicState.listening &&
+        state.mic != MicState.finishing &&
+        !_awaitingMic) {
       return;
     }
     _held = false;
     _maxTimer?.cancel();
     _silenceTimer?.cancel();
+    _micTimer?.cancel();
+    _awaitingMic = false;
     _level.value = 0;
     state = state.copyWith(
       mic: MicState.idle,
@@ -451,8 +496,13 @@ class TalkSpeech extends _$TalkSpeech {
       _held = false;
       _maxTimer?.cancel();
       _silenceTimer?.cancel();
+      _micTimer?.cancel();
+      _awaitingMic = false;
       _level.value = 0;
       state = state.copyWith(recordingSince: () => null);
+    } else if (_awaitingMic) {
+      // the first sound (or words) from the microphone: it records now
+      _micOn();
     }
     switch (e) {
       case SpeechPartial(:final text):

@@ -1064,6 +1064,22 @@ void main() {
       expect(got.whereType<SpeechFinal>().single.text, 'hello thank you');
     });
 
+    test('a final that is only the last phrase again (the plugin made it '
+        'when the phone sent none) keeps the phrases before it', () async {
+      final s = make();
+      final got = <SpeechEvent>[];
+      s.listen(SpokenLanguage.en).listen(got.add);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await phone.result('hello', type: 1);
+      await phone.result('thank you', type: 1);
+      await s.stop();
+      await phone.words('thank you', last: true);
+      await _flush();
+      expect(got.whereType<SpeechFinal>().single.text, 'hello thank you');
+    });
+
     test('a final result replaces the phrases of its own session (no word '
         'twice); the earlier sessions stay', () async {
       final s = make();
@@ -1295,6 +1311,38 @@ void main() {
     }
 
     int stops() => phone.calls.where((c) => c.method == 'stop').length;
+
+    test(
+      'after the stop, the plugin waits finalWait (1 s by default, '
+      'TV-20) for the final result, then makes one from the last result',
+      () async {
+        expect(
+          PlatformSpeechToText(plugin: stt.SpeechToText.withMethodChannel())
+              .finalWait,
+          const Duration(seconds: 1),
+        );
+        final s = PlatformSpeechToText(
+          plugin: stt.SpeechToText.withMethodChannel(),
+          stopTail: Duration.zero,
+          finalWait: const Duration(milliseconds: 100),
+        );
+        addTearDown(s.cancel);
+        final got = <SpeechEvent>[];
+        s.listen(SpokenLanguage.en).listen(got.add);
+        await _flush();
+        await _flush();
+        await phone.status('listening');
+        await phone.result('water please', type: 0);
+        await s.stop();
+        // the phone never sends a final result (Galaxy A56, phone log)
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        expect(
+          got.whereType<SpeechFinal>().single.text,
+          'water please',
+          reason: 'well before the 5 s grace',
+        );
+      },
+    );
 
     test('800 ms by default', () {
       expect(

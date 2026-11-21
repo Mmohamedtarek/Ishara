@@ -753,3 +753,15 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 
 **Built:** the debug log notes when the microphone really started in each session (`stt_mic_on` in debug builds, `trace_mic_on` with developer mode: ms since the listen began, session number), from the recognizer's first sound level. Test added (speech 71/71); analyze clean on the whole app; Talk + speech tests pass.
 
+## Talk voice: the user's phone log (2026-11-21, Galaxy A56 "SM A566B", debug build, on-device recognizer, en-GB; developer mode off, so no words in the log)
+
+**What the log shows (10 listens):** the microphone started 860–886 ms after the listen (1143 ms the first time) in every listen; in 6 listens (numbers said alone) the recognizer sent only empty phrases and no words, so "Didn't catch that" was right; the phone never sent a final result after the stop, so the plugin made one after its 2 s wait: each sentence came ~2.8 s after the release; one sentence of 5 words was signed whole; two of 2 words had no sign (probably "Good boy"). The video could not be looked at here (no video tool on this laptop).
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Haptic and "Listening…" when the microphone really records | log; user | ✓ TV-19 |
+| 2 | Shorter wait for the phone's final result | log; user (1 s) | ✓ TV-20 |
+| 3 | Numbers alone, "bye" | tester | ✗ still needs the runs with developer mode on and the two other recognizer settings (search, normal recognizer) |
+
+**Tests:** analyze clean (whole app), format clean; speech + Talk 217/217; full suite `CI=true`: 948 passed, 4 skipped, 62 failed, all the known Windows-only ones (CI goldens, checksums, architecture scans, `open_storage_test`); mutation-checked: haptic at the press, a release before the microphone, the 2 s final wait: each fails its test. **Review:** `/code-review` (high): 3 findings: a final made from the last phrase dropped the phrases before it (fixed, test); the 2 s backstop can show "Listening…" on a mic that never starts (kept: as before, and the silence limit ends it); no visible change during the ~0.9 s wait (to watch on the phone; a cue would be a design change). **Not run:** integration tests, phone.
+

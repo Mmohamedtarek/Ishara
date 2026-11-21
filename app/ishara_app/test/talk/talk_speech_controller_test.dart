@@ -10,6 +10,7 @@ import 'package:ishara_app/core/avatar/webview_avatar_page.dart';
 import 'package:ishara_app/core/config/app_rules.dart';
 import 'package:ishara_app/core/conversation/conversation_providers.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
+import 'package:ishara_app/core/device/haptics.dart';
 import 'package:ishara_app/core/logging/log.dart';
 import 'package:ishara_app/core/packs/pack_providers.dart';
 import 'package:ishara_app/core/packs/sign_language.dart';
@@ -37,8 +38,23 @@ class _QuickPage extends FakePage {
   }
 }
 
+/// Notes the haptics played instead of playing them.
+class _TestHaptics implements Haptics {
+  new(this.pulses);
+  final List<String> pulses;
+  @override
+  Future<void> tap() async => pulses.add('tap');
+  @override
+  Future<void> short() async => pulses.add('short');
+  @override
+  Future<void> long() async => pulses.add('long');
+}
+
 class _Rig {
-  new _(this.c, this.stt, this.perms, this.page, this.kv);
+  new _(this.c, this.stt, this.perms, this.page, this.kv, this.pulses);
+
+  /// The haptics played, in order (`tap` = recording started).
+  final List<String> pulses;
 
   final ProviderContainer c;
   final FakeSpeechToText stt;
@@ -55,6 +71,19 @@ class _Rig {
     for (final s in page.sent)
       if (s['cmd'] == 'play' || s['cmd'] == 'noSign') s['label'] as String?,
   ];
+
+  /// Presses the mic and lets the microphone come on (the fake's first
+  /// sound level: recording starts then, TV-19).
+  Future<void> press() async {
+    await talk.pressMic();
+    await Future<void>.delayed(Duration.zero);
+  }
+
+  /// Taps the mic (tap mode), letting the microphone come on.
+  Future<void> tap() async {
+    await talk.tapMic();
+    await Future<void>.delayed(Duration.zero);
+  }
 
   /// Taps the mic and waits until the heard sentence is in the feed.
   Future<void> say() async {
@@ -97,11 +126,13 @@ class _Rig {
       untilStop: untilStop,
     );
     final p = perms ?? FakeMicPermissions(current: MicPermission.granted);
+    final pulses = <String>[];
     final c = ProviderContainer(
       overrides: [
         appRulesProvider.overrideWithValue(AsyncData(testAppRules)),
         keyValueStoreProvider.overrideWithValue(kv),
         speechToTextProvider.overrideWithValue(stt),
+        hapticsProvider.overrideWithValue(_TestHaptics(pulses)),
         micPermissionsProvider.overrideWithValue(p),
         if (catalogueFails)
           signCatalogueProvider.overrideWith(
@@ -125,7 +156,7 @@ class _Rig {
       });
       await Future<void>.delayed(Duration.zero);
     }
-    return _Rig._(c, stt, p, page, kv);
+    return _Rig._(c, stt, p, page, kv, pulses);
   }
 }
 
@@ -143,7 +174,7 @@ void main() {
       'sentence still reaches the feed', () async {
     final r = await _Rig.make(heard: ['hello'], endsSigns: false);
     final repo = r.c.read(conversationRepositoryProvider);
-    await r.talk.tapMic();
+    await r.tap();
     await _until(() => r.played.isNotEmpty);
     r.c.dispose(); // the app closes
     await Future<void>.delayed(Duration.zero);
@@ -236,7 +267,7 @@ void main() {
     test('avatar not up: the caption still runs and the feed gets the '
         'sentence; nothing is queued for later', () async {
       final r = await _Rig.make(heard: ['yes'], avatarUp: false);
-      await r.talk.tapMic();
+      await r.tap();
       await _until(() => r.feed.isNotEmpty);
       expect(r.page.sent, isEmpty);
     });
@@ -248,9 +279,9 @@ void main() {
       () async {
         final r = await _Rig.make();
         r.stt.onStop = const SpeechFinal('yes');
-        await r.talk.tapMic();
+        await r.tap();
         expect(r.state.mic, MicState.listening);
-        await r.talk.tapMic();
+        await r.tap();
         await _until(() => r.feed.isNotEmpty);
         expect(r.stt.calls.last, 'stop');
         expect(r.played, ['yes']);
@@ -260,9 +291,9 @@ void main() {
     test('a new tap while signing stops the sentence (it still goes to '
         'the feed)', () async {
       final r = await _Rig.make(heard: ['yes no'], avatarUp: false);
-      await r.talk.tapMic();
+      await r.tap();
       await _until(() => r.state.signing);
-      await r.talk.tapMic();
+      await r.tap();
       await _until(() => r.feed.isNotEmpty);
       expect(r.state.mic, MicState.listening);
     });
@@ -271,7 +302,7 @@ void main() {
       final r = await _Rig.make(
         heard: [const SpeechFailed(SpeechError.noSpeech), 'yes'],
       );
-      await r.talk.tapMic();
+      await r.tap();
       await _until(() => r.state.notice == MicNotice.nothingHeard);
       expect(r.state.mic, MicState.idle);
       expect(r.feed, isEmpty);
@@ -281,7 +312,7 @@ void main() {
 
     test('other failures: a generic notice', () async {
       final r = await _Rig.make(heard: [const SpeechFailed(SpeechError.other)]);
-      await r.talk.tapMic();
+      await r.tap();
       await _until(() => r.state.notice == MicNotice.failed);
     });
 
@@ -289,7 +320,7 @@ void main() {
       final r = await _Rig.make(
         heard: [const SpeechFailed(SpeechError.languageMissing)],
       );
-      await r.talk.tapMic();
+      await r.tap();
       await _until(() => r.state.mic == MicState.languageMissing);
     });
 
@@ -297,7 +328,7 @@ void main() {
       final r = await _Rig.make(
         heard: [const SpeechFailed(SpeechError.permission)],
       );
-      await r.talk.tapMic();
+      await r.tap();
       await _until(() => r.state.mic == MicState.permissionNeeded);
     });
 
@@ -305,7 +336,7 @@ void main() {
       'the phone is busy: a "try again" notice, the mic not stuck',
       () async {
         final r = await _Rig.make(support: SpeechSupport.busy);
-        await r.talk.tapMic();
+        await r.tap();
         expect(r.state.mic, MicState.idle);
         expect(r.state.notice, MicNotice.failed);
         r.stt
@@ -320,10 +351,10 @@ void main() {
       'no recognizer (D6) / no recognition for the language (D7, D8)',
       () async {
         var r = await _Rig.make(support: SpeechSupport.unavailable);
-        await r.talk.tapMic();
+        await r.tap();
         expect(r.state.mic, MicState.unavailable);
         r = await _Rig.make(support: SpeechSupport.languageMissing);
-        await r.talk.tapMic();
+        await r.tap();
         expect(r.state.mic, MicState.languageMissing);
         expect(r.stt.calls, ['prepare en']);
       },
@@ -342,7 +373,7 @@ void main() {
     test('refused (D4): Allow asks again', () async {
       final perms = FakeMicPermissions(answer: MicPermission.denied);
       final r = await _Rig.make(perms: perms, heard: ['yes']);
-      await r.talk.tapMic();
+      await r.tap();
       expect(r.state.mic, MicState.permissionNeeded);
       expect(r.stt.calls, isEmpty, reason: 'never listens without it');
       perms.answer = MicPermission.granted;
@@ -359,7 +390,7 @@ void main() {
         'resume', () async {
       final perms = FakeMicPermissions(answer: MicPermission.permanentlyDenied);
       final r = await _Rig.make(perms: perms);
-      await r.talk.tapMic();
+      await r.tap();
       expect(r.state.mic, MicState.permissionBlocked);
       await r.talk.openSettings();
       expect(perms.settingsOpened, 1);
@@ -405,7 +436,7 @@ void main() {
       final r = await _Rig.make(
         perms: FakeMicPermissions(answer: MicPermission.denied),
       );
-      await r.talk.tapMic();
+      await r.tap();
       expect(r.state.privacyNotice, isFalse);
     });
   });
@@ -413,7 +444,7 @@ void main() {
   test('the catalogue fails to load: a notice, nothing signed, nothing '
       'guessed', () async {
     final r = await _Rig.make(heard: ['yes'], catalogueFails: true);
-    await r.talk.tapMic();
+    await r.tap();
     await _until(() => r.state.notice == MicNotice.failed);
     expect(r.played, isEmpty);
     expect(r.feed, isEmpty);
@@ -578,7 +609,7 @@ void main() {
     test('press → recording (time noted); release → the last words are '
         'signed', () async {
       final r = await held();
-      await r.talk.pressMic();
+      await r.press();
       expect(r.state.mic, MicState.listening);
       expect(r.state.recordingSince, now);
       now = now.add(const Duration(seconds: 2));
@@ -605,7 +636,7 @@ void main() {
         );
         t = DateTime(2026, 11, 21, 12);
         r.talk.setClock(() => t);
-        await r.talk.pressMic();
+        await r.press();
         t = t.add(const Duration(seconds: 1));
         r.stt.stopHangs = true;
         await r.talk.releaseMic();
@@ -617,7 +648,7 @@ void main() {
       test('still held when the last sentence is in: it is signed and a '
           'new recording starts', () async {
         final r = await finishing();
-        await r.talk.pressMic();
+        await r.press();
         expect(listens(r), 1, reason: 'waits for the last sentence');
         await r.stt.answerStop();
         await _until(() => r.state.mic == MicState.listening);
@@ -634,7 +665,7 @@ void main() {
 
       test('let go before the last sentence is in: no new recording', () async {
         final r = await finishing();
-        await r.talk.pressMic();
+        await r.press();
         await r.talk.releaseMic();
         await r.stt.answerStop();
         await _until(() => r.feed.isNotEmpty);
@@ -645,7 +676,7 @@ void main() {
 
       test('slid away to cancel before it is in: no new recording', () async {
         final r = await finishing();
-        await r.talk.pressMic();
+        await r.press();
         await r.talk.cancelMic();
         await r.stt.answerStop();
         await _until(() => r.feed.isNotEmpty);
@@ -659,7 +690,7 @@ void main() {
           final r = await finishing(
             heard: [const SpeechFailed(SpeechError.noSpeech), 'no'],
           );
-          await r.talk.pressMic();
+          await r.press();
           await r.stt.answerStop();
           await _until(() => r.state.mic == MicState.listening);
           expect(listens(r), 2);
@@ -668,13 +699,13 @@ void main() {
 
       test('tap mode: a tap while it finishes records when it is in', () async {
         final r = await finishing();
-        await r.talk.tapMic();
+        await r.tap();
         expect(listens(r), 1);
         await r.stt.answerStop();
         await _until(() => r.state.mic == MicState.listening);
         expect(listens(r), 2);
         // a tap sends it (tap mode: no finger to lift)
-        await r.talk.tapMic();
+        await r.tap();
         await _until(() => r.feed.length == 2);
       });
     });
@@ -687,7 +718,7 @@ void main() {
       test('held with no word heard: ends as if released', () async {
         final r = await held();
         r.talk.silenceLimitForTest = const Duration(milliseconds: 40);
-        await r.talk.pressMic();
+        await r.press();
         await _until(() => r.stt.calls.contains('stop'));
         await _until(() => r.feed.isNotEmpty);
         expect(r.played, ['yes']);
@@ -700,7 +731,7 @@ void main() {
       test('a word heard starts the limit again', () async {
         final r = await held();
         r.talk.silenceLimitForTest = const Duration(milliseconds: 150);
-        await r.talk.pressMic();
+        await r.press();
         await Future<void>.delayed(const Duration(milliseconds: 100));
         r.stt.partial('hello');
         await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -716,7 +747,7 @@ void main() {
       test('an empty partial is not a word', () async {
         final r = await held();
         r.talk.silenceLimitForTest = const Duration(milliseconds: 60);
-        await r.talk.pressMic();
+        await r.press();
         r.stt.partial('  ');
         await _until(() => r.stt.calls.contains('stop'));
       });
@@ -724,7 +755,7 @@ void main() {
       test('tap mode has no silence limit', () async {
         final r = await held();
         r.talk.silenceLimitForTest = const Duration(milliseconds: 20);
-        await r.talk.tapMic();
+        await r.tap();
         await Future<void>.delayed(const Duration(milliseconds: 80));
         expect(r.stt.calls, isNot(contains('stop')));
         expect(r.state.mic, MicState.listening);
@@ -734,7 +765,7 @@ void main() {
     test('a listen that closes with no final result: never stuck '
         '(nothing heard)', () async {
       final r = await held(heard: []);
-      await r.talk.pressMic();
+      await r.press();
       now = now.add(const Duration(seconds: 1));
       r.stt.onStop = const SpeechPartial('…');
       await r.talk.releaseMic();
@@ -744,7 +775,7 @@ void main() {
 
     test('under 0.4 s: thrown away, "too short", nothing signed', () async {
       final r = await held();
-      await r.talk.pressMic();
+      await r.press();
       now = now.add(const Duration(milliseconds: 399));
       await r.talk.releaseMic();
       expect(r.stt.calls.last, 'cancel');
@@ -756,7 +787,7 @@ void main() {
 
     test('exactly 0.4 s is long enough', () async {
       final r = await held();
-      await r.talk.pressMic();
+      await r.press();
       now = now.add(TalkSpeech.minHold);
       await r.talk.releaseMic();
       expect(r.stt.calls.last, 'stop');
@@ -786,7 +817,7 @@ void main() {
 
     test('slide to cancel: thrown away, no notice, nothing signed', () async {
       final r = await held();
-      await r.talk.pressMic();
+      await r.press();
       now = now.add(const Duration(seconds: 3));
       await r.talk.cancelMic();
       expect(r.stt.calls.last, 'cancel');
@@ -800,7 +831,7 @@ void main() {
     test('the maximum length: stops as if released', () async {
       final r = await held();
       r.talk.maxRecordingForTest = const Duration(milliseconds: 30);
-      await r.talk.pressMic();
+      await r.press();
       now = now.add(const Duration(seconds: 60));
       await _until(() => r.stt.calls.contains('stop'));
       await _until(() => r.feed.isNotEmpty);
@@ -817,11 +848,98 @@ void main() {
       final first = r.talk.pressMic();
       await Future<void>.delayed(Duration.zero);
       await r.talk.releaseMic();
-      await r.talk.pressMic();
+      await r.press();
       r.stt.prepareGate!.complete();
       await first;
+      // the microphone comes on (the fake's first sound level)
+      await Future<void>.delayed(Duration.zero);
       expect(r.state.mic, MicState.listening);
       expect(r.state.notice, MicNotice.none);
+    });
+
+    group('recording starts when the microphone really records (user '
+        'decision 2026-11-21, TV-19)', () {
+      Future<_Rig> quiet() async {
+        final r = await held();
+        // the microphone stays off until the test sends a sound level
+        r.stt.micOnAtStart = false;
+        return r;
+      }
+
+      test('pressed: still "preparing", no haptic, until the first sound '
+          'level; then "Listening…", the haptic and the timer', () async {
+        final r = await quiet();
+        await r.press();
+        expect(r.state.mic, MicState.preparing);
+        expect(r.pulses, isEmpty);
+        expect(r.state.recordingSince, isNull);
+        now = now.add(const Duration(milliseconds: 900));
+        r.stt.level(.2);
+        await Future<void>.delayed(Duration.zero);
+        expect(r.state.mic, MicState.listening);
+        expect(r.pulses, ['tap']);
+        expect(r.state.recordingSince, now, reason: 'timed from the mic');
+      });
+
+      test('words heard also mean the microphone records', () async {
+        final r = await quiet();
+        await r.press();
+        r.stt.partial('hello');
+        await Future<void>.delayed(Duration.zero);
+        expect(r.state.mic, MicState.listening);
+      });
+
+      test('let go before the microphone records: nothing sent, "too '
+          'short", the listen cancelled', () async {
+        final r = await quiet();
+        await r.press();
+        await r.talk.releaseMic();
+        expect(r.state.mic, MicState.idle);
+        expect(r.state.notice, MicNotice.tooShort);
+        expect(r.stt.calls.last, 'cancel');
+        r.stt.level(.2);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(r.state.mic, MicState.idle, reason: 'never starts later');
+        expect(r.pulses, isEmpty);
+        expect(r.played, isEmpty);
+      });
+
+      test('slid to cancel before the microphone records: thrown away, no '
+          'notice', () async {
+        final r = await quiet();
+        await r.press();
+        await r.talk.cancelMic();
+        expect(r.state.mic, MicState.idle);
+        expect(r.state.notice, MicNotice.none);
+        expect(r.stt.calls.last, 'cancel');
+      });
+
+      test(
+        'the 0.4 s minimum counts from the microphone, not the press',
+        () async {
+          final r = await quiet();
+          await r.press();
+          now = now.add(const Duration(seconds: 1));
+          r.stt.level(.2);
+          await Future<void>.delayed(Duration.zero);
+          now = now.add(const Duration(milliseconds: 300));
+          await r.talk.releaseMic();
+          expect(r.state.notice, MicNotice.tooShort);
+        },
+      );
+
+      test('no sound level at all: recording starts after micOnWait', () async {
+        final r = await quiet();
+        r.talk.micOnWaitForTest = const Duration(milliseconds: 30);
+        await r.press();
+        expect(r.state.mic, MicState.preparing);
+        await _until(() => r.state.mic == MicState.listening);
+        expect(r.pulses, ['tap']);
+      });
+
+      test('the wait is 2 s', () {
+        expect(TalkSpeech.micOnWait, const Duration(seconds: 2));
+      });
     });
 
     test('maximum length is 60 s', () {
@@ -832,7 +950,7 @@ void main() {
     test('the live level follows the microphone and drops to 0 at the '
         'end', () async {
       final r = await held();
-      await r.talk.pressMic();
+      await r.press();
       r.stt.level(.6);
       await Future<void>.delayed(Duration.zero);
       expect(r.talk.level.value, .6);
@@ -845,9 +963,9 @@ void main() {
     test('tap mode: a tap starts, the next sends, with no length '
         'check', () async {
       final r = await held();
-      await r.talk.tapMic();
+      await r.tap();
       expect(r.state.mic, MicState.listening);
-      await r.talk.tapMic();
+      await r.tap();
       expect(r.stt.calls.last, 'stop');
       await _until(() => r.feed.isNotEmpty);
     });
@@ -856,7 +974,7 @@ void main() {
         'nothing', () async {
       final perms = FakeMicPermissions(answer: MicPermission.denied);
       final r = await _Rig.make(perms: perms, untilStop: true);
-      await r.talk.pressMic();
+      await r.press();
       await r.talk.releaseMic();
       expect(r.state.mic, MicState.permissionNeeded);
       expect(r.stt.calls, isEmpty);
@@ -867,16 +985,16 @@ void main() {
         support: SpeechSupport.unavailable,
         untilStop: true,
       );
-      await r.talk.pressMic();
+      await r.press();
       expect(r.state.mic, MicState.unavailable);
       r = await _Rig.make(
         support: SpeechSupport.languageMissing,
         untilStop: true,
       );
-      await r.talk.pressMic();
+      await r.press();
       expect(r.state.mic, MicState.languageMissing);
       r = await _Rig.make(support: SpeechSupport.busy, untilStop: true);
-      await r.talk.pressMic();
+      await r.press();
       expect(r.state.notice, MicNotice.failed);
     });
   });
