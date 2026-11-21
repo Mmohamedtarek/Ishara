@@ -250,6 +250,11 @@ class PlatformSpeechToText implements SpeechToText {
   /// [stop] was asked for this listen (maybe before the plugin started).
   bool _stopAsked = false;
 
+  /// The recognizer's first sound level of this session came: from then
+  /// on the microphone really records. Debug logs note when (phone test
+  /// 2026-11-21: a word said before that is lost).
+  bool _micOn = false;
+
   /// Hold to talk (2026-11-20): how long after the phone ended its session
   /// the next one starts, while the mic is held (Android refuses a new
   /// session right away).
@@ -376,6 +381,7 @@ class PlatformSpeechToText implements SpeechToText {
     _onDevice = onDevice;
     _gotFinal = false;
     _lastPartial = '';
+    _micOn = false;
     if (resume) {
       // same hold: keep what earlier sessions heard
       _sessionFrom = _phrases.length;
@@ -699,6 +705,14 @@ class PlatformSpeechToText implements SpeechToText {
     if (_maxLevel == null || level > _maxLevel!) _maxLevel = level;
     final out = _out;
     if (out == null || out.isClosed) return;
+    if (!_micOn) {
+      // when the microphone really started, since the listen began (the
+      // screen says "Listening…" just before the listen is asked for)
+      _micOn = true;
+      final on = {'ms': _clock.elapsedMilliseconds, 'session': _restarts};
+      _debug('mic_on', on);
+      trace('mic_on', on);
+    }
     out.add(SpeechLevel(levelFromDb(level)));
   }
 

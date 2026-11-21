@@ -741,3 +741,15 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 
 **Not run:** integration tests, phone. **Open:** phone rerun with the word trace (numbers alone; the 5 s limit with a recognizer that sends few partials).
 
+**Correction (2026-11-21, later):** "analyze 0 issues" above was wrong: after adding the last speech tests I analyzed only `lib/features/talk` and `test/talk`, and `test/speech/speech_to_text_test.dart` had one info (`avoid_escaping_inner_quotes`). CI run #39 on `674f1e0` failed in the Flutter job after ~2 min, before the tests (the logs need a GitHub sign-in; the analyze step is the likely cause). Fixed in the next commit; `flutter analyze --fatal-infos --fatal-warnings` on the whole app is now clean. CI run #38 on `7b2ef5c` passed on Linux: the 62–63 failures seen on this laptop are Windows-only.
+
+## Talk voice: the tester's second run (2026-11-21, results relayed by the user)
+
+**Fixed per the tester:** the end of a sentence is no longer lost on a quick release ("I love you" whole, signed: TV-16); a press with no speech ends by itself after ~5 s with "Didn't catch that" (TV-17).
+
+**Still wrong:** (1) numbers said alone: "one" signed once, then never; "two"…"five" never, each time "Didn't catch that" (most of the "Didn't catch that" in the video). (2) "bye" heard as "Boy", "goodbye" as "Good boy". (3) "please" heard once as "believe" ("water please" → "Water believe").
+
+**From the code (no phone log yet):** "Didn't catch that" comes only when nothing at all came back (no partial, phrase or final); a word heard as "to" / "for" / "won" would show greyed with "No sign yet". So those number attempts got nothing from the recognizer. The tester's two remedies for that case are already in place: a held mic doesn't end at the first empty result (TV-11), and the numbers are in the bias list as words and digits (`signs.json`: "one", "1", …). Two causes are left to tell apart with the trace: the recognizer drops a short word said alone (TV-1), or the word is said before the microphone really records ("Listening…" and the haptic come just before the listen is asked for). The alias decision ("to"/"too" → two, "for" → four, "won" → one, only when the whole press is that word) was left open by the tester ("[قراري: أوافق / مش موافق]" not filled): to decide after the trace. "bye": options listed to the user (keep greyed, the short-query model, the normal recognizer, a whole-press alias); TV-12 stays removed.
+
+**Built:** the debug log notes when the microphone really started in each session (`stt_mic_on` in debug builds, `trace_mic_on` with developer mode: ms since the listen began, session number), from the recognizer's first sound level. Test added (speech 71/71); analyze clean on the whole app; Talk + speech tests pass.
+

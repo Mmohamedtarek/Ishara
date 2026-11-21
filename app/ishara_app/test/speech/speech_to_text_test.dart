@@ -701,6 +701,40 @@ void main() {
       expect(line('end'), containsPair('error', 'noSpeech'));
     });
 
+    test('mic_on: when the microphone really started (the first sound level '
+        'of each session), once per session (phone test 2026-11-21)', () async {
+      final s = PlatformSpeechToText(
+        plugin: stt.SpeechToText.withMethodChannel(),
+        trace: SpeechTrace(() => true),
+        restartDelay: Duration.zero,
+      );
+      addTearDown(s.cancel);
+      s.listen(SpokenLanguage.en).listen(null);
+      await _flush();
+      await _flush();
+      await phone.status('listening');
+      await phone.level(1);
+      await phone.level(3);
+      await _flush();
+      List<Map<String, Object?>> micOn() => [
+        for (final r in lines)
+          if ((r.object! as LogEvent).toJson()['event'] == 'trace_mic_on')
+            (r.object! as LogEvent).toJson(),
+      ];
+      expect(micOn(), hasLength(1));
+      expect(micOn().single['session'], 0);
+      expect(micOn().single['ms'], isA<int>());
+      // the phone ends the session while the mic is held: a new session
+      // and its own mic_on
+      await phone.error('error_no_match');
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      await phone.status('listening');
+      await phone.level(2);
+      await _flush();
+      expect(micOn(), hasLength(2));
+      expect(micOn().last['session'], 1);
+    });
+
     test('off (developer mode off): no trace line, no plugin log', () async {
       final s = PlatformSpeechToText(
         plugin: stt.SpeechToText.withMethodChannel(),
@@ -1335,7 +1369,7 @@ void main() {
     });
 
     test('a final result while the mic is held also counts as words heard '
-        '(Talk\'s silence limit)', () async {
+        "(Talk's silence limit)", () async {
       final s = make();
       final got = <SpeechEvent>[];
       s.listen(SpokenLanguage.en).listen(got.add);
