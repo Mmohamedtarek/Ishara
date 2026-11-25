@@ -800,5 +800,5 @@ User decision TV-21: Moonshine Small ships in the APK and is English's recognize
 - 25 English listens: 0 empty, 0 errors, 0 fallback. Mic on ~0.5 s after the press. Release → final ~1.13–1.17 s (800 ms tail included). 3 listens gave text but no sign.
 - Airplane mode: 8/8 English listens worked, no fallback.
 - Restart: copy kept (no recopy), load 920 ms.
-- Arabic through Google in release: not tested.
+- Arabic through Google in release: worked.
 - Not phone-tested yet: the broken-model APK (fallback on a damaged copy), `onTrimMemory` free / reload, storage numbers (TV-23 storage figure: not measured).
