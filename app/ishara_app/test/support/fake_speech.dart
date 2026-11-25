@@ -48,6 +48,11 @@ class FakeSpeechToText implements SpeechToText {
     return support;
   }
 
+  @override
+  Future<void> preload(SpokenLanguage language) async {
+    calls.add('preload ${language.name}');
+  }
+
   /// The phrases of the last listen.
   List<String> phrases = const [];
 

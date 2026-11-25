@@ -251,6 +251,15 @@ void main() {
         ),
       );
       await c.read(savedPhrasesRepositoryProvider).star('hello');
+      // the longer speech line (TV-21) pushes it below the fold
+      await t.scrollUntilVisible(
+        _key('privacy-export'),
+        200,
+        scrollable: find.descendant(
+          of: find.byKey(const ValueKey('screen-privacy')),
+          matching: find.byType(Scrollable),
+        ),
+      );
       await tapIt(t, _key('privacy-export'));
       expect(sharer.shared.single.$1, 'ishara-data.json');
       final data = jsonDecode(

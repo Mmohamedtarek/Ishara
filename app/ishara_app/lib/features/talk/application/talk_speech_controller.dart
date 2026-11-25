@@ -148,6 +148,12 @@ class TalkSpeech extends _$TalkSpeech {
       unawaited(_listen?.cancel());
       unawaited(_sequencer?.dispose());
     });
+    // TV-21: a spoken language picked while Talk is open gets its model
+    // ready too, not during the next press.
+    ref.listen(profileControllerProvider, (before, now) {
+      if (before?.spoken == now.spoken) return;
+      ref.read(speechToTextProvider).preload(now.spoken).ignore();
+    });
     // Q-D4: "I speak" opens Talk face to face.
     return TalkSpeechState(
       faceToFace: ref.read(profileControllerProvider).role == UserRole.speak,
@@ -227,6 +233,13 @@ class TalkSpeech extends _$TalkSpeech {
   /// decision 2026-11-21, TV-18).
   bool _queued = false;
   bool _queuedTap = false;
+
+  /// Talk opened: the speech engine gets its model ready in the background
+  /// (TV-21; Moonshine for English), so a press doesn't wait for it. No mic,
+  /// no prompt; a press during it still waits in "preparing" (TV-19).
+  void preloadSpeech() {
+    ref.read(speechToTextProvider).preload(_language).ignore();
+  }
 
   /// Hold to talk (2026-10-26): the mic is pressed. Recording starts as
   /// soon as the permission and the recognizer are ready and the microphone

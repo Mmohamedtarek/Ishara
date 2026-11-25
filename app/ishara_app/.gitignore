@@ -53,3 +53,7 @@ app.*.map.json
 /lib/l10n/gen/
 /coverage/
 **/failures/
+
+# Moonshine speech model (DECISIONS TV-21): shipped in the APK, never
+# committed. `android/gradlew :app:fetchMoonshineModel` puts it here.
+/android/app/src/main/assets/moonshine/

@@ -1,0 +1,8 @@
+<!-- Test only (-PmoonshineBrokenModelTest=true, DECISIONS TV-21): a separate
+     app with a broken Moonshine model, named so nobody takes it for Ishara. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application
+        android:label="Ishara MODEL TEST"
+        tools:replace="android:label" />
+</manifest>

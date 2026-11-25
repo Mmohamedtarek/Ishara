@@ -3,15 +3,19 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ishara_app/core/avatar/avatar_host.dart';
 import 'package:ishara_app/core/conversation/conversation_providers.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
 import 'package:ishara_app/core/device/haptics.dart';
+import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/settings/app_settings.dart';
 import 'package:ishara_app/core/speech/mic_permissions.dart';
 import 'package:ishara_app/core/speech/speech_providers.dart';
 import 'package:ishara_app/core/speech/speech_to_text.dart';
 import 'package:ishara_app/core/storage/key_value_store.dart';
 import 'package:ishara_app/features/talk/presentation/talk_screen.dart';
+import 'package:ishara_app/l10n/gen/app_localizations_ar.dart';
+import 'package:ishara_app/l10n/gen/app_localizations_en.dart';
 
 import '../support/fake_speech.dart';
 import '../support/fake_talk.dart';
@@ -359,6 +363,11 @@ void main() {
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      // TV-21: opening Talk and coming back both preload the model
+      expect(
+        talk.stt.calls.where((c) => c.startsWith('preload')),
+        hasLength(2),
+      );
       await g.up();
       await settle(t, n: 3);
       expect(find.text('Mic ready'), findsOneWidget);
@@ -621,6 +630,77 @@ void main() {
     await _hold(t);
     expect(find.byKey(const ValueKey('talk-privacy')), findsNothing);
     await _finishSigning(t);
+  });
+
+  group('the privacy card (D19, 3 lines, 2026-11-25)', () {
+    const android =
+        'English is turned into text on this phone. For Arabic, or if that '
+        "isn't available, the other person's voice may go to Google or Apple.";
+    const ios =
+        "Speech to text uses your phone's speech recognizer, which may send "
+        "the other person's voice to Google or Apple.";
+
+    testWidgets('Android: the on-phone text, 3 lines at most; the avatar '
+        'keeps 120 px; a screen reader gets the full text; More opens '
+        'Privacy', (t) async {
+      final semantics = t.ensureSemantics();
+      await _Talk(heard: ['yes']).pump(t);
+      await _hold(t);
+      expect(_text(android), findsOneWidget);
+      expect(_text(ios), findsNothing);
+      final text = t.widget<Text>(
+        find
+            .descendant(
+              of: find.byKey(const ValueKey('talk-privacy')),
+              matching: find.byType(Text),
+            )
+            .first,
+      );
+      expect(text.maxLines, 3);
+      expect(find.byType(AvatarStage), findsOneWidget);
+      expect(
+        t.getSize(find.byType(AvatarStage)).height,
+        greaterThanOrEqualTo(120),
+      );
+      expect(
+        t.getSemantics(find.byKey(const ValueKey('talk-privacy-more'))),
+        matchesSemantics(
+          label: AppLocalizationsEn().privacySpeech,
+          hint: 'More',
+          isButton: true,
+          hasTapAction: true,
+        ),
+      );
+      await _finishSigning(t);
+      await tapIt(t, find.byKey(const ValueKey('talk-privacy-more')));
+      expect(find.text('route:${AppRoutes.privacy}'), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('iOS: never claims on-phone English', (t) async {
+      await _Talk(heard: ['yes']).pump(t);
+      await _hold(t);
+      expect(_text(ios), findsOneWidget);
+      expect(_text('on this phone'), findsNothing);
+      await _finishSigning(t);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    test('each platform gets its own text, in English and Arabic', () {
+      final en = AppLocalizationsEn();
+      final ar = AppLocalizationsAr();
+      for (final l in [en, ar]) {
+        expect(
+          talkPrivacyShort(l, platform: TargetPlatform.android),
+          l.talkPrivacyAndroid,
+        );
+        for (final other in [TargetPlatform.iOS, TargetPlatform.macOS]) {
+          expect(talkPrivacyShort(l, platform: other), l.talkPrivacyIos);
+        }
+      }
+      expect(en.talkPrivacyAndroid, android);
+      expect(en.talkPrivacyIos, ios);
+      expect(ar.talkPrivacyIos, isNot(contains('الموبايل ده')));
+    });
   });
 
   testWidgets('Replay plays the last sentence again (caption lights up)', (

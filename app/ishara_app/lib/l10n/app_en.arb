@@ -1402,9 +1402,21 @@
   "@micLabel": {
     "description": "approved new text (step 7, 2026-10-12): D18: screen reader, mic button (prototype aria-label)"
   },
-  "privacySpeech": "Speech to text uses your phone's speech recognizer. On some phones it sends the other person's voice to Google or Apple to turn it into text. Your signs and sentences stay on your phone.",
+  "privacySpeech": "On Android, English speech is turned into text on this phone. For Arabic, or if that isn't available, Ishara uses your phone's speech recognizer, which on some phones sends the other person's voice to Google or Apple. Your signs and sentences stay on your phone unless you save a phrase.",
   "@privacySpeech": {
-    "description": "approved new text (step 7, 2026-10-12): D19: Q-T3 privacy line"
+    "description": "approved new text (2026-11-24, TV-21: Moonshine for English): D19: Q-T3 privacy line"
+  },
+  "talkPrivacyAndroid": "English is turned into text on this phone. For Arabic, or if that isn't available, the other person's voice may go to Google or Apple.",
+  "@talkPrivacyAndroid": {
+    "description": "approved text (2026-11-25, TV-21): Talk's 3-line privacy card (D19); the full text is privacySpeech in Settings › Privacy (Android: Moonshine for English)"
+  },
+  "talkPrivacyIos": "Speech to text uses your phone's speech recognizer, which may send the other person's voice to Google or Apple.",
+  "@talkPrivacyIos": {
+    "description": "approved text (2026-11-25, TV-21): Talk's 3-line privacy card (D19); the full text is privacySpeech in Settings › Privacy (iOS: no on-phone English)"
+  },
+  "talkPrivacyMore": "More",
+  "@talkPrivacyMore": {
+    "description": "approved text (2026-11-25): the cue at the end of Talk's privacy card; tapping opens Settings › Privacy"
   },
   "clearLabel": "Clear and move to the conversation",
   "@clearLabel": {

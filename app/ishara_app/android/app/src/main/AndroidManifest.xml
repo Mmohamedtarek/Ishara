@@ -24,9 +24,20 @@
     <!-- Sockets: the avatar page is served on 127.0.0.1 (AvatarAssetServer);
          later also Firebase. -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Talk, speech -> sign: the other person's voice goes to the phone's
-         own speech recognizer (speech_to_text; Q-T3). -->
+    <!-- Talk, speech -> sign: the other person's voice goes to Moonshine on
+         the phone (English) or the phone's own speech recognizer (Arabic, and
+         English when Moonshine can't run; speech_to_text; Q-T3, TV-21). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Moonshine (TV-21) needs API 26; below it the app never touches its
+         classes and English uses the phone's recognizer. -->
+    <uses-sdk tools:overrideLibrary="ai.moonshine.voice" />
+    <!-- Moonshine's downloader (left out of the build) needs it; nothing
+         else does. Removed without tools:selector (a selector keeps this
+         entry as a declaration). The build fails if another library ever
+         declares it (the ACCESS_NETWORK_STATE check in app/build.gradle.kts). -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
     <!-- Optional: without BLE the app still offers speech -> avatar and Learn. -->
     <uses-feature
         android:name="android.hardware.bluetooth_le"
@@ -61,6 +72,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Moonshine's own permission screen: Talk asks for the mic. -->
+        <activity
+            android:name="ai.moonshine.voice.MicrophonePermissionActivity"
+            tools:node="remove" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

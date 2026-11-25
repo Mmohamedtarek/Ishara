@@ -76,6 +76,11 @@ abstract interface class SpeechToText {
   /// permission is asked for separately).
   Future<SpeechSupport> prepare(SpokenLanguage language);
 
+  /// Talk opened in [language]: an engine with a model to load starts it in
+  /// the background (TV-21). Never opens the mic or asks for anything; the
+  /// phone's recognizer has nothing to do here.
+  Future<void> preload(SpokenLanguage language);
+
   /// Listens once (see [SpeechEvent]) until [stop] or [cancel]: hold to
   /// talk, the user decides when speech ends (2026-10-26), so a pause
   /// doesn't end it, and neither does the phone ending its own session
@@ -292,6 +297,11 @@ class PlatformSpeechToText implements SpeechToText {
   };
 
   bool get _heardSomething => _phrases.isNotEmpty || _lastPartial.isNotEmpty;
+
+  /// Nothing to load ahead: `initialize` may ask for the mic, so it waits
+  /// for a press.
+  @override
+  Future<void> preload(SpokenLanguage language) async {}
 
   @override
   Future<SpeechSupport> prepare(SpokenLanguage language) async {

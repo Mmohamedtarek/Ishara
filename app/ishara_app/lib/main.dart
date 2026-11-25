@@ -6,6 +6,7 @@ import 'package:ishara_app/app.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/config/app_rules.dart';
 import 'package:ishara_app/core/errors/failure.dart';
+import 'package:ishara_app/core/licenses/native_licenses.dart';
 import 'package:ishara_app/core/logging/log.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/storage/open_storage.dart';
@@ -14,6 +15,8 @@ import 'package:ishara_app/core/storage/storage_providers.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   setUpLogging();
+  // Moonshine, ONNX Runtime and the libraries inside them (TV-21).
+  registerNativeLicenses();
   final log = Log('app');
   FlutterError.onError = (details) {
     FlutterError.presentError(details);

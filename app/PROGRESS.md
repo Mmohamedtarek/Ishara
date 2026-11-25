@@ -765,3 +765,40 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 
 **Tests:** analyze clean (whole app), format clean; speech + Talk 217/217; full suite `CI=true`: 948 passed, 4 skipped, 62 failed, all the known Windows-only ones (CI goldens, checksums, architecture scans, `open_storage_test`); mutation-checked: haptic at the press, a release before the microphone, the 2 s final wait: each fails its test. **Review:** `/code-review` (high): 3 findings: a final made from the last phrase dropped the phrases before it (fixed, test); the 2 s backstop can show "Listening…" on a mic that never starts (kept: as before, and the silence limit ends it); no visible change during the ~0.9 s wait (to watch on the phone; a cue would be a design change). **Not run:** integration tests, phone.
 
+
+## Talk voice: Moonshine for English in release (2026-11-24, branch `feature/stt-moonshine`, Linux laptop; phone: the user's Galaxy A56)
+
+User decision TV-21: Moonshine Small ships in the APK and is English's recognizer in release; Arabic stays on Google. Phone run 1 (debug, TV-22) is the evidence.
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Model never committed; fetch task with pinned URLs + SHA-256, Windows and Linux, local cache reused; stored uncompressed; release fails with the command; debug and CI build without it | user 1, 2026-11-24 #1 | built; checks below |
+| 2 | Copy on first use through a temp folder (free space, SHA-256, atomic rename); marker per app install and model version; sizes only on normal starts; load failure → copied again once only if a full SHA-256 check finds it damaged, else straight to Google (user, 2026-11-25); never the UI thread; errors never crash | user 2, #2 | built (`MoonshineModelStore.kt`) |
+| 3 | Preload when Talk opens in English, when the app resumes and when the spoken language changes (never during a listen); no haptic / "Listening…" before the mic records; a press during the load waits | #3, TV-19, user 2026-11-24 | built; tests |
+| 4 | Free the model under memory pressure, never during a listen or within 10 s of a press's "ready"; reload on use; log load / free / fallback | #4 | built (`onTrimMemory`) |
+| 5 | `implementation`, not transitive; plugin in `main`; stubs gone; minSdk kept, no Moonshine below API 26; R8 keep rules; no network | user 3 | built; merged manifest and APK contents checked below |
+| 6 | Moonshine's `ACCESS_NETWORK_STATE` and `MicrophonePermissionActivity` removed. `tools:selector` left both in the merged release manifest, so they are removed without it, and the build fails if another library ever declares `ACCESS_NETWORK_STATE` (user, 2026-11-25) | #5 | ✓ merged release manifest has neither; the activity class is gone from the APK |
+| 7 | Fallback to Google for one listen, reason logged; debug toast | user 4, #6 | built; tests |
+| 8 | Licence notices for every linked third-party library | B | built: 9 notices, none GPL / non-commercial |
+| 9 | Privacy text (approved): full text in Settings › Privacy; Talk's card 3 lines (Android / iOS texts approved 2026-11-25), "More" opens Privacy, screen readers get the full text, the avatar keeps ≥ 120 px | A, user 2026-11-25 | ✓ tests + goldens (EN/AR × light/dark) |
+| 10 | Test-only broken-model build, off by default, separate APK, fails with a release build | approved | built |
+
+**Checks (laptop, 2026-11-25):**
+- `dart format`: clean. `flutter analyze --fatal-infos --fatal-warnings`: no issues.
+- `flutter test --concurrency=2 --coverage`: **1132 passed, 4 skipped (benchmarks), 0 failed**. Coverage gate (90 %): lib/core 92.4 % (`moonshine_speech_to_text.dart` 92 %), `lib/features/*/domain` 99.7 %: ✓.
+- Goldens: `step9_privacy` and `talk_mic_blocked` re-rendered (new privacy text and Talk card), Linux and CI variants rendered locally; the CI ones must be replaced by the runner's (`goldens.yml`) after the push.
+- Debug APK without the model: builds; no model in it (English falls back to Google, debug toast). `checkMoonshineModel` and `flutter build apk --release` without the model: fail with the Linux and Windows commands.
+- `:app:fetchMoonshineModel`: the 8 files from the local cache, all SHA-256 ✓; git-ignored.
+- Release (`flutter build apk --release --split-per-abi --target-platform android-arm64 --dart-define=GLOVE=ble`): **`app-arm64-v8a-release.apk` 212,296,678 bytes (212.3 MB)**. The 8 model files and the 3 native libraries are stored (not compressed). Dex: only `ai.moonshine.voice` JNI + the 8 classes the native code uses; no downloader, OkHttp, WorkManager or `MicrophonePermissionActivity`. R8 needed no new `-dontwarn`.
+- Merged release manifest permissions: BLUETOOTH_SCAN (neverForLocation), BLUETOOTH_CONNECT, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, RECORD_AUDIO, BLUETOOTH and BLUETOOTH_ADMIN (maxSdk 30), the app's DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION. No `ACCESS_NETWORK_STATE`, no Moonshine entry. The network-permission check fails as expected when told Moonshine's entry is another library's.
+- Broken-model APK (`-PmoonshineBrokenModelTest=true :app:assembleMoonshineBrokenTest`): `app-moonshineBrokenTest.apk` 273 MB (all ABIs), id `….brokenmodeltest`, label "Ishara MODEL TEST", tokenizer.bin's last byte changed; with a release task in the same run the build fails. Flutter copies the build type into the plugins with minify on, which stripped their classes: the plugins now use their own release settings for it.
+- `/code-review`: 7 findings; fixed: a prepare error could end the app; a verified copy that won't load was copied again on every start; a model freed between "ready" and the start lost the first words; a preload cancelled a listen; a language change didn't preload; DECISIONS said `tools:selector`. Kept: the licence texts (~370 KB) are bundled on every platform, used on Android only (iOS isn't released in v1).
+- Not run: `integration_test/` on the phone.
+
+**Phone (release APK, Galaxy A56, 2026-11-25, run and relayed by the user; TV-22):**
+- First launch: copy 414 ms, verify 117 ms, load 311 ms, all during the preload. PSS 855,783 → 1,292,913 kB.
+- 25 English listens: 0 empty, 0 errors, 0 fallback. Mic on ~0.5 s after the press. Release → final ~1.13–1.17 s (800 ms tail included). 3 listens gave text but no sign.
+- Airplane mode: 8/8 English listens worked, no fallback.
+- Restart: copy kept (no recopy), load 920 ms.
+- Arabic through Google in release: not tested.
+- Not phone-tested yet: the broken-model APK (fallback on a damaged copy), `onTrimMemory` free / reload, storage numbers (TV-23 storage figure: not measured).

@@ -7,6 +7,7 @@ import 'package:ishara_app/core/avatar/avatar_library.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/avatar/sign_speed.dart';
 import 'package:ishara_app/core/avatar/webview_avatar_page.dart';
+import 'package:ishara_app/core/catalogue/sign_catalogue.dart';
 import 'package:ishara_app/core/config/app_rules.dart';
 import 'package:ishara_app/core/conversation/conversation_providers.dart';
 import 'package:ishara_app/core/conversation/conversation_repository.dart';
@@ -199,6 +200,25 @@ void main() {
       expect(r.feed.single.side, MessageSide.them);
       expect(r.feed.single.text, 'Hi there, thank you');
       expect(r.stt.calls, ['prepare en', 'listen en']);
+    });
+
+    test('TV-21: opening Talk preloads the spoken language only', () async {
+      final r = await _Rig.make(spoken: 'ar');
+      r.talk.preloadSpeech();
+      await Future<void>.delayed(Duration.zero);
+      expect(r.stt.calls, ['preload ar'], reason: 'no prepare, no listen');
+      expect(r.state.mic, MicState.idle);
+    });
+
+    test('TV-21: a spoken language picked while Talk is open is preloaded '
+        'at once', () async {
+      final r = await _Rig.make(spoken: 'ar');
+      expect(r.state.mic, MicState.idle); // the controller exists
+      await r.c
+          .read(profileControllerProvider.notifier)
+          .setSpoken(SpokenLanguage.en);
+      await Future<void>.delayed(Duration.zero);
+      expect(r.stt.calls, ['preload en']);
     });
 
     test(

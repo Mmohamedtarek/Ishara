@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:ishara_app/core/settings/developer_mode.dart';
 import 'package:ishara_app/core/speech/mic_permissions.dart';
+import 'package:ishara_app/core/speech/moonshine_speech_to_text.dart';
 import 'package:ishara_app/core/speech/speech_to_text.dart';
 import 'package:ishara_app/core/speech/speech_trace.dart';
 import 'package:ishara_app/core/speech/text_to_speech.dart';
@@ -8,11 +9,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'speech_providers.g.dart';
 
-/// The phone's speech recognizer (tests override it with a fake).
+/// Speech to text: Moonshine for English on Android, the phone's
+/// recognizer for Arabic and as the fallback (TV-21). Tests override it
+/// with a fake.
 @Riverpod(keepAlive: true)
 SpeechToText speechToText(Ref ref) {
-  final s = PlatformSpeechToText(trace: ref.watch(speechTraceProvider));
+  final trace = ref.watch(speechTraceProvider);
+  final s = speechEngine(PlatformSpeechToText(trace: trace), trace);
   ref.onDispose(s.cancel);
+  if (s is MoonshineEnglishRouter) ref.onDispose(s.dispose);
   return s;
 }
 
