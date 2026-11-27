@@ -97,7 +97,9 @@ abstract interface class SpeechToText {
   /// heard"), also when the phone never answers
   /// ([PlatformSpeechToText.stopGrace]). The recognizer first keeps
   /// listening a moment for the last word ([PlatformSpeechToText.stopTail]).
-  Future<void> stop();
+  /// [bySilence]: Talk's silence limit ended the listen (TV-17); for the
+  /// logs only, it changes nothing else.
+  Future<void> stop({bool bySilence = false});
 
   /// Ends the listen without a result (the stream just closes).
   Future<void> cancel();
@@ -766,7 +768,7 @@ class PlatformSpeechToText implements SpeechToText {
   }
 
   @override
-  Future<void> stop() async {
+  Future<void> stop({bool bySilence = false}) async {
     final out = _out;
     if (out == null || out.isClosed || _stopAsked) return;
     trace('stop', {'ms': _clock.elapsedMilliseconds});

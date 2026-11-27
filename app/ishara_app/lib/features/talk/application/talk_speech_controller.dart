@@ -335,7 +335,11 @@ class TalkSpeech extends _$TalkSpeech {
 
   /// The mic is let go: under [minHold] the recording is thrown away,
   /// otherwise the recognizer's last words are the sentence.
-  Future<void> releaseMic({bool checkLength = true}) async {
+  /// [bySilence]: the silence limit let go (logged with the sentence).
+  Future<void> releaseMic({
+    bool checkLength = true,
+    bool bySilence = false,
+  }) async {
     _held = false;
     _queued = false;
     _silenceTimer?.cancel();
@@ -352,7 +356,7 @@ class TalkSpeech extends _$TalkSpeech {
       return;
     }
     state = state.copyWith(mic: MicState.finishing, recordingSince: () => null);
-    await ref.read(speechToTextProvider).stop();
+    await ref.read(speechToTextProvider).stop(bySilence: bySilence);
   }
 
   /// Slide to cancel (or the screen reader's "Cancel recording"): the
@@ -403,7 +407,7 @@ class TalkSpeech extends _$TalkSpeech {
     _silenceTimer = Timer(silenceLimitForTest, () {
       if (!ref.mounted || state.mic != MicState.listening) return;
       _log.info('silence_stop');
-      unawaited(releaseMic(checkLength: false));
+      unawaited(releaseMic(checkLength: false, bySilence: true));
     });
   }
 

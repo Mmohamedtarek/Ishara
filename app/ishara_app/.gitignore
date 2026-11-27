@@ -43,6 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+# Gradle reports (e.g. problems report) from ./gradlew in android/
+/android/build/
 
 # Widget Preview related
 .widget_preview/
@@ -57,3 +59,10 @@ app.*.map.json
 # Moonshine speech model (DECISIONS TV-21): shipped in the APK, never
 # committed. `android/gradlew :app:fetchMoonshineModel` puts it here.
 /android/app/src/main/assets/moonshine/
+
+# EgypTalk speech model (DECISIONS TV-24): shipped in the APK, never
+# committed. `android/gradlew :app:fetchEgyptalkModel` puts it here.
+/android/app/src/main/assets/egyptalk/
+
+# sherpa-onnx AAR (TV-24), pinned: `fetchSherpaOnnx` puts it here.
+/android/app/libs/

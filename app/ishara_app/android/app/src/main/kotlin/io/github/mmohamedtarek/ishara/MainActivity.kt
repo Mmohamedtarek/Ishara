@@ -18,8 +18,9 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        // English speech to text on the phone (Moonshine, DECISIONS TV-21).
-        flutterEngine.plugins.add(MoonshineSpeechPlugin())
+        // Speech to text on the phone: English with Moonshine (DECISIONS
+        // TV-21), Arabic with EgypTalk (TV-24).
+        flutterEngine.plugins.add(OnDeviceSpeechPlugin())
         // Emergency contacts (Q-T4 phase 1): the system's own phone picker.
         // It grants access to the one picked number only: no contacts
         // permission. WhatsApp: installed or not (package visibility).

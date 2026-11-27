@@ -283,8 +283,8 @@ class _PrivacyLine extends ConsumerWidget {
   }
 }
 
-/// The card's short text: on Android English is turned into text on the
-/// phone (TV-21); iOS has no Moonshine, so it never says so.
+/// The card's short text: on Android English and Arabic are turned into
+/// text on the phone (TV-21, TV-24); iOS has neither, so it never says so.
 @visibleForTesting
 String talkPrivacyShort(AppLocalizations l, {TargetPlatform? platform}) =>
     (platform ?? defaultTargetPlatform) == TargetPlatform.android

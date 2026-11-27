@@ -1,4 +1,5 @@
 import java.io.File
+import java.io.RandomAccessFile
 import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.file.Files
@@ -17,22 +18,48 @@ plugins {
 // `fetchMoonshineModel` task puts it in src/main/assets (git-ignored).
 // Pure Gradle (no bash, curl or sha256sum), so it also runs on Windows.
 
-/** One model file: name, size in bytes, SHA-256. */
-data class MoonshineFile(val name: String, val size: Long, val sha256: String)
+/** One pinned file: name, size in bytes, SHA-256. */
+data class PinnedFile(val name: String, val size: Long, val sha256: String)
 
 val moonshineModelVersion = "small-streaming-en/quantized_26_11_02"
 val moonshineBaseUrl = "https://download.moonshine.ai/model/$moonshineModelVersion"
 val moonshineFiles = listOf(
-    MoonshineFile("adapter.ort", 2870320, "100d4806a3ba19b739fa9ae5c952e4d5267983090eea4a085e08d3e0bfd6875b"),
-    MoonshineFile("cross_kv.ort", 5356496, "aa0ed033b7065ef744c36dce00228c708b43f2f2410e8ec782a960105c8595f7"),
-    MoonshineFile("decoder_kv.ort", 82043616, "e4fae3869851b861177b5e1619c77ec9262365b2747ec322298d11753e88b38d"),
-    MoonshineFile("encoder.ort", 44148536, "f61486dc7b017cee99196366dcc977a173f45f2f387b0b7977695d0f0565d234"),
-    MoonshineFile("frontend.model.ort", 26992, "4a8d5ef7e99a5e3011dbf09ffac4176056587f2aec20f885d606b9f55fbed408"),
-    MoonshineFile("frontend.weights.ort", 7769416, "5379f3dfebe849c6cbacf84f0aa7441956f9572efe1720d44aa267e7dff93056"),
-    MoonshineFile("streaming_config.json", 512, "26f02b6afb22d60871a5efd85c3d38e569cc0ddb6c5eb6e93d3260152ae8a47a"),
-    MoonshineFile("tokenizer.bin", 249974, "6884b35fd6377d4c4d32336a0bc152f36b64d1e45b6503683cdc238250a8472d"),
+    PinnedFile("adapter.ort", 2870320, "100d4806a3ba19b739fa9ae5c952e4d5267983090eea4a085e08d3e0bfd6875b"),
+    PinnedFile("cross_kv.ort", 5356496, "aa0ed033b7065ef744c36dce00228c708b43f2f2410e8ec782a960105c8595f7"),
+    PinnedFile("decoder_kv.ort", 82043616, "e4fae3869851b861177b5e1619c77ec9262365b2747ec322298d11753e88b38d"),
+    PinnedFile("encoder.ort", 44148536, "f61486dc7b017cee99196366dcc977a173f45f2f387b0b7977695d0f0565d234"),
+    PinnedFile("frontend.model.ort", 26992, "4a8d5ef7e99a5e3011dbf09ffac4176056587f2aec20f885d606b9f55fbed408"),
+    PinnedFile("frontend.weights.ort", 7769416, "5379f3dfebe849c6cbacf84f0aa7441956f9572efe1720d44aa267e7dff93056"),
+    PinnedFile("streaming_config.json", 512, "26f02b6afb22d60871a5efd85c3d38e569cc0ddb6c5eb6e93d3260152ae8a47a"),
+    PinnedFile("tokenizer.bin", 249974, "6884b35fd6377d4c4d32336a0bc152f36b64d1e45b6503683cdc238250a8472d"),
 )
 val moonshineAssets = file("src/main/assets/moonshine/small-streaming-en")
+
+// --- EgypTalk model (Arabic speech to text, DECISIONS TV-24) ----------------
+// EgypTalk-ASR-v2 (NAMAA-Space, CC BY 4.0), CTC branch exported to ONNX and
+// int8 by app/tools/egyptalk_export.py, published on this repo's release
+// below. Like Moonshine's: inside the APK, uncompressed, never committed.
+val egyptalkModelVersion = "model-egyptalk-asr-v2-ctc-int8-r1"
+val egyptalkBaseUrl = "https://github.com/Mmohamedtarek/Ishara/releases/download/$egyptalkModelVersion"
+val egyptalkFiles = listOf(
+    PinnedFile("egyptalk-asr-v2-ctc.int8.onnx", 131652630, "e311a80d77a2c05db0090df0edeae75ce426de2fb5521a0a54a14a15016b585e"),
+    PinnedFile("egyptalk-asr-v2-tokens.txt", 12858, "9b938381a19a69bb279cdcfc299419f25a049ea1de192e0d10317274a0f20074"),
+)
+val egyptalkAssets = file("src/main/assets/egyptalk")
+
+// --- sherpa-onnx (runs EgypTalk, Apache-2.0, DECISIONS TV-24) ---------------
+// Not on Maven Central: the AAR comes from k2-fsa's GitHub release, pinned.
+// The static-link build has ONNX Runtime 1.28.2 inside libsherpa-onnx-jni.so
+// (no libonnxruntime.so, no exported Ort symbols), so it never collides with
+// Moonshine's libonnxruntime.so (1.23.2, a minimal build that can't load
+// ONNX models). Code, not a model: every build needs it, CI included.
+val sherpaOnnxAar = PinnedFile(
+    "sherpa-onnx-static-link-onnxruntime-2.0.3.aar",
+    39999115,
+    "7744a3a8f08f017d59c2d8ed8d9b700345561f5abe9f4e06dc6eaef3a0b977b4",
+)
+val sherpaOnnxUrl = "https://github.com/k2-fsa/sherpa-onnx/releases/download/v2.0.3"
+val sherpaOnnxDir = file("libs")
 
 /**
  * Test only (DECISIONS TV-21): `-PmoonshineBrokenModelTest=true` adds the
@@ -55,8 +82,74 @@ fun sha256Of(f: File): String {
     return digest.digest().joinToString("") { "%02x".format(it) }
 }
 
-fun moonshineFileOk(f: File, want: MoonshineFile): Boolean =
+fun pinnedFileOk(f: File, want: PinnedFile): Boolean =
     f.isFile && f.length() == want.size && sha256Of(f) == want.sha256
+
+/**
+ * The folder a -P...Cache property names, or [default]. A named folder that
+ * doesn't exist fails the build instead of downloading again: in
+ * `-PegyptalkCache=~/x` the shell doesn't expand `~`, so use `$HOME/x`.
+ */
+fun cacheFolder(name: String, property: String?, default: File): File {
+    if (property == null) return default
+    val folder = File(property)
+    if (!folder.isDirectory) {
+        throw GradleException("-P$name=$property is not a folder (use \$HOME, not ~).")
+    }
+    return folder
+}
+
+/**
+ * Puts [want] in [dir]: kept if already right, else copied from [cache] or
+ * downloaded from "[baseUrl]/name"; always checked (size and SHA-256), and
+ * moved into place only when right.
+ */
+fun fetchPinned(want: PinnedFile, dir: File, cache: File, baseUrl: String, log: (String) -> Unit) {
+    dir.mkdirs()
+    val dest = File(dir, want.name)
+    if (pinnedFileOk(dest, want)) {
+        log("ok          ${want.name}")
+        return
+    }
+    val part = File(dir, want.name + ".part")
+    part.delete()
+    val cached = File(cache, want.name)
+    if (pinnedFileOk(cached, want)) {
+        cached.copyTo(part, overwrite = true)
+        log("from cache  ${want.name}")
+    } else {
+        val url = "$baseUrl/${want.name}"
+        log("download    $url")
+        val connection = URI(url).toURL().openConnection() as HttpURLConnection
+        connection.connectTimeout = 30_000
+        connection.readTimeout = 60_000
+        connection.setRequestProperty("User-Agent", "ishara-build")
+        try {
+            if (connection.responseCode != 200) {
+                throw GradleException("$url answered HTTP ${connection.responseCode}")
+            }
+            connection.inputStream.use { input ->
+                part.outputStream().use { output -> input.copyTo(output, 1 shl 20) }
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+    if (!pinnedFileOk(part, want)) {
+        part.delete()
+        throw GradleException(
+            "${want.name}: wrong size or SHA-256 (expected ${want.size} bytes, ${want.sha256}).",
+        )
+    }
+    Files.move(
+        part.toPath(),
+        dest.toPath(),
+        StandardCopyOption.REPLACE_EXISTING,
+        StandardCopyOption.ATOMIC_MOVE,
+    )
+}
+
+val userCache = File(System.getProperty("user.home"), ".cache/ishara")
 
 android {
     namespace = "io.github.mmohamedtarek.ishara"
@@ -94,12 +187,28 @@ android {
             "MOONSHINE_MODEL_FILES",
             "\"" + moonshineFiles.joinToString(";") { "${it.name}:${it.size}:${it.sha256}" } + "\"",
         )
+        // The app checks the APK's EgypTalk files against these (EgyptalkModelCheck).
+        buildConfigField("String", "EGYPTALK_MODEL_VERSION", "\"$egyptalkModelVersion\"")
+        buildConfigField(
+            "String",
+            "EGYPTALK_MODEL_FILES",
+            "\"" + egyptalkFiles.joinToString(";") { "${it.name}:${it.size}:${it.sha256}" } + "\"",
+        )
     }
 
-    // The model is stored uncompressed, so the app copies it straight out of
-    // the APK. Exact names: other assets stay compressed.
+    // The models are stored uncompressed: the app copies Moonshine's straight
+    // out of the APK, and sherpa-onnx maps EgypTalk's in place. Exact names:
+    // other assets stay compressed.
     androidResources {
-        noCompress += moonshineFiles.map { it.name }
+        noCompress += moonshineFiles.map { it.name } + egyptalkFiles.map { it.name }
+    }
+
+    packaging {
+        jniLibs {
+            // sherpa-onnx's 32-bit x86 build: Flutter ships no x86 app, and
+            // only there does sherpa bring its own libonnxruntime.so.
+            excludes += listOf("lib/x86/libsherpa-onnx-jni.so", "lib/x86/libonnxruntime.so")
+        }
     }
 
     buildTypes {
@@ -134,6 +243,11 @@ dependencies {
     implementation("ai.moonshine:moonshine-voice:0.1.6") {
         isTransitive = false
     }
+    // Arabic speech to text on the phone (Apache-2.0; DECISIONS TV-24), put
+    // in libs/ (git-ignored) by fetchSherpaOnnx before every build.
+    implementation(files(File(sherpaOnnxDir, sherpaOnnxAar.name)))
+    // JVM tests of the window rule (WordWindowsTest; EPL-1.0, never in the app)
+    testImplementation("junit:junit:4.13.2")
 }
 
 flutter {
@@ -146,53 +260,16 @@ val fetchMoonshineModel = tasks.register("fetchMoonshineModel") {
         "(-PmoonshineCache=<folder> reuses a local copy)."
     val cacheProperty = providers.gradleProperty("moonshineCache").orNull
     doLast {
-        val cache = cacheProperty?.let(::File) ?: File(
-            System.getProperty("user.home"),
-            ".cache/moonshine_voice/download.moonshine.ai/model/$moonshineModelVersion",
+        val cache = cacheFolder(
+            "moonshineCache",
+            cacheProperty,
+            File(
+                System.getProperty("user.home"),
+                ".cache/moonshine_voice/download.moonshine.ai/model/$moonshineModelVersion",
+            ),
         )
-        moonshineAssets.mkdirs()
         for (want in moonshineFiles) {
-            val dest = File(moonshineAssets, want.name)
-            if (moonshineFileOk(dest, want)) {
-                logger.lifecycle("ok          ${want.name}")
-                continue
-            }
-            val part = File(moonshineAssets, want.name + ".part")
-            part.delete()
-            val cached = File(cache, want.name)
-            if (moonshineFileOk(cached, want)) {
-                cached.copyTo(part, overwrite = true)
-                logger.lifecycle("from cache  ${want.name}")
-            } else {
-                val url = "$moonshineBaseUrl/${want.name}"
-                logger.lifecycle("download    $url")
-                val connection = URI(url).toURL().openConnection() as HttpURLConnection
-                connection.connectTimeout = 30_000
-                connection.readTimeout = 60_000
-                connection.setRequestProperty("User-Agent", "ishara-build")
-                try {
-                    if (connection.responseCode != 200) {
-                        throw GradleException("$url answered HTTP ${connection.responseCode}")
-                    }
-                    connection.inputStream.use { input ->
-                        part.outputStream().use { output -> input.copyTo(output, 1 shl 20) }
-                    }
-                } finally {
-                    connection.disconnect()
-                }
-            }
-            if (!moonshineFileOk(part, want)) {
-                part.delete()
-                throw GradleException(
-                    "${want.name}: wrong size or SHA-256 (expected ${want.size} bytes, ${want.sha256}).",
-                )
-            }
-            Files.move(
-                part.toPath(),
-                dest.toPath(),
-                StandardCopyOption.REPLACE_EXISTING,
-                StandardCopyOption.ATOMIC_MOVE,
-            )
+            fetchPinned(want, moonshineAssets, cache, moonshineBaseUrl) { logger.lifecycle(it) }
         }
         logger.lifecycle("Moonshine model ready in $moonshineAssets")
     }
@@ -202,7 +279,7 @@ val checkMoonshineModel = tasks.register("checkMoonshineModel") {
     group = "ishara"
     description = "Fails unless the Moonshine model is in src/main/assets with the right SHA-256."
     doLast {
-        val bad = moonshineFiles.filterNot { moonshineFileOk(File(moonshineAssets, it.name), it) }
+        val bad = moonshineFiles.filterNot { pinnedFileOk(File(moonshineAssets, it.name), it) }
         if (bad.isNotEmpty()) {
             throw GradleException(
                 """
@@ -219,12 +296,58 @@ val checkMoonshineModel = tasks.register("checkMoonshineModel") {
     }
 }
 
-// Release builds need the model; debug builds and CI work without it (English
-// then falls back to Google).
+val fetchEgyptalkModel = tasks.register("fetchEgyptalkModel") {
+    group = "ishara"
+    description = "Puts the EgypTalk model in src/main/assets and checks every SHA-256 " +
+        "(-PegyptalkCache=<folder> reuses a local copy, e.g. egyptalk_export.py's output)."
+    val cacheProperty = providers.gradleProperty("egyptalkCache").orNull
+    doLast {
+        val cache = cacheFolder("egyptalkCache", cacheProperty, File(userCache, "egyptalk/$egyptalkModelVersion"))
+        for (want in egyptalkFiles) {
+            fetchPinned(want, egyptalkAssets, cache, egyptalkBaseUrl) { logger.lifecycle(it) }
+        }
+        logger.lifecycle("EgypTalk model ready in $egyptalkAssets")
+    }
+}
+
+val checkEgyptalkModel = tasks.register("checkEgyptalkModel") {
+    group = "ishara"
+    description = "Fails unless the EgypTalk model is in src/main/assets with the right SHA-256."
+    doLast {
+        val bad = egyptalkFiles.filterNot { pinnedFileOk(File(egyptalkAssets, it.name), it) }
+        if (bad.isNotEmpty()) {
+            throw GradleException(
+                """
+                |EgypTalk model missing or wrong in $egyptalkAssets:
+                |  ${bad.joinToString(", ") { it.name }}
+                |A release build ships the Arabic speech model inside the APK (DECISIONS TV-24).
+                |Fetch it, then build again:
+                |  Linux / macOS:  cd app/ishara_app/android && ./gradlew :app:fetchEgyptalkModel
+                |  Windows:        cd app\ishara_app\android && gradlew.bat :app:fetchEgyptalkModel
+                |Add -PegyptalkCache=<folder> to reuse a local copy of the 2 files.
+                """.trimMargin(),
+            )
+        }
+    }
+}
+
+val fetchSherpaOnnx = tasks.register("fetchSherpaOnnx") {
+    group = "ishara"
+    description = "Puts the pinned sherpa-onnx AAR in libs/ (-PsherpaOnnxCache=<folder> reuses a local copy)."
+    val cacheProperty = providers.gradleProperty("sherpaOnnxCache").orNull
+    doLast {
+        val cache = cacheFolder("sherpaOnnxCache", cacheProperty, File(userCache, "sherpa-onnx"))
+        fetchPinned(sherpaOnnxAar, sherpaOnnxDir, cache, sherpaOnnxUrl) { logger.lifecycle(it) }
+    }
+}
+
+// Release builds need the models; debug builds and CI work without them
+// (the language then falls back to Google). Every build needs sherpa-onnx.
 tasks.configureEach {
     if (name == "preReleaseBuild" || name == "preMoonshineBrokenTestBuild") {
-        dependsOn(checkMoonshineModel)
+        dependsOn(checkMoonshineModel, checkEgyptalkModel)
     }
+    if (Regex("^pre.*Build$").matches(name)) dependsOn(fetchSherpaOnnx)
 }
 
 // AndroidManifest.xml removes ACCESS_NETWORK_STATE without tools:selector (a
@@ -256,20 +379,32 @@ tasks.configureEach {
 }
 
 if (moonshineBrokenModelTest) {
-    // A copy of tokenizer.bin with its last byte changed; build-type assets
-    // replace the main ones with the same path.
+    // Copies of Moonshine's tokenizer.bin and EgypTalk's model with one byte
+    // changed (TV-21, TV-24); build-type assets replace the main ones with
+    // the same path. Both languages then fall back to Google.
     val brokenAssets = layout.buildDirectory.dir("moonshine-broken-assets").get().asFile
     val prepareBrokenModel = tasks.register("prepareMoonshineBrokenModel") {
-        dependsOn(checkMoonshineModel)
+        dependsOn(checkMoonshineModel, checkEgyptalkModel)
         outputs.dir(brokenAssets)
         doLast {
-            val source = File(moonshineAssets, "tokenizer.bin")
-            val dest = File(brokenAssets, "moonshine/small-streaming-en/tokenizer.bin")
-            dest.parentFile.mkdirs()
-            val bytes = source.readBytes()
+            val tokenizer = File(brokenAssets, "moonshine/small-streaming-en/tokenizer.bin")
+            tokenizer.parentFile.mkdirs()
+            val bytes = File(moonshineAssets, "tokenizer.bin").readBytes()
             bytes[bytes.size - 1] = (bytes[bytes.size - 1].toInt() xor 0xFF).toByte()
-            dest.writeBytes(bytes)
-            logger.lifecycle("BROKEN MODEL TEST: one byte changed in $dest")
+            tokenizer.writeBytes(bytes)
+            logger.lifecycle("BROKEN MODEL TEST: one byte changed in $tokenizer")
+            // 132 MB: copied, then one byte in the middle changed in place
+            val onnx = egyptalkFiles.first { it.name.endsWith(".onnx") }
+            val model = File(brokenAssets, "egyptalk/${onnx.name}")
+            model.parentFile.mkdirs()
+            File(egyptalkAssets, onnx.name).copyTo(model, overwrite = true)
+            RandomAccessFile(model, "rw").use { f ->
+                f.seek(onnx.size / 2)
+                val b = f.read()
+                f.seek(onnx.size / 2)
+                f.write(b xor 0xFF)
+            }
+            logger.lifecycle("BROKEN MODEL TEST: one byte changed in $model")
         }
     }
     android.sourceSets.getByName("moonshineBrokenTest").assets.srcDir(brokenAssets)

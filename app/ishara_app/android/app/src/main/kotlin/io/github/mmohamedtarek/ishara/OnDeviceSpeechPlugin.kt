@@ -30,46 +30,110 @@ import kotlin.math.max
 import kotlin.math.sqrt
 
 /**
- * English speech to text on the phone with Moonshine Small (DECISIONS TV-21).
+ * Speech to text on the phone: English with Moonshine Small (DECISIONS
+ * TV-21), Arabic with EgypTalk through sherpa-onnx (TV-24), one channel
+ * pair per model.
  *
- * The model ships in the APK and is copied to the files folder on first use
- * ([MoonshineModelStore]). Moonshine itself is only touched through
- * [MoonshineEngine], and never below API 26. Audio stays in memory and is
- * never saved; nothing here uses the network. Under memory pressure the
- * model is freed when no listen is on, and loaded again on the next use.
+ * Moonshine's model ships in the APK and is copied to the files folder on
+ * first use ([MoonshineModelStore]); EgypTalk's is read straight from the
+ * APK after a check ([EgyptalkModelCheck]). The engines are only touched
+ * through [MoonshineEngine] and [EgyptalkEngine], Moonshine never below API
+ * 26. One engine thread runs every load and listen, so only one model is
+ * loaded at a time (loading one frees the other first) and a model is never
+ * freed during a listen. Audio stays in memory and is never saved; nothing
+ * here uses the network. Under memory pressure the loaded model is freed
+ * when no listen is on, and loaded again on the next use.
  */
-class MoonshineSpeechPlugin :
-    FlutterPlugin,
-    MethodChannel.MethodCallHandler,
-    EventChannel.StreamHandler {
-    private class Session(val id: Int) {
+class OnDeviceSpeechPlugin : FlutterPlugin {
+    /**
+     * Loads a model: the recognizer, or why not ([status]). [pssBefore] and
+     * [started] are taken just before the load (after any copy or check).
+     */
+    private class Opened(
+        val recognizer: LocalRecognizer?,
+        val status: String,
+        val fields: Map<String, Any?>,
+        val pssBefore: Long = 0,
+        val started: Long = 0,
+    )
+
+    /** One model, its channels and its state (engine thread unless noted). */
+    private inner class Slot(
+        val name: String,
+        val tag: String,
+        val minSdk: Int,
+        val open: () -> Opened,
+    ) : MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
+        var methods: MethodChannel? = null
+        var events: EventChannel? = null
+
+        /** Main thread only. */
+        var sink: EventChannel.EventSink? = null
+
+        /** Why the model can't be used in this app run. */
+        var unusable: Map<String, Any?>? = null
+
+        /** When a prepare last answered "ready": a press starts next. */
+        var readyAt = 0L
+
+        fun attach(binding: FlutterPlugin.FlutterPluginBinding) {
+            methods = MethodChannel(binding.binaryMessenger, "ishara/$name").also {
+                it.setMethodCallHandler(this)
+            }
+            events = EventChannel(binding.binaryMessenger, "ishara/$name/events").also {
+                it.setStreamHandler(this)
+            }
+        }
+
+        fun detach() {
+            methods?.setMethodCallHandler(null)
+            events?.setStreamHandler(null)
+            methods = null
+            events = null
+            sink = null
+        }
+
+        override fun onListen(arguments: Any?, eventSink: EventChannel.EventSink) {
+            sink = eventSink
+        }
+
+        override fun onCancel(arguments: Any?) {
+            sink = null
+            // nobody is listening: never leave the mic open
+            if (active?.slot === this) cancelActive()
+        }
+
+        override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) =
+            handle(this, call, result)
+    }
+
+    private inner class Session(val id: Int, val slot: Slot) {
         @Volatile var stop = false
         @Volatile var cancel = false
         @Volatile var micError: String? = null
 
-        /** Moonshine got audio from this session. */
+        /** The recognizer got audio from this session. */
         @Volatile var fed = false
         val audio = LinkedBlockingQueue<FloatArray>()
     }
 
     private lateinit var context: Context
     private lateinit var store: MoonshineModelStore
-    private var methods: MethodChannel? = null
-    private var events: EventChannel? = null
-    private var sink: EventChannel.EventSink? = null
+    private lateinit var egyptalkCheck: EgyptalkModelCheck
     private val main = Handler(Looper.getMainLooper())
 
-    /** Copies and loads the model and runs one session at a time. */
-    private val engine = Executors.newSingleThreadExecutor { Thread(it, "moonshine-engine") }
+    /** Copies and loads the models and runs one session at a time. */
+    private val engine = Executors.newSingleThreadExecutor { Thread(it, "on-device-stt") }
 
-    /** Only touched on [engine]. */
-    private var model: MoonshineEngine? = null
+    private val moonshine = Slot("moonshine", "IsharaMoonshine", Build.VERSION_CODES.O) { openMoonshine() }
+    private val egyptalk = Slot("egyptalk", "IsharaEgyptalk", Build.VERSION_CODES.N) { openEgyptalk() }
+    private val slots = listOf(moonshine, egyptalk)
 
-    /** Why the model can't be used in this app run; only touched on [engine]. */
-    private var unusable: Map<String, Any?>? = null
-
-    /** When a prepare last answered "ready" (engine thread): a press starts next. */
-    private var readyAt = 0L
+    /** The loaded models by slot name, one at a time (engine thread). */
+    private val models = LoadedModels<LocalRecognizer> { name, model, why ->
+        model.free()
+        Log.i(slots.first { it.name == name }.tag, "model freed ($why)")
+    }
 
     /** Only set on the main thread. */
     @Volatile private var active: Session? = null
@@ -80,49 +144,29 @@ class MoonshineSpeechPlugin :
             val pressure = level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND ||
                 level == ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW ||
                 level == ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL
-            if (pressure) freeWhenIdle("trim level $level")
+            if (pressure) slots.forEach { freeWhenIdle(it, "trim level $level") }
         }
 
         override fun onConfigurationChanged(newConfig: Configuration) = Unit
 
         @Deprecated("Still sent on old phones")
-        override fun onLowMemory() = freeWhenIdle("low memory")
+        override fun onLowMemory() = slots.forEach { freeWhenIdle(it, "low memory") }
     }
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
         store = MoonshineModelStore(context)
+        egyptalkCheck = EgyptalkModelCheck(context)
         context.registerComponentCallbacks(memory)
-        methods = MethodChannel(binding.binaryMessenger, "ishara/moonshine").also {
-            it.setMethodCallHandler(this)
-        }
-        events = EventChannel(binding.binaryMessenger, "ishara/moonshine/events").also {
-            it.setStreamHandler(this)
-        }
+        slots.forEach { it.attach(binding) }
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context.unregisterComponentCallbacks(memory)
-        methods?.setMethodCallHandler(null)
-        events?.setStreamHandler(null)
-        methods = null
-        events = null
-        sink = null
+        slots.forEach { it.detach() }
         cancelActive()
-        engine.execute {
-            model?.free()
-            model = null
-        }
+        engine.execute { models.freeAll("detached") }
         engine.shutdown()
-    }
-
-    override fun onListen(arguments: Any?, eventSink: EventChannel.EventSink) {
-        sink = eventSink
-    }
-
-    override fun onCancel(arguments: Any?) {
-        sink = null
-        cancelActive() // nobody is listening: never leave the mic open
     }
 
     private fun cancelActive() {
@@ -130,31 +174,35 @@ class MoonshineSpeechPlugin :
         active = null
     }
 
-    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+    private fun handle(slot: Slot, call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "prepare" -> {
                 // Never cancels a listen: a preload (Talk opened or resumed)
                 // can arrive while one is on. A session left by a Dart hot
                 // restart ends at the next "start".
                 engine.execute {
-                    val answer = safePrepare()
-                    if (answer["status"] == "ready") readyAt = SystemClock.elapsedRealtime()
+                    val answer = safePrepare(slot)
+                    if (answer["status"] == "ready") slot.readyAt = SystemClock.elapsedRealtime()
                     main.post { result.success(answer) }
                 }
             }
             "start" -> {
-                val session = Session(call.argument<Int>("session") ?: -1)
+                val session = Session(call.argument<Int>("session") ?: -1, slot)
                 cancelActive()
                 active = session
+                models.startAsked(slot.name) // its model is kept until the listen runs
                 engine.execute { runSession(session) }
                 result.success(null)
             }
             "stop" -> {
-                active?.takeIf { it.id == call.argument<Int>("session") }?.stop = true
+                active?.takeIf { it.slot === slot && it.id == call.argument<Int>("session") }
+                    ?.stop = true
                 result.success(null)
             }
             "cancel" -> {
-                val session = active?.takeIf { it.id == call.argument<Int>("session") }
+                val session = active?.takeIf {
+                    it.slot === slot && it.id == call.argument<Int>("session")
+                }
                 session?.cancel = true
                 if (session != null) active = null
                 result.success(null)
@@ -162,9 +210,9 @@ class MoonshineSpeechPlugin :
             "memory" -> Thread({
                 val answer = memoryNow()
                 main.post { result.success(answer) }
-            }, "moonshine-memory").start()
+            }, "on-device-stt-memory").start()
             "debugNotice" -> {
-                // Debug builds only: says English is not on Moonshine.
+                // Debug builds only: says the language is not on its model.
                 if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
                     Toast.makeText(context, call.argument<String>("text") ?: "", Toast.LENGTH_LONG)
                         .show()
@@ -181,22 +229,47 @@ class MoonshineSpeechPlugin :
     )
 
     /** [prepare], never throwing on the engine thread (that would end the app). */
-    private fun safePrepare(): Map<String, Any?> = try {
-        prepare()
+    private fun safePrepare(slot: Slot): Map<String, Any?> = try {
+        prepare(slot)
     } catch (t: Throwable) {
-        Log.e(TAG, "prepare failed", t)
+        Log.e(slot.tag, "prepare failed", t)
         mapOf("status" to "failed", "message" to "prepare: ${t.javaClass.simpleName}")
     }
 
-    /** On [engine]: copies (first use) and loads the model. */
-    private fun prepare(): Map<String, Any?> {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    /** On [engine]: makes [slot]'s model usable and loads it. */
+    private fun prepare(slot: Slot): Map<String, Any?> {
+        if (Build.VERSION.SDK_INT < slot.minSdk) {
             return mapOf("status" to "unsupported", "message" to "API ${Build.VERSION.SDK_INT}")
         }
-        if (model != null) return mapOf("status" to "ready", "cached" to true)
-        unusable?.let { return it }
+        slot.unusable?.let { return it }
+        // One model at a time, also when this one is loaded already: the
+        // other language's goes first. Never during a listen (listens run on
+        // this thread), and a start already asked for keeps its model.
+        models.keepOnly(slot.name)
+        if (models[slot.name] != null) return mapOf("status" to "ready", "cached" to true)
+        val opened = slot.open()
+        if (opened.recognizer == null) return remember(slot, opened.status, opened.fields)
+        models[slot.name] = opened.recognizer
+        val loadMs = SystemClock.elapsedRealtime() - opened.started
+        val pssAfter = Debug.getPss()
+        Log.i(
+            slot.tag,
+            "model loaded in $loadMs ms (${opened.fields}), PSS ${opened.pssBefore} -> $pssAfter kB",
+        )
+        return mapOf(
+            "status" to "ready",
+            "cached" to false,
+            "loadMs" to loadMs,
+            "pssBeforeKb" to opened.pssBefore,
+            "pssAfterKb" to pssAfter,
+            "nativeHeapKb" to Debug.getNativeHeapAllocatedSize() / 1024,
+        ) + opened.fields
+    }
+
+    /** Moonshine (TV-21): copy (first use), load, copy again only if damaged. */
+    private fun openMoonshine(): Opened {
         var copy = store.ensure()
-        if (!copy.ready) return remember(copy.status, copy.fields)
+        if (!copy.ready) return Opened(null, copy.status, copy.fields)
         val pssBefore = Debug.getPss()
         val started = SystemClock.elapsedRealtime()
         var (loaded, error) = MoonshineEngine.load(store.dir)
@@ -205,55 +278,58 @@ class MoonshineSpeechPlugin :
         // one that passes the check now) is fine, so the cause is elsewhere
         // (e.g. memory) and copying 142 MB again on every start can't help.
         if (loaded == null && copy.fields["copy"] == "kept" && !store.intact()) {
-            Log.w(TAG, "model failed to load ($error) and is damaged, copying it again")
+            Log.w(moonshine.tag, "model failed to load ($error) and is damaged, copying it again")
             store.delete()
             copy = store.ensure(copyAgain = true)
-            if (!copy.ready) return remember(copy.status, copy.fields)
+            if (!copy.ready) return Opened(null, copy.status, copy.fields)
             val again = MoonshineEngine.load(store.dir)
             loaded = again.first
             error = again.second
         }
-        if (loaded == null) return remember("failed", mapOf("message" to error))
-        model = loaded
-        val loadMs = SystemClock.elapsedRealtime() - started
-        val pssAfter = Debug.getPss()
-        Log.i(TAG, "model loaded in $loadMs ms (${copy.fields}), PSS $pssBefore -> $pssAfter kB")
-        return mapOf(
-            "status" to "ready",
-            "cached" to false,
-            "loadMs" to loadMs,
-            "pssBeforeKb" to pssBefore,
-            "pssAfterKb" to pssAfter,
-            "nativeHeapKb" to Debug.getNativeHeapAllocatedSize() / 1024,
-        ) + copy.fields
+        if (loaded == null) return Opened(null, "failed", mapOf("message" to error))
+        return Opened(loaded.recognizer(RATE), "ready", copy.fields, pssBefore, started)
+    }
+
+    /** EgypTalk (TV-24): checked in the APK, loaded from it (no copy). */
+    private fun openEgyptalk(): Opened {
+        val check = egyptalkCheck.ensure()
+        if (!check.ready) return Opened(null, check.status, check.fields)
+        val pssBefore = Debug.getPss()
+        val started = SystemClock.elapsedRealtime()
+        egyptalkCheck.loadStarting()
+        val (loaded, error) = try {
+            EgyptalkEngine.load(context.assets, egyptalkCheck.model, egyptalkCheck.tokens)
+        } finally {
+            egyptalkCheck.loadReturned()
+        }
+        if (loaded == null) return Opened(null, "failed", mapOf("message" to error))
+        return Opened(loaded.recognizer(), "ready", check.fields, pssBefore, started)
     }
 
     /** Not usable: kept for this app run, except "no space" (it may change). */
-    private fun remember(status: String, fields: Map<String, Any?>): Map<String, Any?> {
+    private fun remember(slot: Slot, status: String, fields: Map<String, Any?>): Map<String, Any?> {
         val answer = mapOf("status" to status) + fields
-        Log.e(TAG, "model not usable: $answer")
-        if (status != MoonshineModelStore.NO_SPACE) unusable = answer
+        Log.e(slot.tag, "model not usable: $answer")
+        if (status != MoonshineModelStore.NO_SPACE) slot.unusable = answer
         return answer
     }
 
-    /** Frees the model under memory pressure, never during a listen. */
-    private fun freeWhenIdle(why: String) {
+    /** Frees [slot]'s model under memory pressure, never during a listen. */
+    private fun freeWhenIdle(slot: Slot, why: String) {
         try {
             engine.execute {
-                val loaded = model ?: return@execute
-                if (active != null) {
-                    Log.i(TAG, "model kept ($why): a listen is on")
+                if (models[slot.name] == null) return@execute
+                if (active != null || models.startWaiting(slot.name)) {
+                    Log.i(slot.tag, "model kept ($why): a listen is on")
                     return@execute
                 }
                 // A press was just told "ready": its start follows, and a
                 // reload inside the listen would lose its first words.
-                if (SystemClock.elapsedRealtime() - readyAt < PRESS_GRACE_MS) {
-                    Log.i(TAG, "model kept ($why): a press is starting")
+                if (SystemClock.elapsedRealtime() - slot.readyAt < PRESS_GRACE_MS) {
+                    Log.i(slot.tag, "model kept ($why): a press is starting")
                     return@execute
                 }
-                loaded.free()
-                model = null
-                Log.i(TAG, "model freed ($why)")
+                models.free(slot.name, why)
             }
         } catch (e: RejectedExecutionException) {
             // detached
@@ -262,11 +338,14 @@ class MoonshineSpeechPlugin :
 
     @SuppressLint("MissingPermission") // checked just before
     private fun runSession(s: Session) {
+        val slot = s.slot
+        models.startRun(slot.name)
         if (s.cancel) return
+        models.keepOnly(slot.name)
         // Freed under memory pressure since the prepare: load it again.
-        val m = model ?: run {
-            safePrepare()
-            model
+        val rec = models[slot.name] ?: run {
+            safePrepare(slot)
+            models[slot.name]
         } ?: return fail(s, "model_not_loaded")
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
             PackageManager.PERMISSION_GRANTED
@@ -274,7 +353,7 @@ class MoonshineSpeechPlugin :
             return fail(s, "permission")
         }
         var record: AudioRecord? = null
-        var stream = -1
+        var begun = false
         var reader: Thread? = null
         try {
             val minBytes = AudioRecord.getMinBufferSize(RATE, CHANNEL, ENCODING)
@@ -287,14 +366,14 @@ class MoonshineSpeechPlugin :
                 max(minBytes, RATE * 2 * 2), // 2 s, so a slow decode loses nothing
             )
             if (record.state != AudioRecord.STATE_INITIALIZED) return fail(s, "mic_init")
-            stream = m.startStream()
-            if (stream < 0) return fail(s, "stream_start")
+            begun = rec.begin { text -> emit(s, mapOf("type" to "partial", "text" to text)) }
+            if (!begun) return fail(s, "stream_start")
             val mic: AudioRecord = record
-            val thread = Thread({ readMic(s, mic) }, "moonshine-mic")
+            val thread = Thread({ readMic(s, mic) }, "on-device-stt-mic")
             thread.start()
             reader = thread
             record = null // from here the reader thread owns and releases it
-            if (!feed(s, m, stream)) {
+            if (!feed(s, rec)) {
                 if (!s.cancel) fail(s, "decode")
                 return
             }
@@ -303,29 +382,27 @@ class MoonshineSpeechPlugin :
             s.micError?.let {
                 // Words already captured are still decoded; the mic is closed.
                 if (!s.fed) return fail(s, it)
-                Log.w(TAG, "session ${s.id}: mic ended early ($it)")
+                Log.w(slot.tag, "session ${s.id}: mic ended early ($it)")
             }
 
             val started = SystemClock.elapsedRealtime()
-            val final = m.finish(stream) ?: return fail(s, "decode")
+            val final = rec.finish() ?: return fail(s, "decode")
             val decodeMs = SystemClock.elapsedRealtime() - started
-            emit(s, mapOf("type" to "final", "text" to final, "decodeMs" to decodeMs))
+            emit(s, mapOf("type" to "final", "text" to final, "decodeMs" to decodeMs) + rec.stats())
             main.post { if (active === s) active = null }
         } catch (e: Throwable) {
-            Log.e(TAG, "session failed: ${e.javaClass.simpleName}")
+            Log.e(slot.tag, "session failed: ${e.javaClass.simpleName}")
             fail(s, "engine")
         } finally {
             s.stop = true // the reader ends and releases the mic, whatever happened
             record?.release()
             reader?.join(READER_JOIN_MS)
-            if (stream >= 0) m.freeStream(stream)
+            if (begun) rec.end()
         }
     }
 
-    /** Feeds the mic to Moonshine until it ends; false if decoding failed. */
-    private fun feed(s: Session, m: MoonshineEngine, stream: Int): Boolean {
-        var sinceUpdate = 0
-        var shown = ""
+    /** Feeds the mic to the recognizer until it ends; false if decoding failed. */
+    private fun feed(s: Session, rec: LocalRecognizer): Boolean {
         while (true) {
             val first = s.audio.poll(POLL_MS, TimeUnit.MILLISECONDS) ?: continue
             if (first === END) return true
@@ -333,19 +410,11 @@ class MoonshineSpeechPlugin :
             var chunk: FloatArray? = first
             while (chunk != null) {
                 if (chunk === END) return true
-                if (!m.addAudio(stream, chunk, RATE)) return false
+                if (!rec.add(chunk)) return false
                 s.fed = true
-                sinceUpdate += chunk.size
                 chunk = s.audio.poll()
             }
-            if (sinceUpdate >= UPDATE_SAMPLES && !s.cancel) {
-                sinceUpdate = 0
-                val text = m.text(stream) ?: return false
-                if (text != shown) {
-                    shown = text
-                    emit(s, mapOf("type" to "partial", "text" to text))
-                }
-            }
+            if (!s.cancel && !rec.update()) return false
         }
     }
 
@@ -379,7 +448,7 @@ class MoonshineSpeechPlugin :
             }
             if (!s.cancel && filled > 0) pushAudio(s, pcm, filled, live)
         } catch (e: Exception) {
-            Log.e(TAG, "mic failed: ${e.javaClass.simpleName}")
+            Log.e(s.slot.tag, "mic failed: ${e.javaClass.simpleName}")
             s.micError = "mic_error"
         } finally {
             try {
@@ -411,24 +480,22 @@ class MoonshineSpeechPlugin :
         ((20 * log10(max(rms, 1e-5)) + 60) / 60).coerceIn(0.0, 1.0)
 
     private fun fail(s: Session, code: String) {
-        Log.e(TAG, "session ${s.id}: $code")
+        Log.e(s.slot.tag, "session ${s.id}: $code")
         emit(s, mapOf("type" to "error", "code" to code))
         main.post { if (active === s) active = null }
     }
 
     private fun emit(s: Session, event: Map<String, Any>) {
         main.post {
-            if (!s.cancel) sink?.success(event + ("session" to s.id))
+            if (!s.cancel) s.slot.sink?.success(event + ("session" to s.id))
         }
     }
 
     private companion object {
-        const val TAG = "IsharaMoonshine"
         const val RATE = 16000
         const val CHANNEL = AudioFormat.CHANNEL_IN_MONO
         const val ENCODING = AudioFormat.ENCODING_PCM_16BIT
         const val CHUNK = 1600 // 100 ms
-        const val UPDATE_SAMPLES = 8000 // a partial every 500 ms of audio
         const val POLL_MS = 200L
         const val READ_IDLE_MS = 10L
         const val READER_JOIN_MS = 2000L

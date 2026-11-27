@@ -57,7 +57,10 @@ class _FixedTalk extends TalkSpeech {
   @override
   Future<void> pressMic() async {}
   @override
-  Future<void> releaseMic({bool checkLength = true}) async {}
+  Future<void> releaseMic({
+    bool checkLength = true,
+    bool bySilence = false,
+  }) async {}
   @override
   Future<void> cancelMic() async {}
 

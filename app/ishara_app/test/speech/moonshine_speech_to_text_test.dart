@@ -8,7 +8,7 @@ import 'package:ishara_app/core/speech/speech_to_text.dart';
 
 import '../support/fake_speech.dart';
 
-const _channel = MethodChannel(MoonshineSpeechToText.methodChannel);
+final _channel = MethodChannel(OnDeviceModel.moonshine.methodChannel);
 
 /// The native side: answers calls and sends events.
 class _FakeNative {
@@ -88,15 +88,15 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late _FakeNative native;
-  late MoonshineSpeechToText stt;
+  late OnDeviceSpeechToText stt;
 
-  MoonshineSpeechToText make({
+  OnDeviceSpeechToText make({
     SpeechToText? fallback,
     Duration tail = const Duration(milliseconds: 30),
     Duration finalTimeout = const Duration(seconds: 5),
     Duration prepareTimeout = const Duration(seconds: 30),
     Duration watchdog = const Duration(seconds: 70),
-  }) => MoonshineSpeechToText(
+  }) => OnDeviceSpeechToText(
     methods: _channel,
     events: native.events.stream,
     fallback: fallback,
@@ -152,7 +152,12 @@ void main() {
     test('Google alone is the same object; Moonshine routes', () {
       final google = PlatformSpeechToText();
       expect(
-        speechEngine(google, google.trace, english: EnglishEngine.google),
+        speechEngine(
+          google,
+          google.trace,
+          english: EnglishEngine.google,
+          arabic: ArabicEngine.google,
+        ),
         same(google),
       );
       final routed = speechEngine(
@@ -160,24 +165,21 @@ void main() {
         google.trace,
         english: EnglishEngine.moonshine,
       );
-      expect(routed, isA<MoonshineEnglishRouter>());
-      expect(
-        (routed as MoonshineEnglishRouter).moonshine.fallback,
-        same(google),
-      );
+      expect(routed, isA<OnDeviceRouter>());
+      expect((routed as OnDeviceRouter).english!.fallback, same(google));
       final only = speechEngine(
         google,
         google.trace,
         english: EnglishEngine.moonshineOnly,
       );
-      expect((only as MoonshineEnglishRouter).moonshine.fallback, isNull);
+      expect((only as OnDeviceRouter).english!.fallback, isNull);
     });
   });
 
   group('router', () {
     test('English goes to Moonshine, Arabic to Google', () async {
       final google = FakeSpeechToText(untilStop: true);
-      final router = MoonshineEnglishRouter(stt, google);
+      final router = OnDeviceRouter(stt, google);
 
       await router.preload(SpokenLanguage.ar);
       await router.prepare(SpokenLanguage.ar);
@@ -200,7 +202,7 @@ void main() {
     test('a switch starts the new engine after the old one let go', () async {
       final gate = Completer<void>();
       final google = _SlowCancelSpeech(gate);
-      final router = MoonshineEnglishRouter(stt, google);
+      final router = OnDeviceRouter(stt, google);
       await stt.prepare(SpokenLanguage.en);
       router.listen(SpokenLanguage.ar).listen((_) {});
       await pumpEventQueue();
@@ -218,7 +220,7 @@ void main() {
     test('a cancel during a switch never opens the new mic', () async {
       final gate = Completer<void>();
       final google = _SlowCancelSpeech(gate);
-      final router = MoonshineEnglishRouter(stt, google);
+      final router = OnDeviceRouter(stt, google);
       await stt.prepare(SpokenLanguage.en);
       router.listen(SpokenLanguage.ar).listen((_) {});
       await pumpEventQueue();
@@ -337,7 +339,7 @@ void main() {
     });
 
     test('no debug notice outside debug builds', () async {
-      stt = MoonshineSpeechToText(
+      stt = OnDeviceSpeechToText(
         methods: _channel,
         events: native.events.stream,
         fallback: google,

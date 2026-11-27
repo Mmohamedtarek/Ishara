@@ -19,3 +19,9 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -dontwarn androidx.work.**
+
+# sherpa-onnx (DECISIONS TV-24): libsherpa-onnx-jni.so reads every config
+# class and field by name (GetOfflineConfig: FindClass, GetFieldID), and a
+# renamed or removed one makes it return 0 or end the app. Kept whole: the
+# package is small (about 130 classes).
+-keep class com.k2fsa.sherpa.onnx.** { *; }

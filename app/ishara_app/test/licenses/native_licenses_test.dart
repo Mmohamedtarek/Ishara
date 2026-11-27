@@ -18,7 +18,8 @@ void main() {
     expect({for (final n in nativeNotices) n.file}, onDisk);
   });
 
-  test('Android: Moonshine, ONNX Runtime and their libraries', () async {
+  test('Android: Moonshine, EgypTalk, sherpa-onnx, ONNX Runtime and their '
+      'libraries', () async {
     LicenseRegistry.reset();
     registerNativeLicenses(platform: TargetPlatform.android);
     final entries = await LicenseRegistry.licenses.toList();
@@ -34,6 +35,15 @@ void main() {
         'JSON for Modern C++',
         'UTF8-CPP',
         'utf8proc',
+        'EgypTalk-ASR-v2 Egyptian Arabic model',
+        'sherpa-onnx',
+        'kaldi-decoder',
+        'simple-sentencepiece',
+        'kaldifst',
+        'kaldi-hmm-gmm',
+        'kaldi_native_io',
+        'OpenFst',
+        'hclust-cpp',
       ]),
     );
     final texts = [
@@ -44,13 +54,26 @@ void main() {
       texts.firstWhere((t) => t.startsWith('Eigen')),
       contains('Mozilla Public License'),
     );
+    // CC BY 4.0 (TV-24): credit, licence link, and the change made
+    final egyptalk = texts.firstWhere((t) => t.startsWith('EgypTalk-ASR-v2'));
+    expect(egyptalk, contains('NAMAA-Space'));
+    expect(
+      egyptalk,
+      contains('https://huggingface.co/NAMAA-Space/EgypTalk-ASR-v2'),
+    );
+    expect(egyptalk, contains('https://creativecommons.org/licenses/by/4.0/'));
+    expect(egyptalk, contains('quantized to int8'));
+    expect(egyptalk, contains('NVIDIA'));
   });
 
-  test('other platforms add nothing (they ship no Moonshine)', () async {
-    LicenseRegistry.reset();
-    registerNativeLicenses(platform: TargetPlatform.iOS);
-    expect(await LicenseRegistry.licenses.toList(), isEmpty);
-  });
+  test(
+    'other platforms add nothing (they ship no Moonshine or sherpa-onnx)',
+    () async {
+      LicenseRegistry.reset();
+      registerNativeLicenses(platform: TargetPlatform.iOS);
+      expect(await LicenseRegistry.licenses.toList(), isEmpty);
+    },
+  );
 
   test('the texts are read from the bundle', () async {
     final entries = await nativeLicenses(rootBundle).toList();

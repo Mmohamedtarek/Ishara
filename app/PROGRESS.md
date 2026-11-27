@@ -802,3 +802,32 @@ User decision TV-21: Moonshine Small ships in the APK and is English's recognize
 - Restart: copy kept (no recopy), load 920 ms.
 - Arabic through Google in release: worked.
 - Not phone-tested yet: the broken-model APK (fallback on a damaged copy), `onTrimMemory` free / reload, storage numbers (TV-23 storage figure: not measured).
+
+## Talk voice: EgypTalk for Arabic (2026-11-26, branch `feature/stt-egyptalk`, Linux laptop; phone: the user's Galaxy A56)
+
+User decision TV-24: EgypTalk-ASR-v2 (sherpa-onnx CTC int8) is Arabic's recognizer on Android in release; Google stays the fallback. Laptop evaluation (137 clips): 86.3 % exact signs, 0 wrong signs.
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | sherpa-onnx's ONNX Runtime never collides with Moonshine's (no blind `pickFirst`) | user #1 | built: static-link AAR (ORT 1.28.2 inside `libsherpa-onnx-jni.so`, no `Ort*` exports); not yet built into an APK |
+| 2 | No live partials: TV-17 still works (last 1.5 s every 1 s, a partial only when non-empty and changed: auto-stop at most 6.5 s after the last word + one window decode; user 2026-11-27); windows never overlap (tick skipped), never shown, never the sentence; window time and `word_to_stop_ms` logged; after a skipped tick the next window covers the audio since the last one (up to 5 s); one decode at a time, no time limit; under 0.25 s not decoded; final limit 10 s + 0.5 × recording (EgypTalk only). TV-16, TV-19, TV-20, TV-12 hold | user #2, 2026-11-27 | ✓ Dart tests; JVM `WordWindowsTest` 6, `WindowedListenTest` 5 (mutation-checked); phone ✓ A56: 40 listens, 0 skipped windows, window 50–170 ms, silence stop 5.1 s after the last word |
+| 3 | One model loaded at a time; switching frees the other (also when the model is cached; a waiting start keeps its model, counted on the engine thread); `onTrimMemory` as Moonshine; PSS logged | user #3, review 2026-11-27 | ✓ JVM `LoadedModelsTest` 4 (mutation-checked); phone ✓ A56: Moonshine freed before EgypTalk loaded, PSS +156 MB; back to English and `onTrimMemory`: to test later |
+| 4 | Model on this repo's release, pinned URL + SHA-256, Gradle fetch (Windows, Linux), export script committed | user #4, A | ✓ release `model-egyptalk-asr-v2-ctc-int8-r1` (files re-downloaded, all SHA-256 match); fetch task built, not run |
+| 5 | In the APK uncompressed, never committed; loaded straight from the APK (no copy, user 2026-11-26), SHA-256 marker; crash guard (API 30+: exit record, only crashes count; below 30: every ended load); preload in Arabic; fallback reasons logged; debug toast; R8; manifest check | user #5, 2026-11-27 | ✓ release APK: both files stored, same SHA-256, zipalign OK; R8 keeps sherpa-onnx; JVM `EndedLoadRuleTest` 3; phone ✓ A56: loaded from the APK, no copy, 1399 ms (check 251 ms), 0 fallbacks; broken-model APK: to test later |
+| 6 | Licences: EgypTalk (credit), NVIDIA base, sherpa-onnx and everything it links | user #6 | built (7 new texts, upstream, pinned tags); ORT 1.28.2's third-party notices are the 1.28.0 release's (no 1.28.2 package reachable) |
+| 7 | Privacy texts (full EN/AR, Android card EN/AR); iOS unchanged | user, approved 2026-11-26 | ✓ tests; goldens re-rendered: `linux/step9_privacy`, `ci/step9_privacy`, `linux/talk_mic_blocked` (CI one unchanged); the CI ones must come from `goldens.yml` after the push |
+| 8 | APK size, TV-24 | user #8 | ✓ release arm64 **369,002,977 bytes (369.0 MB)**, was 212.3 MB; one `libonnxruntime.so` (Moonshine's 1.23.2); permissions unchanged |
+| — | Every Moonshine / TV-21 test still passes with the same meaning; English phone checks again before any push | user condition | ✓ suite (Moonshine tests renamed only); A56 English re-check 5/5, release to final ~1.14 s |
+
+**Checks (laptop, 2026-11-27):** `fetchSherpaOnnx`, `fetchEgyptalkModel -PegyptalkCache=$HOME/…` ✓; analyze 0 issues, format clean; full suite `CI=true` 1083 passed, 4 skipped; with Linux goldens 1153 passed, 4 skipped; coverage gate ✓ (lib/core 92.4 %, domain 99.7 %); JVM unit tests 18/18 (`:app:testDebugUnitTest`, junit 4.13.2 test-only); release build ✓.
+**Review:** `/code-review` (high) found 9, all fixed (user 2026-11-27), with tests where testable: (1) an empty recording was decoded (sherpa-onnx may end the app); (2) a cached prepare skipped freeing the other model, and a stale main-thread state could keep both loaded; (3) Moonshine's 10 s final limit for a whole-recording decode; (4) a window wait that gave up after 10 s could let two decodes overlap or release the model under one; (5) a late window could reach the next listen; (6) any process death during a load counted as a crash; (7) skipped ticks left audio out of every window; (8) a misplaced KDoc; (9) junit 4.12 (CVE-2020-15250). Not unit-testable here: the plugin's wiring of (2) and the exit-record read of (6) (Android only): on the phone log.
+**Phone (Galaxy A56, release APK, 2026-11-27, user's run):** English re-check 5/5 listens signed, release to final ~1.14 s. Switch to Arabic: Moonshine freed, EgypTalk loaded from the APK (no copy) in 1399 ms (SHA-256 check 251 ms), PSS +156 MB. 40 Arabic listens: 0 errors, 0 fallbacks, 0 skipped windows; window decode 50–170 ms, final decode 83–658 ms, release to final ~1.25 s; 5 of the 40 gave no sign (release logs hold no text, cause unknown). Silence stop: recording 6900 ms, last word heard at 1000 ms → **5.1 s** from the word to the stop. Found: `word_to_stop_ms` used the last non-empty window (noise decoded as the same text up to 6000 ms → logged 100); fixed: the last window with a word heard, logged after a silence stop only (`stop()` now says `bySilence`; tests, mutation-checked). Laptop after the fix: analyze, full suite, coverage gate, JVM tests (below); no APK rebuilt (log-only change, user).
+
+**To test later (mobile team):**
+- a 30 s Arabic sentence (final decode time against the 10 s + 0.5 × recording limit);
+- switching back to English: EgypTalk freed, Moonshine loaded again;
+- the broken-model APK (`moonshineBrokenTest`), both languages: each falls back to Google with reason `corrupt`;
+- `onTrimMemory`: the model freed in the background, loaded again at the next use;
+- why 5 Arabic listens gave no sign: a debug build with the speech trace on shows the text (not "ميه"/"مية": ة → ه is already normalized, `word_normalizer.dart`).
+
+**Not run yet:** integration tests; APK with the `word_to_stop_ms` fix.

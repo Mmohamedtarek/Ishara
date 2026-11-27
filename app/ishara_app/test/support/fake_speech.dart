@@ -77,9 +77,13 @@ class FakeSpeechToText implements SpeechToText {
     return out.stream;
   }
 
+  /// [stop]'s `bySilence` for each stop (Talk's silence limit, TV-17).
+  final stopsBySilence = <bool>[];
+
   @override
-  Future<void> stop() async {
+  Future<void> stop({bool bySilence = false}) async {
     calls.add('stop');
+    stopsBySilence.add(bySilence);
     if (stopHangs) return;
     await answerStop();
   }

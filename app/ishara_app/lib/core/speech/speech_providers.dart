@@ -9,15 +9,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'speech_providers.g.dart';
 
-/// Speech to text: Moonshine for English on Android, the phone's
-/// recognizer for Arabic and as the fallback (TV-21). Tests override it
-/// with a fake.
+/// Speech to text: on Android, Moonshine for English (TV-21) and EgypTalk
+/// for Arabic (TV-24); the phone's recognizer on iOS and as the fallback.
+/// Tests override it with a fake.
 @Riverpod(keepAlive: true)
 SpeechToText speechToText(Ref ref) {
   final trace = ref.watch(speechTraceProvider);
   final s = speechEngine(PlatformSpeechToText(trace: trace), trace);
   ref.onDispose(s.cancel);
-  if (s is MoonshineEnglishRouter) ref.onDispose(s.dispose);
+  if (s is OnDeviceRouter) ref.onDispose(s.dispose);
   return s;
 }
 

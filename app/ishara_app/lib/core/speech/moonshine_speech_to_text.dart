@@ -36,36 +36,82 @@ EnglishEngine englishEngine({
   return EnglishEngine.moonshine;
 }
 
-/// The speech engine the app uses: [google] for Arabic, and for English
-/// what [englishEngine] picks.
+/// Which recognizer Arabic uses (DECISIONS TV-24).
+enum ArabicEngine {
+  /// EgypTalk on the phone; Google when it can't run.
+  egyptalk,
+
+  /// Debug builds with `--dart-define=STT_ENGINE_AR=egyptalk`: EgypTalk
+  /// only, so a missing model shows as "unavailable".
+  egyptalkOnly,
+
+  /// iOS, or debug builds with `--dart-define=STT_ENGINE_AR=google`.
+  google,
+}
+
+/// TV-24: Arabic uses EgypTalk on Android. Debug builds can force an engine
+/// with `--dart-define=STT_ENGINE_AR=google|egyptalk`; release builds
+/// ignore it.
+ArabicEngine arabicEngine({
+  bool debug = kDebugMode,
+  String define = const String.fromEnvironment('STT_ENGINE_AR'),
+  TargetPlatform? platform,
+}) {
+  if ((platform ?? defaultTargetPlatform) != TargetPlatform.android) {
+    return ArabicEngine.google;
+  }
+  if (debug && define == 'google') return ArabicEngine.google;
+  if (debug && define == 'egyptalk') return ArabicEngine.egyptalkOnly;
+  return ArabicEngine.egyptalk;
+}
+
+/// The speech engine the app uses: for each language what [englishEngine]
+/// and [arabicEngine] pick, [google] for the rest and as the fallback.
 SpeechToText speechEngine(
   PlatformSpeechToText google,
   SpeechTrace trace, {
   EnglishEngine? english,
-}) => switch (english ?? englishEngine()) {
-  EnglishEngine.google => google,
-  EnglishEngine.moonshine => MoonshineEnglishRouter(
-    MoonshineSpeechToText(trace: trace, fallback: google),
-    google,
-  ),
-  EnglishEngine.moonshineOnly => MoonshineEnglishRouter(
-    MoonshineSpeechToText(trace: trace),
-    google,
-  ),
-};
+  ArabicEngine? arabic,
+}) {
+  final en = switch (english ?? englishEngine()) {
+    EnglishEngine.google => null,
+    EnglishEngine.moonshine => OnDeviceSpeechToText(
+      trace: trace,
+      fallback: google,
+    ),
+    EnglishEngine.moonshineOnly => OnDeviceSpeechToText(trace: trace),
+  };
+  final ar = switch (arabic ?? arabicEngine()) {
+    ArabicEngine.google => null,
+    ArabicEngine.egyptalk => OnDeviceSpeechToText(
+      model: OnDeviceModel.egyptalk,
+      trace: trace,
+      fallback: google,
+    ),
+    ArabicEngine.egyptalkOnly => OnDeviceSpeechToText(
+      model: OnDeviceModel.egyptalk,
+      trace: trace,
+    ),
+  };
+  if (en == null && ar == null) return google;
+  return OnDeviceRouter(en, google, arabic: ar);
+}
 
-/// English goes to Moonshine, Arabic always to Google.
-class MoonshineEnglishRouter implements SpeechToText {
+/// Each language goes to its on-device engine ([english], [arabic]), or to
+/// [google] when it has none.
+class OnDeviceRouter implements SpeechToText {
   new(
-    this.moonshine,
+    this.english,
     this.google, {
+    this.arabic,
     this.switchWait = const Duration(seconds: 2),
   });
 
   /// How long the other engine has to close the mic.
   final Duration switchWait;
 
-  final MoonshineSpeechToText moonshine;
+  final OnDeviceSpeechToText? english;
+  final OnDeviceSpeechToText? arabic;
   final SpeechToText google;
   SpeechToText? _active;
 
@@ -75,9 +121,12 @@ class MoonshineEnglishRouter implements SpeechToText {
   /// Waiting for the other engine to let go of the mic.
   bool _switching = false;
   bool _stopWhileSwitching = false;
+  bool _stopBySilence = false;
 
-  SpeechToText _for(SpokenLanguage language) =>
-      language == SpokenLanguage.en ? moonshine : google;
+  SpeechToText _for(SpokenLanguage language) => switch (language) {
+    SpokenLanguage.en => english ?? google,
+    SpokenLanguage.ar => arabic ?? google,
+  };
 
   @override
   Future<void> preload(SpokenLanguage language) =>
@@ -121,17 +170,20 @@ class MoonshineEnglishRouter implements SpeechToText {
     if (ticket != _ticket) return;
     _switching = false;
     final events = engine.listen(language, phrases: phrases);
-    if (_stopWhileSwitching) unawaited(engine.stop());
+    if (_stopWhileSwitching) {
+      unawaited(engine.stop(bySilence: _stopBySilence));
+    }
     yield* events;
   }
 
   @override
-  Future<void> stop() {
+  Future<void> stop({bool bySilence = false}) {
     if (_switching) {
       _stopWhileSwitching = true;
+      _stopBySilence = bySilence;
       return Future<void>.value();
     }
-    return _active?.stop() ?? Future<void>.value();
+    return _active?.stop(bySilence: bySilence) ?? Future<void>.value();
   }
 
   @override
@@ -141,19 +193,75 @@ class MoonshineEnglishRouter implements SpeechToText {
     return _active?.cancel() ?? Future<void>.value();
   }
 
-  Future<void> dispose() => moonshine.dispose();
+  Future<void> dispose() async {
+    await english?.dispose();
+    await arabic?.dispose();
+  }
 }
 
-/// English speech to text on the phone with Moonshine Small, through
-/// `MoonshineSpeechPlugin.kt` (TV-21). The sentence is Moonshine's final text
-/// only; partials are for display and the silence limit (TV-17).
+/// One on-device model: its language, its channels to
+/// `OnDeviceSpeechPlugin.kt` and the name in its logs.
+@immutable
+class OnDeviceModel {
+  const new({
+    required this.name,
+    required this.label,
+    required this.language,
+    required this.languageName,
+    required this.methodChannel,
+    required this.eventChannel,
+    this.finalTimeoutPerRecorded = 0,
+  });
+
+  /// English: Moonshine Small streaming (TV-21).
+  static const moonshine = OnDeviceModel(
+    name: 'moonshine',
+    label: 'Moonshine',
+    language: SpokenLanguage.en,
+    languageName: 'English',
+    methodChannel: 'ishara/moonshine',
+    eventChannel: 'ishara/moonshine/events',
+  );
+
+  /// Arabic: EgypTalk-ASR-v2 through sherpa-onnx (TV-24).
+  static const egyptalk = OnDeviceModel(
+    name: 'egyptalk',
+    label: 'EgypTalk',
+    language: SpokenLanguage.ar,
+    languageName: 'Arabic',
+    methodChannel: 'ishara/egyptalk',
+    eventChannel: 'ishara/egyptalk/events',
+    // one decode of the whole recording after the release (user 2026-11-27)
+    finalTimeoutPerRecorded: 0.5,
+  );
+
+  /// Prefix of the log events (`moonshine_final`, `egyptalk_fallback`…).
+  final String name;
+
+  /// For the debug notice.
+  final String label;
+  final SpokenLanguage language;
+  final String languageName;
+  final String methodChannel;
+  final String eventChannel;
+
+  /// The final text's time limit grows by this much per second recorded:
+  /// 0 for a streaming model, whose final is ready at the release.
+  final double finalTimeoutPerRecorded;
+}
+
+/// Speech to text on the phone for one language, through
+/// `OnDeviceSpeechPlugin.kt`: English with Moonshine Small (TV-21), Arabic
+/// with EgypTalk (TV-24). The sentence is the model's final text only;
+/// partials are for the silence limit only (TV-17), never shown.
 ///
-/// With a [fallback] (Google), English goes to it for one listen when
-/// Moonshine can't run: not supported (Android below 8), model missing,
-/// failed to load, or the listen failed to start. Each reason is logged;
-/// debug builds also show it on the phone.
-class MoonshineSpeechToText implements SpeechToText {
+/// With a [fallback] (Google), the language goes to it for one listen when
+/// the model can't run: not supported (Moonshine: Android below 8), model
+/// missing, failed to load, or the listen failed to start. Each reason is
+/// logged; debug builds also show it on the phone.
+class OnDeviceSpeechToText implements SpeechToText {
   new({
+    this.model = OnDeviceModel.moonshine,
     MethodChannel? methods,
     Stream<Object?>? events,
     this.fallback,
@@ -163,24 +271,26 @@ class MoonshineSpeechToText implements SpeechToText {
     this.finalTimeout = const Duration(seconds: 10),
     this.prepareTimeout = const Duration(seconds: 30),
     this.watchdog = const Duration(seconds: 70),
-  }) : _methods = methods ?? const MethodChannel(methodChannel),
+  }) : _methods = methods ?? MethodChannel(model.methodChannel),
        _events =
-           events ?? const EventChannel(eventChannel).receiveBroadcastStream();
+           events ?? EventChannel(model.eventChannel).receiveBroadcastStream();
 
-  static const methodChannel = 'ishara/moonshine';
-  static const eventChannel = 'ishara/moonshine/events';
+  /// Which model, and so which language.
+  final OnDeviceModel model;
 
-  /// Where English goes when Moonshine can't run (null: nowhere).
+  /// Where the language goes when the model can't run (null: nowhere).
   final SpeechToText? fallback;
 
-  /// Shows on the phone why English is not on Moonshine (debug builds).
+  /// Shows on the phone why the language is not on the model (debug builds).
   final bool debugNotices;
 
   /// The mic keeps recording this long after the release (TV-16).
   final Duration stopTail;
 
-  /// After the native stop, how long Moonshine has to send its final text.
-  /// Past it the listen fails: a partial is never used as the sentence.
+  /// After the native stop, how long the model has to send its final text,
+  /// plus [OnDeviceModel.finalTimeoutPerRecorded] × the recording (EgypTalk:
+  /// 10 s + 0.5 × the recording). Past it the listen fails: a partial is
+  /// never used as the sentence.
   final Duration finalTimeout;
 
   /// The first use copies and loads the model.
@@ -199,11 +309,17 @@ class MoonshineSpeechToText implements SpeechToText {
   final _release = Stopwatch();
   final _noticesShown = <String>{};
 
+  /// The final text's time limit of the current listen (logged).
+  int? _finalLimitMs;
+
   StreamSubscription<Object?>? _subscription;
   StreamController<SpeechEvent>? _out;
   int _session = 0;
   bool _micOnNow = false;
   bool _stopAsked = false;
+
+  /// The current listen was ended by Talk's silence limit (TV-17, logs only).
+  bool _stopBySilence = false;
   Timer? _tailTimer;
   Timer? _finalTimer;
   Timer? _watchdog;
@@ -223,7 +339,7 @@ class MoonshineSpeechToText implements SpeechToText {
     _subscription ??= _events.listen(
       _onEvent,
       onError: (Object e) {
-        _log.warn('moonshine_event_error', {'error': '$e'});
+        _log.warn('${model.name}_event_error', {'error': '$e'});
         final out = _out;
         if (out == null || out.isClosed || _onFallback != null) return;
         unawaited(_invoke('cancel', _session));
@@ -232,14 +348,15 @@ class MoonshineSpeechToText implements SpeechToText {
     );
   }
 
-  /// Talk opened in English: copies (first use) and loads the model in the
-  /// background, so a press doesn't wait for it. No mic, no prompt.
+  /// Talk opened in this model's language: copies (first use) and loads
+  /// the model in the background, so a press doesn't wait for it. No mic,
+  /// no prompt.
   @override
   Future<void> preload(SpokenLanguage language) async {
     // never during a listen: it has its model already
-    if (language != SpokenLanguage.en || _out != null) return;
+    if (language != model.language || _out != null) return;
     final (support, reason) = await _prepareNative();
-    _log.info('moonshine_preload', {
+    _log.info('${model.name}_preload', {
       'ready': support == SpeechSupport.ready,
       if (support != SpeechSupport.ready) 'reason': reason,
     });
@@ -247,13 +364,13 @@ class MoonshineSpeechToText implements SpeechToText {
 
   @override
   Future<SpeechSupport> prepare(SpokenLanguage language) async {
-    if (language != SpokenLanguage.en) return SpeechSupport.languageMissing;
+    if (language != model.language) return SpeechSupport.languageMissing;
     _subscribe();
     var (support, reason) = (SpeechSupport.busy, 'prepare_timeout');
     try {
       (support, reason) = await _prepareNative().timeout(prepareTimeout);
     } on TimeoutException {
-      _log.warn('moonshine_prepare_timeout');
+      _log.warn('${model.name}_prepare_timeout');
     }
     if (support == SpeechSupport.ready) {
       _fallbackNext = false;
@@ -275,13 +392,13 @@ class MoonshineSpeechToText implements SpeechToText {
     try {
       answer = await _methods.invokeMapMethod<String, Object?>('prepare');
     } on Object catch (e) {
-      _log.warn('moonshine_prepare_failed', {'error': '$e'});
+      _log.warn('${model.name}_prepare_failed', {'error': '$e'});
       return (SpeechSupport.unavailable, 'no_plugin');
     }
     final status = answer?['status'];
     if (status == 'ready') {
       if (answer?['cached'] == false) {
-        _log.info('moonshine_model_loaded', {
+        _log.info('${model.name}_model_loaded', {
           'copy': answer?['copy'],
           'copy_ms': answer?['copyMs'],
           'verify_ms': answer?['verifyMs'],
@@ -293,7 +410,7 @@ class MoonshineSpeechToText implements SpeechToText {
       }
       return (SpeechSupport.ready, 'ready');
     }
-    _log.warn('moonshine_model_unusable', {
+    _log.warn('${model.name}_model_unusable', {
       'status': status,
       'files': answer?['files'],
       'message': answer?['message'],
@@ -303,13 +420,15 @@ class MoonshineSpeechToText implements SpeechToText {
     return (SpeechSupport.unavailable, status is String ? status : 'failed');
   }
 
-  /// Logs why English goes to Google; debug builds also show it, once per
-  /// reason, so nobody thinks they are testing Moonshine.
+  /// Logs why the language goes to Google; debug builds also show it, once
+  /// per reason, so nobody thinks they are testing the model.
   void _noteFallback(String reason) {
-    _log.warn('moonshine_fallback', {'reason': reason});
+    _log.warn('${model.name}_fallback', {'reason': reason});
     if (!debugNotices || !_noticesShown.add(reason)) return;
     _methods.invokeMethod<void>('debugNotice', {
-      'text': 'Moonshine not used ($reason): English is on Google.',
+      'text':
+          '${model.label} not used ($reason): '
+          '${model.languageName} is on Google.',
     }).ignore();
   }
 
@@ -329,13 +448,13 @@ class MoonshineSpeechToText implements SpeechToText {
     _fallbackEvents = null;
     _onFallback = null;
     final google = fallback;
-    if (language == SpokenLanguage.en && _fallbackNext && google != null) {
-      // the prepare already found Moonshine unusable
+    if (language == model.language && _fallbackNext && google != null) {
+      // the prepare already found the model unusable
       _onFallback = google;
       return google.listen(language, phrases: phrases);
     }
     final out = _out = StreamController<SpeechEvent>();
-    if (language != SpokenLanguage.en) {
+    if (language != model.language) {
       _finish(out, const SpeechFailed(SpeechError.languageMissing));
       return out.stream;
     }
@@ -344,6 +463,7 @@ class MoonshineSpeechToText implements SpeechToText {
     _phrases = phrases;
     _micOnNow = false;
     _stopAsked = false;
+    _stopBySilence = false;
     _clock
       ..reset()
       ..start();
@@ -351,11 +471,11 @@ class MoonshineSpeechToText implements SpeechToText {
       ..stop()
       ..reset();
     _watchdog = Timer(watchdog, () {
-      _log.warn('moonshine_watchdog');
+      _log.warn('${model.name}_watchdog');
       unawaited(_invoke('cancel', session));
       _finish(out, const SpeechFailed(SpeechError.other));
     });
-    trace('listen', {'engine': 'moonshine', 'session': session});
+    trace('listen', {'engine': model.name, 'session': session});
     unawaited(_start(session, out));
     return out.stream;
   }
@@ -364,7 +484,7 @@ class MoonshineSpeechToText implements SpeechToText {
     try {
       await _methods.invokeMethod<void>('start', {'session': session});
     } on Object catch (e) {
-      _log.warn('moonshine_start_failed', {'error': '$e'});
+      _log.warn('${model.name}_start_failed', {'error': '$e'});
       if (identical(_out, out)) await _startFailed(out, 'start_call');
     }
   }
@@ -384,14 +504,14 @@ class MoonshineSpeechToText implements SpeechToText {
     unawaited(_invoke('cancel', _session));
     _onFallback = google;
     _noteFallback('start_$code');
-    final support = await google.prepare(SpokenLanguage.en);
+    final support = await google.prepare(model.language);
     if (!identical(_out, out) || out.isClosed) return; // cancelled meanwhile
     if (support != SpeechSupport.ready) {
       _finish(out, const SpeechFailed(SpeechError.other));
       return;
     }
     _fallbackEvents = google
-        .listen(SpokenLanguage.en, phrases: _phrases)
+        .listen(model.language, phrases: _phrases)
         .listen(
           out.add,
           onError: (Object e) =>
@@ -400,7 +520,7 @@ class MoonshineSpeechToText implements SpeechToText {
             if (!out.isClosed) unawaited(out.close());
           },
         );
-    if (_stopAsked) unawaited(google.stop());
+    if (_stopAsked) unawaited(google.stop(bySilence: _stopBySilence));
   }
 
   void _onEvent(Object? raw) {
@@ -412,7 +532,7 @@ class MoonshineSpeechToText implements SpeechToText {
         if (!_micOnNow) {
           _micOnNow = true;
           final on = {'ms': _clock.elapsedMilliseconds};
-          _log.info('moonshine_mic_on', on);
+          _log.info('${model.name}_mic_on', on);
           trace('mic_on', on);
         }
         final level = raw['level'];
@@ -430,9 +550,24 @@ class MoonshineSpeechToText implements SpeechToText {
               ? _release.elapsedMilliseconds
               : null,
           'decode_ms': raw['decodeMs'],
+          'final_limit_ms': _finalLimitMs,
           'empty': heard.isEmpty,
+          // EgypTalk: the windows decoded while held (TV-17), on the phone
+          if (raw['windows'] != null) ...{
+            'windows': raw['windows'],
+            'windows_skipped': raw['windowsSkipped'],
+            'window_ms_median': raw['windowMsMedian'],
+            'window_ms_max': raw['windowMsMax'],
+            'audio_ms': raw['audioMs'],
+            'last_word_audio_ms': raw['lastWordAudioMs'],
+            'last_heard_audio_ms': raw['lastHeardAudioMs'],
+            'stop': _stopBySilence ? 'silence' : 'release',
+            // TV-17, after a silence stop only: from the end of the last
+            // window with a word heard (the last partial) to the stop
+            if (_stopBySilence) 'word_to_stop_ms': _wordToStopMs(raw),
+          },
         };
-        _log.info('moonshine_final', fields);
+        _log.info('${model.name}_final', fields);
         trace('final', {...fields, 'text': heard});
         _finish(
           out,
@@ -443,7 +578,7 @@ class MoonshineSpeechToText implements SpeechToText {
         unawaited(_logMemory());
       case 'error':
         final code = raw['code'];
-        _log.warn('moonshine_error', {'code': code, 'mic_on': _micOnNow});
+        _log.warn('${model.name}_error', {'code': code, 'mic_on': _micOnNow});
         if (code == 'permission') {
           _finish(out, const SpeechFailed(SpeechError.permission));
         } else if (!_micOnNow) {
@@ -459,27 +594,31 @@ class MoonshineSpeechToText implements SpeechToText {
   Future<void> _logMemory() async {
     try {
       final memory = await _methods.invokeMapMethod<String, Object?>('memory');
-      _log.info('moonshine_memory', {
+      _log.info('${model.name}_memory', {
         'pss_kb': memory?['pssKb'],
         'native_heap_kb': memory?['nativeHeapKb'],
       });
     } on Object catch (e) {
-      _log.warn('moonshine_memory_failed', {'error': '$e'});
+      _log.warn('${model.name}_memory_failed', {'error': '$e'});
     }
   }
 
   @override
-  Future<void> stop() async {
+  Future<void> stop({bool bySilence = false}) async {
     final google = _onFallback;
     if (google != null) {
       _stopAsked = true;
+      _stopBySilence = bySilence;
       // before its listen started, [_startFailed] sends the stop
-      if (_out == null || _fallbackEvents != null) await google.stop();
+      if (_out == null || _fallbackEvents != null) {
+        await google.stop(bySilence: bySilence);
+      }
       return;
     }
     final out = _out;
     if (out == null || out.isClosed || _stopAsked) return;
     _stopAsked = true;
+    _stopBySilence = bySilence;
     _release.start();
     trace('stop', {'ms': _clock.elapsedMilliseconds});
     final session = _session;
@@ -505,8 +644,14 @@ class MoonshineSpeechToText implements SpeechToText {
     _watchdog?.cancel();
     _watchdog = null;
     _finalTimer?.cancel();
-    _finalTimer = Timer(finalTimeout, () {
-      _log.warn('moonshine_final_timeout');
+    final recorded = _clock.elapsed;
+    final limit = finalTimeout + recorded * model.finalTimeoutPerRecorded;
+    _finalLimitMs = limit.inMilliseconds;
+    _finalTimer = Timer(limit, () {
+      _log.warn('${model.name}_final_timeout', {
+        'recorded_ms': recorded.inMilliseconds,
+        'limit_ms': limit.inMilliseconds,
+      });
       unawaited(_invoke('cancel', session));
       _finish(out, const SpeechFailed(SpeechError.other));
     });
@@ -541,7 +686,7 @@ class MoonshineSpeechToText implements SpeechToText {
     try {
       await _methods.invokeMethod<void>(method, {'session': session});
     } on Object catch (e) {
-      _log.warn('moonshine_${method}_failed', {'error': '$e'});
+      _log.warn('${model.name}_${method}_failed', {'error': '$e'});
     }
   }
 
@@ -552,6 +697,17 @@ class MoonshineSpeechToText implements SpeechToText {
     _finalTimer = null;
     _watchdog?.cancel();
     _watchdog = null;
+  }
+
+  /// The recording minus TV-16's tail minus where the last window with a
+  /// word heard ends, in audio ms; null without one. (Not the last
+  /// non-empty window: noise decoded as the same text again goes on long
+  /// after the word, phone run 2026-11-27.)
+  int? _wordToStopMs(Map<Object?, Object?> raw) {
+    final audio = raw['audioMs'];
+    final word = raw['lastHeardAudioMs'];
+    if (audio is! int || word is! int || word < 0) return null;
+    return audio - stopTail.inMilliseconds - word;
   }
 
   void _finish(StreamController<SpeechEvent> out, SpeechEvent last) {

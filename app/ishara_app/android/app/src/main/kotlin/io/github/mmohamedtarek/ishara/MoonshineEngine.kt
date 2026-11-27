@@ -6,7 +6,7 @@ import java.io.File
 
 /**
  * The only class that touches Moonshine (DECISIONS TV-21). Moonshine needs
- * API 26: [MoonshineSpeechPlugin] never uses this class below it.
+ * API 26: [OnDeviceSpeechPlugin] never uses this class below it.
  *
  * Calls Moonshine's JNI directly: no downloader, no network, no files besides
  * the model folder. Every call runs on the plugin's engine thread.
@@ -44,7 +44,52 @@ internal class MoonshineEngine private constructor(private val handle: Int) {
     private fun textOf(t: Transcript): String =
         t.lines.orEmpty().mapNotNull { it.text?.trim()?.ifEmpty { null } }.joinToString(" ")
 
+    /** As a [LocalRecognizer]: a streaming listen, a partial every 500 ms of audio. */
+    fun recognizer(rate: Int): LocalRecognizer = object : LocalRecognizer {
+        private var stream = -1
+        private var partial: (String) -> Unit = {}
+        private var sinceUpdate = 0
+        private var shown = ""
+
+        override fun begin(partial: (String) -> Unit): Boolean {
+            this.partial = partial
+            sinceUpdate = 0
+            shown = ""
+            stream = startStream()
+            return stream >= 0
+        }
+
+        override fun add(samples: FloatArray): Boolean {
+            if (!addAudio(stream, samples, rate)) return false
+            sinceUpdate += samples.size
+            return true
+        }
+
+        override fun update(): Boolean {
+            if (sinceUpdate < UPDATE_SAMPLES) return true
+            sinceUpdate = 0
+            val text = text(stream) ?: return false
+            if (text != shown) {
+                shown = text
+                partial(text)
+            }
+            return true
+        }
+
+        override fun finish(): String? = finish(stream)
+
+        override fun end() {
+            if (stream >= 0) freeStream(stream)
+            stream = -1
+        }
+
+        override fun free() = this@MoonshineEngine.free()
+    }
+
     companion object {
+        /** A partial every 500 ms of audio. */
+        private const val UPDATE_SAMPLES = 8000
+
         /** Loads Moonshine Small streaming from [dir]: the engine, or an error. */
         fun load(dir: File): Pair<MoonshineEngine?, String?> = try {
             JNI.ensureLibraryLoaded()

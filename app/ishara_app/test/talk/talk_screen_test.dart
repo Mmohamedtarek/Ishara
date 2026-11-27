@@ -632,10 +632,10 @@ void main() {
     await _finishSigning(t);
   });
 
-  group('the privacy card (D19, 3 lines, 2026-11-25)', () {
+  group('the privacy card (D19, 3 lines; Android text TV-24, 2026-11-26)', () {
     const android =
-        'English is turned into text on this phone. For Arabic, or if that '
-        "isn't available, the other person's voice may go to Google or Apple.";
+        "Speech is turned into text on this phone. If that isn't available, "
+        "the other person's voice may go to Google or Apple.";
     const ios =
         "Speech to text uses your phone's speech recognizer, which may send "
         "the other person's voice to Google or Apple.";

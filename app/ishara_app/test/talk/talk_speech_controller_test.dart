@@ -740,12 +740,23 @@ void main() {
         r.talk.silenceLimitForTest = const Duration(milliseconds: 40);
         await r.press();
         await _until(() => r.stt.calls.contains('stop'));
+        expect(r.stt.stopsBySilence, [
+          true,
+        ], reason: 'logged as a silence stop');
         await _until(() => r.feed.isNotEmpty);
         expect(r.played, ['yes']);
         expect(r.state.mic, MicState.idle);
         // the finger comes up later: nothing more happens
         await r.talk.releaseMic();
         expect(r.stt.calls.where((c) => c == 'stop'), hasLength(1));
+      });
+
+      test('a release is not a silence stop', () async {
+        final r = await held();
+        await r.press();
+        now = now.add(const Duration(seconds: 1));
+        await r.talk.releaseMic();
+        expect(r.stt.stopsBySilence, [false]);
       });
 
       test('a word heard starts the limit again', () async {
