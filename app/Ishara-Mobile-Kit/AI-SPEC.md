@@ -1,4 +1,10 @@
-# Ishara AI — what the app must do (spec v3.3)
+# Ishara AI — what the app must do (spec v3.5)
+
+**v3.5** adds `rest_per_class` (section 5): the three conditions of a word signed alone (`rest_conf`, `rest_run`,
+`rest_null`) can be set per word; a word that isn't listed, or a condition that isn't given for it, uses the global
+value. The kit's `decider.json` sets it for `one` only (`{"null": 0.05, "conf": 0.6, "run": 1}`). New models (v3.4:
+trained on 20 people); the labels, the pipeline and every other config value are the same as v3.3. Without
+`rest_per_class` the Decider behaves exactly as v3.3.
 
 **v3.3** changes the Decider and the gap rule (new models too; the labels and the pipeline are the same):
 1. **`pair_level`** (section 5): the word that confirms a pending tentative word must pass this level (`"tentative"` in the
@@ -97,6 +103,7 @@ Config = `model/decider.json` → object `"cnn"`:
 | `rest_conf` | …if the pending word's highest `conf` while pending reached this. Default 0 |
 | `rest_run` | …and it passed the `tentative` level this many steps in a row at some point. Default 0 |
 | `rest_null` | …and at some step where it was the top label, `null` was this low or lower. Default 1 |
+| `rest_per_class` | v3.5: `{label: {"conf": …, "run": …, "null": …}}`, the three conditions above for that pending word; a missing word or key uses `rest_conf` / `rest_run` / `rest_null`. `confirm_on_rest` stays global. Default `{}` |
 
 Each level (`idle`, `tentative`, `active`) has: `confidence` (min averaged probability of the top label), `per_class` (`{label: threshold}` overriding `confidence`), `hold` (consecutive runs the same label must pass), `max_null` (max averaged probability of `rest + other`).
 
@@ -128,8 +135,10 @@ if pending != none:                                       # v3.3: how the pendin
     pending_rest = pending_rest + 1 if label == "rest" else 0
 
 if label is "rest" or "other":
+    rc = rest_per_class.get(pending, {})                   # v3.5: the pending word's own conditions, if any
     if pending != none and confirm_on_rest > 0 and pending_rest >= confirm_on_rest \
-       and pending_peak >= rest_conf and pending_best >= rest_run and pending_null <= rest_null:
+       and pending_peak >= rc.get("conf", rest_conf) and pending_best >= rc.get("run", rest_run) \
+       and pending_null <= rc.get("null", rest_null):
         events += confirm(pending); say(pending); pending = none; pending_rest = 0   # v3.3: a word signed alone
     rest_seen += 1
     if rest_seen >= 2: last_said = none; blocked.clear()

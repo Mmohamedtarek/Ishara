@@ -1,9 +1,13 @@
-# Ishara Mobile Kit (v3.3)
+# Ishara Mobile Kit (v3.5)
 
 The kit holds everything the mobile app needs to recognize signs today. The app doesn't have to wait for the glove, and needs no rewrite when the glove is ready.
 
 ## What's new
 
+- **v3.5 (spec v3.5, the app's Decider must change):** `rest_per_class` in `decider.json` (section 5 of `AI-SPEC.md`):
+  per-word conditions for a word signed alone, set for `one` only (alone 78% -> 85% on new people, stray words
+  unchanged). New models (v3.4, 20 people); `model/`, `mock/` and `test/` rebuilt from `AI/Ishara-AI-v3-5/_kit_v3.5`.
+  Run `sync_kit.sh` and the tests.
 - **v3.3 (spec v3.3, the app's recognizer must change):** new models (ME and YOU have their ASL pointing movement; data,
   models and `decider.json` from one run), and `AI-SPEC.md` v3.3:
   - `pair_level`: the word that confirms a tentative word must pass the `tentative` level;
