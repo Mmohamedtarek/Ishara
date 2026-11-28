@@ -127,7 +127,8 @@ jobs:
     runs-on: ubuntu-24.04
     defaults:
       run:
-        working-directory: AI/Ishara-AI-v3-2
+        # the AI version whose models are in app/Ishara-Mobile-Kit (Kit v3.5)
+        working-directory: AI/Ishara-AI-v3-5
     steps:
       - uses: actions/checkout@v4
 
@@ -135,7 +136,7 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: AI/Ishara-AI-v3-2/requirements.txt
+          cache-dependency-path: AI/Ishara-AI-v3-5/requirements.txt
 
       - name: Dependencies
         run: pip install -r requirements.txt
