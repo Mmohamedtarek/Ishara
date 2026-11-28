@@ -118,6 +118,10 @@ class PairController extends _$PairController {
   StreamSubscription<GloveStatus>? _statusSub;
   bool _askedLocation = false;
 
+  /// "Skip for now" was tapped (R1-4): nothing more happens here and no
+  /// glove is saved.
+  bool _skipped = false;
+
   GloveSource get _glove => ref.read(gloveSourceProvider);
 
   @override
@@ -140,9 +144,10 @@ class PairController extends _$PairController {
 
   /// Asks for the permissions, then scans.
   Future<void> start() async {
+    if (_skipped) return;
     state = const PairState();
     final p = await ref.read(glovePermissionsProvider).request();
-    if (!ref.mounted) return;
+    if (!ref.mounted || _skipped) return;
     if (p != GlovePermission.granted) {
       state = PairState(stage: PairStage.permissionDenied, permission: p);
       return;
@@ -161,8 +166,23 @@ class PairController extends _$PairController {
   Future<void> openSettings() =>
       ref.read(glovePermissionsProvider).openSettings();
 
+  /// "Skip for now" during onboarding (R1-4): stops the scan and any
+  /// connect in progress. Nothing about the glove is saved: a connect that
+  /// finishes after this doesn't save the glove.
+  Future<void> skip() async {
+    _skipped = true;
+    final scan = _scan;
+    _scan = null;
+    await scan?.cancel();
+    if (state.stage == PairStage.connecting || _glove.status.isConnected) {
+      // cancels a connect in progress, or drops a link it made
+      await _glove.disconnect();
+    }
+  }
+
   Future<void> _startScan() async {
     await _scan?.cancel();
+    if (!ref.mounted || _skipped) return;
     state = const PairState(stage: PairStage.scanning);
     final found = <DiscoveredGlove>[];
     _scan = _glove.scan().listen(
@@ -277,6 +297,11 @@ class PairController extends _$PairController {
       _statusSub = null;
     }
     if (!ref.mounted) return;
+    if (_skipped) {
+      // skipped while connecting: the glove isn't saved (R1-4)
+      if (_glove.status.isConnected) await _glove.disconnect();
+      return;
+    }
     final s = _glove.status;
     if (s.mpuFail) {
       // Q-K3: check 2 includes "no #MPU FAIL". Without the motion sensor

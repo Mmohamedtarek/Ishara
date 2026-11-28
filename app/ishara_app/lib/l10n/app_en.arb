@@ -2242,5 +2242,13 @@
   "authErrUnavailable": "Accounts aren't available right now. You can keep using Ishara as a guest.",
   "@authErrUnavailable": {
     "description": "approved new text (step 10b, 2026-11-28): N29: sign in / create / reset when Firebase couldn't start (accounts off this run; user 2026-11-27)"
+  },
+  "pairSkip": "Skip for now",
+  "@pairSkip": {
+    "description": "approved new text (release v1.0, 2026-11-28): R1-4: Pair, onboarding only: finish onboarding without a glove and open Talk"
+  },
+  "pairSkipHint": "You can pair your glove later in Settings.",
+  "@pairSkipHint": {
+    "description": "approved new text (release v1.0, 2026-11-28): R1-4: under Skip for now"
   }
 }

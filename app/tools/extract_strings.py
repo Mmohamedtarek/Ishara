@@ -338,6 +338,13 @@ STEP10B_DRAFTS = {
     "authErrUnavailable": ("Accounts aren't available right now. You can keep using Ishara as a guest.", "الحسابات مش متاحة دلوقتي. تقدر تكمّل استخدام إشارة كزائر.", "N29: sign in / create / reset when Firebase couldn't start (accounts off this run; user 2026-11-27)", None),
 }
 
+# Release v1.0 texts (user, 2026-11-28, approved as final with the request,
+# DECISIONS R1-4): getting in without a glove. key: (en, ar, why, placeholders).
+RELEASE_V1_TEXTS = {
+    "pairSkip": ("Skip for now", "تخطّى دلوقتي", "R1-4: Pair, onboarding only: finish onboarding without a glove and open Talk", None),
+    "pairSkipHint": ("You can pair your glove later in Settings.", "تقدر توصّل الجوانتي بعدين من الإعدادات.", "R1-4: under Skip for now", None),
+}
+
 # Prototype texts whose Arabic the user changed (key: (ar, why)).
 AR_CHANGED = {
     "starred": ("المحفوظة", "Starred = «المحفوظة» everywhere (step 9 review, 2026-10-15)"),
@@ -649,6 +656,16 @@ def main() -> int:
             return 1
         out_en[key], out_ar[key] = e, a
         meta = {"description": f"approved new text (step 10b, 2026-11-28): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
+    for key, (e, a, why, ph) in RELEASE_V1_TEXTS.items():
+        if key in out_en:
+            print(f"error: release v1.0 key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"approved new text (release v1.0, 2026-11-28): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta
