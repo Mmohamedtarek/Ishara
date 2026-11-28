@@ -22,11 +22,22 @@ import numpy as np
 
 import live
 import simulate_data as sim
-from common import LABELS, SIGN_LABELS, WINDOW, normalize
+from common import LABELS, SIGN_LABELS, WINDOW, calib_arrays, normalize, setup_console, show_help
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else ("../../app/Ishara-Mobile-Kit" if os.path.isdir("../../app/Ishara-Mobile-Kit") else "../Ishara-Mobile-Kit")
 PERSONS = {"A": 777, "B": 778}       # أشخاص وهميين مش في التدريب ولا الاختبار
 REPEATS = 3                          # كل ملف: (راحة، الإشارة، راحة) 3 مرات
+
+
+def write_text(path, text):
+    """كل ملفات الـ Kit بـ LF و UTF-8، عشان تطلع نفس الـ bytes بالظبط على Windows و Linux (فريق الموبايل بيقارن بيها)"""
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+
+
+def write_json(path, obj, **kw):
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(obj, f, **kw)
 
 
 def glove_cal_line(person):
@@ -41,7 +52,7 @@ def to_lines(raw):
 
 
 def decode(predictor, cfg, raw, cal):
-    o, f, b = (np.asarray(cal[k], float) for k in ("open", "fist", "gyro_bias_raw"))
+    o, f, b = calib_arrays(cal)
     x = normalize(np.asarray(raw, float), o, f, b)
     ends = np.array([e for e in range(WINDOW, len(x) + 1) if e % live.STEP == 0])
     W = np.stack([x[e - WINDOW:e] for e in ends])
@@ -61,7 +72,8 @@ def main():
     cfg = live.decider_config("cnn")
     members = cfg.get("models") or live.ENSEMBLE
     predictor = live.Predictor("cnn", members=members)
-    cfg_out = {k: v for k, v in cfg.items() if k not in live.Decider.LEVEL_KEYS and k != "confirm_on_rest"}
+    # confirm_on_rest و rest_conf و rest_run (تأكيد الكلمة المفردة) بقوا جزء من الإعدادات، والتطبيق لازم يطبّقهم
+    cfg_out = {k: v for k, v in cfg.items() if k not in live.Decider.LEVEL_KEYS}
     cfg_out.update(confirm_rf=False, models=[m + ".tflite" for m in members])     # التطبيق مفيهوش Random Forest
     for d in ("model", "mock", "test"):
         os.makedirs(os.path.join(OUT, d), exist_ok=True)
@@ -71,7 +83,7 @@ def main():
     for m in members:
         shutil.copy(m + ".tflite", os.path.join(OUT, "model"))
     shutil.copy("labels.txt", os.path.join(OUT, "model"))
-    json.dump({"cnn": cfg_out}, open(os.path.join(OUT, "model", "decider.json"), "w"), indent=2)
+    write_json(os.path.join(OUT, "model", "decider.json"), {"cnn": cfg_out}, indent=2)
 
     expected, report = {}, []
     for name, seed in PERSONS.items():
@@ -93,7 +105,7 @@ def main():
                 said, *_ = decode(predictor, cfg_out, raw, cal)
                 if [s["word"] for s in said] == want:
                     break
-            open(os.path.join(folder, f"{label}.csv"), "w").write("\n".join([cal_line] + to_lines(raw)) + "\n")
+            write_text(os.path.join(folder, f"{label}.csv"), "\n".join([cal_line] + to_lines(raw)) + "\n")
             expected[f"{name}/{label}.csv"] = {"words": said, "events": decode.events}
             report.append((f"{name}/{label}", attempt + 1, [s["word"] for s in said] == want))
         # جمل متصلة
@@ -107,14 +119,14 @@ def main():
             said, *_ = decode(predictor, cfg_out, raw, cal)
             if [s["word"] for s in said] == words:
                 break
-        open(os.path.join(folder, "sentences.csv"), "w").write("\n".join([cal_line] + to_lines(raw)) + "\n")
+        write_text(os.path.join(folder, "sentences.csv"), "\n".join([cal_line] + to_lines(raw)) + "\n")
         expected[f"{name}/sentences.csv"] = {"words": said, "events": decode.events}
         report.append((f"{name}/sentences", attempt + 1, [s["word"] for s in said] == words))
         # 5 دقايق حركة عادية: مفيش ولا كلمة المفروض تطلع
         n = int(5 * 60 * 50 / (WINDOW - 10)) + 1
         raw = sim.stitch([sim.make_sample("rest" if r < 0.45 else "other", person) for r in sim.rng.random(n)])
         said, *_ = decode(predictor, cfg_out, raw, cal)
-        open(os.path.join(folder, "everyday.csv"), "w").write("\n".join([cal_line] + to_lines(raw)) + "\n")
+        write_text(os.path.join(folder, "everyday.csv"), "\n".join([cal_line] + to_lines(raw)) + "\n")
         expected[f"{name}/everyday.csv"] = {"words": said, "events": decode.events}
         report.append((f"{name}/everyday", 1, not said))
         # تمرين الـ Learn: (راحة، الإشارة ممسوكة ضعف الوقت، راحة) → الكلمة مرة واحدة
@@ -129,7 +141,7 @@ def main():
                 said, *_ = decode(predictor, cfg_out, raw, cal)
                 if [s["word"] for s in said] == [label]:
                     break
-            open(os.path.join(pfolder, f"{label}.csv"), "w").write("\n".join([cal_line] + to_lines(raw)) + "\n")
+            write_text(os.path.join(pfolder, f"{label}.csv"), "\n".join([cal_line] + to_lines(raw)) + "\n")
             expected[f"{name}/practice/{label}.csv"] = {"words": said, "events": decode.events}
             report.append((f"{name}/practice/{label}", attempt + 1, [s["word"] for s in said] == [label]))
         if name == "A":
@@ -138,13 +150,14 @@ def main():
             test_vectors(os.path.join(OUT, "test", "test_vectors.json"), predictor, cfg_out, raw_for_tests(folder), cal)
             gaps = gap_case(predictor, cfg_out, raw_for_tests(folder), cal)
     tv_path = os.path.join(OUT, "test", "test_vectors.json")
-    tv = json.load(open(tv_path))
+    with open(tv_path, encoding="utf-8") as f:
+        tv = json.load(f)
     tv["gaps"] = gaps
-    json.dump(tv, open(tv_path, "w"))
-    json.dump({"note": "for each file: 'words' = confirmed words the app must show and speak, with the sample index (1-based "
+    write_json(tv_path, tv)
+    write_json(os.path.join(OUT, "mock", "expected.json"), {"note": "for each file: 'words' = confirmed words the app must show and speak, with the sample index (1-based "
                        "count of samples read) when each is confirmed; 'events' = every Decider event (word / tentative / "
                        "confirm / cancel) at its model step. Same as the Python reference.",
-               "files": expected}, open(os.path.join(OUT, "mock", "expected.json"), "w"), indent=1)
+               "files": expected}, indent=1)
     calibration_mocks()
     bad = [r for r in report if not r[2]]
     print(f"mock: {len(report)} ملف، {len(bad)} مش مطابق للمطلوب: {bad}")
@@ -195,8 +208,7 @@ def calibration_mocks(out=None):
         relaxed = o + 0.15 * (f - o)
         files["turn"] = rows(np.tile(relaxed, (len(roll), 1)), roll, rate)
         for step, raw in files.items():
-            with open(os.path.join(folder, f"{step}.csv"), "w") as fh:
-                fh.write("\n".join([cal_line] + to_lines(raw)) + "\n")
+            write_text(os.path.join(folder, f"{step}.csv"), "\n".join([cal_line] + to_lines(raw)) + "\n")
     print("calibration mocks: open / fist / turn for", ", ".join(PERSONS))
 
 
@@ -237,7 +249,9 @@ def gap_case(predictor, cfg, raw, cal):
                     "65535 -> 0. Gap rule (AI-SPEC section 4): 1-5 missing samples -> repeat the last good sample that many "
                     "times (they count as samples); more than 5 -> clear the window, restart the sample counter, reset the "
                     "Decider, and emit cancel for a pending tentative word first; a duplicate or older seq "
-                    "((seq - expected) mod 65536 >= 32768) is dropped and not counted. 'expected' = every event, with the "
+                    "((seq - expected) mod 65536 >= 32768) is dropped and not counted, but more than 10 dropped in a row "
+                    "means the glove restarted: treat it as a gap of more than 5. The USB/CSV seq is uint8 (wraps 255 -> 0): "
+                    "use mod 256 (drop when >= 128) until a seq above 255 is seen. 'expected' = every event, with the "
                     "0-based index of the input sample that produced it. The file has a 3-sample gap, a duplicate, an older "
                     "seq, a wrap, and a 12-sample gap right after a tentative word.",
             "calibration": cal, "config": cfg, "input": lines, "expected": expected}
@@ -256,12 +270,12 @@ def write_frames(path, raw):
         lines.append(frame.hex())
         for j, r in enumerate(block):
             lines.append("  " + " ".join(str(v) for v in [k + j, *r]))
-    open(path, "w").write("\n".join(lines) + "\n")
+    write_text(path, "\n".join(lines) + "\n")
 
 
 def test_vectors(path, predictor, cfg, raw, cal):
     said, W, P, ends = decode(predictor, cfg, raw, cal)
-    o, f, b = (np.asarray(cal[k], float) for k in ("open", "fist", "gyro_bias_raw"))
+    o, f, b = calib_arrays(cal)
     pick = np.linspace(0, len(W) - 1, 6).round().astype(int)
     # نفس النوافذ دي من ملفات الـ tflite نفسها (اللي في الـ Kit): كل موديل لوحده، والمتوسط
     import tensorflow as tf
@@ -283,7 +297,7 @@ def test_vectors(path, predictor, cfg, raw, cal):
                             "normalized_sum": round(float(W[i].sum()), 4),
                             "probs_each": [[round(float(v), 6) for v in p] for p in each],
                             "probs": [round(float(v), 6) for v in np.mean(each, axis=0)]})
-    json.dump({
+    write_json(path, {
         "labels": predictor.classes,
         "calibration": cal,
         "normalize": {"note": "flex = (raw - open) / (fist - open), |fist-open|<1 -> 1; acc = raw / 8192; "
@@ -298,9 +312,11 @@ def test_vectors(path, predictor, cfg, raw, cal):
                             "Decider with this config; it must emit exactly these events at these steps.",
                     "config": cfg, "probs": [[round(float(v), 6) for v in p] for p in P],
                     "expected": [{"step": e["step"], "event": e["event"], "word": e["word"]} for e in decode.events]},
-    }, open(path, "w"))
+    })
     print(f"test vectors: {len(model_cases)} نافذة، {len(P)} خطوة decider، {len(said)} كلمة")
 
 
 if __name__ == "__main__":
+    setup_console()
+    show_help(__doc__)
     main()

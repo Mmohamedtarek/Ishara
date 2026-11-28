@@ -126,6 +126,11 @@ class TalkGlove extends _$TalkGlove {
   final List<StreamSubscription<Object?>> _subs = [];
   Timer? _end;
   int _nextId = 1;
+
+  /// Labels of tentative words the user tapped (Q-T1) whose Decider
+  /// `confirm` hasn't come yet: that confirm is the same word, already
+  /// spoken (S7-9). A new `tentative` of the label means the Decider moved on.
+  final Set<String> _tappedAwaitingConfirm = {};
   int _speakGen = 0;
   SignCatalogue? _catalogue;
   Duration? _timeout;
@@ -270,6 +275,7 @@ class TalkGlove extends _$TalkGlove {
     final words = sign.wordsIn(_language);
     switch (e.kind) {
       case DeciderEventKind.tentative:
+        _tappedAwaitingConfirm.remove(e.label);
         _add(e.label, words.spoken, words.spoken, LiveWordState.tentative);
       case DeciderEventKind.word:
         _add(e.label, words.spoken, words.spoken, LiveWordState.confirmed);
@@ -279,7 +285,7 @@ class TalkGlove extends _$TalkGlove {
         final i = _lastPending(e.label);
         if (i == null) {
           // Already confirmed by the user's tap (S7-9): not spoken again.
-          if (_lastByUser(e.label) != null) return;
+          if (_tappedAwaitingConfirm.remove(e.label)) return;
           // The tentative word was cleared away, but the Decider says it
           // was a real sign: it starts the new sentence.
           _add(e.label, words.spoken, words.spoken, LiveWordState.confirmed);
@@ -309,14 +315,6 @@ class TalkGlove extends _$TalkGlove {
     for (var i = state.words.length - 1; i >= 0; i--) {
       final w = state.words[i];
       if (w.label == label && w.state == LiveWordState.tentative) return i;
-    }
-    return null;
-  }
-
-  int? _lastByUser(String label) {
-    for (var i = state.words.length - 1; i >= 0; i--) {
-      final w = state.words[i];
-      if (w.label == label && w.byUser) return i;
     }
     return null;
   }
@@ -368,6 +366,8 @@ class TalkGlove extends _$TalkGlove {
     if (i < 0) return;
     final w = state.words[i];
     _replace(i, w.copyWith(state: LiveWordState.confirmed, byUser: true));
+    final label = w.label;
+    if (label != null) _tappedAwaitingConfirm.add(label);
     _log.info('user_confirm', {'label': w.label});
     _say(w.spoken);
     ref.read(vibrateProvider).short(); // S9-1: a glove word

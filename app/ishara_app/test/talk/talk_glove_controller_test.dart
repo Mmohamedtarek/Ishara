@@ -160,6 +160,62 @@ void main() {
       expect(r.words, hasLength(1));
     });
 
+    test('the Decider confirms it just before the tap (v3.3: a word signed '
+        'alone confirms on rest): one word, spoken once', () async {
+      final r = await _Rig.make();
+      r.feed.tentative('please');
+      final id = r.state.words.single.id;
+      r.feed.confirm('please');
+      r.talk.confirmByTap(id); // the tap lands on the now-confirmed word
+      expect(r.words, [('please', LiveWordState.confirmed)]);
+      expect(r.spoken, ['please'], reason: 'not twice');
+      expect(r.state.words.single.byUser, isFalse);
+    });
+
+    test(
+      'tapped, then the Decider confirms it on rest (v3.3): spoken once',
+      () async {
+        final r = await _Rig.make();
+        r.feed.tentative('yes');
+        r.talk.confirmByTap(r.state.words.single.id);
+        r.feed.confirm('yes');
+        expect(r.words, [('yes', LiveWordState.confirmed)]);
+        expect(r.spoken, ['yes']);
+      },
+    );
+
+    test('an older tapped word does not swallow a later real sign of the '
+        'same word', () async {
+      final r = await _Rig.make();
+      r.feed.tentative('yes');
+      r.talk.confirmByTap(r.state.words.single.id);
+      r.feed.confirm('yes'); // the tapped word's own confirm: skipped
+      // Later in the sentence: the faded "yes" was cleared away (Talk was
+      // hidden), then the Decider confirms it on rest.
+      r.feed.confirm('yes');
+      expect(r.words, [
+        ('yes', LiveWordState.confirmed),
+        ('yes', LiveWordState.confirmed),
+      ]);
+      expect(r.spoken, ['yes', 'yes']);
+    });
+
+    test('tapped, the Decider cancels it, then the same word is signed '
+        'again: the new one is shown', () async {
+      final r = await _Rig.make();
+      r.feed.tentative('no');
+      r.talk.confirmByTap(r.state.words.single.id);
+      r.feed
+        ..cancel('no')
+        ..tentative('no')
+        ..confirm('no');
+      expect(r.words, [
+        ('no', LiveWordState.confirmed),
+        ('no', LiveWordState.confirmed),
+      ]);
+      expect(r.spoken, ['no', 'no']);
+    });
+
     test('a confirmed word can not be tapped again', () async {
       final r = await _Rig.make();
       r.feed.word('yes');

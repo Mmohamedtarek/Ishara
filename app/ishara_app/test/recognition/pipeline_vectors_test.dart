@@ -1,5 +1,5 @@
 // The recognition pipeline must reproduce the kit's numbers exactly
-// (AI-SPEC v3.2.1 §8): test/test_vectors.json and mock/expected.json.
+// (AI-SPEC v3.3 §8): test/test_vectors.json and mock/expected.json.
 @TestOn('vm')
 library;
 
