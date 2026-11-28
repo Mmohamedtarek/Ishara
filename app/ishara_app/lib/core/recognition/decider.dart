@@ -142,10 +142,11 @@ class Decider {
       if (waiting != null &&
           config.confirmOnRest > 0 &&
           _pendingRest >= config.confirmOnRest &&
-          _pendingPeak >= config.restConf &&
-          _pendingBest >= config.restRun &&
-          _pendingNull <= config.restNull) {
-        // v3.3: a word signed alone.
+          _pendingPeak >= config.restConfFor(waiting) &&
+          _pendingBest >= config.restRunFor(waiting) &&
+          _pendingNull <= config.restNullFor(waiting)) {
+        // v3.3: a word signed alone; v3.5: with the word's own conditions
+        // (rest_per_class), else the global ones.
         events.add(DeciderEvent(DeciderEventKind.confirm, waiting));
         _say(waiting);
         _pending = null;

@@ -141,12 +141,69 @@ class LevelConfig {
   double thresholdFor(String label) => perClass[label] ?? confidence;
 }
 
-/// `model/decider.json` -> object `"cnn"` (AI-SPEC v3.3 §5).
+/// `rest_per_class` (AI-SPEC v3.5 §5): one word's own conditions for a word
+/// signed alone. A null field uses the global `rest_conf` / `rest_run` /
+/// `rest_null`.
+@immutable
+class RestRule {
+  const new({this.conf, this.run, this.nullP});
+
+  /// One entry of `rest_per_class`: `{"conf": num, "run": int >= 0,
+  /// "null": num}`, each optional. Any other key is a [ParseFailure]: a
+  /// misspelt key would otherwise silently fall back to the global value.
+  factory fromJson(String label, Object? json) {
+    if (json is! Map<String, Object?>) {
+      throw ParseFailure(
+        'rest_per_class.$label must be an object',
+        source: 'decider.json',
+      );
+    }
+    final unknown = json.keys.where((k) => !_keys.contains(k)).toList();
+    if (unknown.isNotEmpty) {
+      throw ParseFailure(
+        'rest_per_class.$label has unknown keys ${unknown.join(', ')} '
+        '(conf, run, null)',
+        source: 'decider.json',
+      );
+    }
+    double? number(String k) => switch (json[k]) {
+      null => null,
+      final num n => n.toDouble(),
+      _ => throw ParseFailure(
+        'rest_per_class.$label.$k must be a number',
+        source: 'decider.json',
+      ),
+    };
+    final run = switch (json['run']) {
+      null => null,
+      final int n when n >= 0 => n,
+      _ => throw ParseFailure(
+        'rest_per_class.$label.run must be an int >= 0',
+        source: 'decider.json',
+      ),
+    };
+    return RestRule(conf: number('conf'), run: run, nullP: number('null'));
+  }
+
+  static const _keys = {'conf', 'run', 'null'};
+
+  /// `conf`: replaces `rest_conf` for this word.
+  final double? conf;
+
+  /// `run`: replaces `rest_run` for this word.
+  final int? run;
+
+  /// `null`: replaces `rest_null` for this word.
+  final double? nullP;
+}
+
+/// `model/decider.json` -> object `"cnn"` (AI-SPEC v3.5 §5).
 ///
 /// Only the keys of the spec are read; `confirm_rf` is always false in the app
 /// and ignored. The v3.3 keys (`pair_level`, `confirm_on_rest`, `rest_conf`,
-/// `rest_run`, `rest_null`) are optional: their defaults give exactly the
-/// v3.2.1 behaviour, so an older `decider.json` still works.
+/// `rest_run`, `rest_null`) and the v3.5 key `rest_per_class` are optional:
+/// their defaults give exactly the v3.2.1 behaviour, so an older
+/// `decider.json` still works.
 @immutable
 class DeciderConfig {
   const new({
@@ -162,6 +219,7 @@ class DeciderConfig {
     this.restConf = 0,
     this.restRun = 0,
     this.restNull = 1,
+    this.restPerClass = const {},
   });
 
   factory parse(String jsonText) {
@@ -232,6 +290,18 @@ class DeciderConfig {
       final num n => n.toDouble(),
       _ => throw ParseFailure('$k must be a number', source: 'decider.json'),
     };
+    // v3.5: absent = no word has its own conditions (v3.3).
+    final restPerClass = switch (j['rest_per_class']) {
+      null => const <String, RestRule>{},
+      final Map<String, Object?> m => Map<String, RestRule>.unmodifiable({
+        for (final MapEntry(:key, :value) in m.entries)
+          key: RestRule.fromJson(key, value),
+      }),
+      _ => throw const ParseFailure(
+        'rest_per_class must be an object',
+        source: 'decider.json',
+      ),
+    };
     return DeciderConfig(
       smooth: smooth,
       activeSeconds: seconds('active_s'),
@@ -245,6 +315,7 @@ class DeciderConfig {
       restConf: number('rest_conf', 0),
       restRun: count('rest_run'),
       restNull: number('rest_null', 1),
+      restPerClass: restPerClass,
     );
   }
 
@@ -278,6 +349,19 @@ class DeciderConfig {
   /// `null` was this low or lower. Default 1.
   final double restNull;
 
+  /// `rest_per_class` (v3.5): a word's own `conf` / `run` / `null` for a
+  /// word signed alone; `confirm_on_rest` stays global. Default empty.
+  final Map<String, RestRule> restPerClass;
+
+  /// `rest_conf` for [label]: its own value, else the global one.
+  double restConfFor(String label) => restPerClass[label]?.conf ?? restConf;
+
+  /// `rest_run` for [label]: its own value, else the global one.
+  int restRunFor(String label) => restPerClass[label]?.run ?? restRun;
+
+  /// `rest_null` for [label]: its own value, else the global one.
+  double restNullFor(String label) => restPerClass[label]?.nullP ?? restNull;
+
   /// Model runs per second (AI-SPEC §5: one run = 0.2 s).
   static const double runsPerSecond = AiSpec.sampleRateHz / AiSpec.step;
 
@@ -287,8 +371,23 @@ class DeciderConfig {
   /// `confirm_s` in model runs, rounded like `live.py` (Python `round`).
   int get confirmSteps => roundHalfEven(confirmSeconds * runsPerSecond);
 
-  /// Checks that every `per_class` label exists in [labels].
+  /// Checks that every `per_class` and `rest_per_class` label exists in
+  /// [labels], and that `rest_per_class` names only words.
   void validateAgainst(Labels labels) {
+    for (final label in restPerClass.keys) {
+      if (labels.indexOf(label) == null) {
+        throw ParseFailure(
+          'rest_per_class names unknown label "$label"',
+          source: 'decider.json',
+        );
+      }
+      if (!labels.isWord(label)) {
+        throw ParseFailure(
+          'rest_per_class names "$label", which is not a word',
+          source: 'decider.json',
+        );
+      }
+    }
     for (final (name, l) in [
       ('idle', idle),
       ('tentative', tentative),

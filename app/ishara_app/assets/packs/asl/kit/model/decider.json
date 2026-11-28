@@ -34,6 +34,13 @@
         "you": 0.7
       }
     },
-    "rest_null": 0.03
+    "rest_null": 0.03,
+    "rest_per_class": {
+      "one": {
+        "null": 0.05,
+        "conf": 0.6,
+        "run": 1
+      }
+    }
   }
 }
