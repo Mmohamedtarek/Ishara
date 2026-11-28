@@ -918,3 +918,21 @@ The 10b work from 2026-10-17 (local WIP on `step10`) applied as one 3-way patch,
 **Project id out of git (2026-11-28):** the real project's id is no longer in any tracked file (docs say "the real Firebase project"); `firebase_defines.py` checks exactly one project and the app id, `--expect-project <id>` optional, and never prints the id; the guard test reads the id from the local `google-services.json` and fails if a tracked file holds it (mutation-checked; skipped where the file is absent, i.e. CI).
 
 **Open (deferred by the user, 2026-11-28):** integration tests on the phone (`tools/run_integration_phone.sh`); the real-account checklist; CI goldens from the runner (after the push).
+
+## Release v1.0 (2026-11-28, branch `release/v1.0` from `origin/main` c5e7669, Linux laptop; not pushed)
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Branch from `origin/main` c5e7669 (AI v3.5) | user | ✓ |
+| 2 | Merge `feature/backend-10b`; conflict `.gitignore` only, both sides kept | user | ✓ merge 299ce4b |
+| 3 | Merge `app-v3.3` (with the `ai-v3.3` commits); conflicts DECISIONS / PROGRESS, every entry kept in date order | user | ✓ merge 7372d29; every line of both sides present except 5 lines one side had edited on purpose (C8 updated by v3.3; the old phone serial removed by 10b) |
+| 4 | Kit v3.5 through `sync_kit.sh`; `rest_per_class` as the v3.5 README and `decider.json` say; Decider tests; test vectors and 88 mock files | user; AI-SPEC v3.5 §5 | ✓ kit copied into `app/Ishara-Mobile-Kit/` (K35-1, commit 9dd227f), spec and README v3.5; `verify_kit.py` OK; `DeciderConfig.restPerClass` + `Decider`; `test/recognition/decider_v35_test.dart` (13 tests; with the Decider on the global values 4 fail); test vectors and mock 88/88 ✓ |
+| 5 | `hw-thumb`, `hw-five`, `step10` not merged | user | ✓ |
+| 6 | Version 1.0.0+1 | user | ✓ no branch had a higher build number |
+| 7 | Release signing from `android/key.properties`, clear failure | user | ✓ `checkReleaseSigning` before `preReleaseBuild`; checked: file missing, keys missing (names only), keystore missing; root `.gitignore` + guard test (key.properties, no keystore tracked) |
+
+**Checks (laptop):** analyze `--fatal-infos` 0 issues, format clean; full suite **1283 passed, 5 skipped** (local), **1207 passed, 5 skipped** (`CI=true`: the 76 Linux golden variants are not run; no other difference); against the step 10b run no test was lost (two renamed: C8 by v3.3, the `.gitignore` guard); rules 29/29; `verify_kit.py` on `app/Ishara-Mobile-Kit`: gaps OK, test vectors OK, mock 88/88. No golden image changed.
+
+**For the AI team:** the kit's test vectors and mock files don't exercise `rest_per_class`: `verify_kit.py` with `rest_per_class` ignored still gives OK and 88/88, and the app's kit tests pass with the Decider on the global values. Only the app's own tests (`decider_v35_test.dart`) cover it; a vector where `one` is confirmed alone only through its own conditions would close the gap.
+
+**Open:** release keystore (the user creates it: keytool command in the summary); the signed release APK; integration tests and the real-account checklist on the phone (deferred); CI goldens from the runner (after a push).

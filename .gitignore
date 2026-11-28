@@ -36,3 +36,10 @@ firebase.defines.json
 .firebaserc
 firebase-debug.log
 firestore-debug.log
+
+# Release signing (v1.0): the key's details and the keystore never enter git
+# (android/key.properties; the keystore lives outside the repo). Guarded by
+# the same test.
+key.properties
+*.jks
+*.keystore

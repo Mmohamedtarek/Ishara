@@ -3,9 +3,10 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Step 10b: the repo is public. The Firebase project's config files stay on
-/// the developer's machine (the root `.gitignore`), and no Google API key is
-/// ever committed. Nothing here prints a file's contents.
+/// Step 10b: the repo is public. The Firebase project's config files and the
+/// release signing details (v1.0) stay on the developer's machine (the
+/// repo's `.gitignore` files), and no Google API key or keystore is ever
+/// committed. Nothing here prints a file's contents.
 void main() {
   /// The config files, at the places they would be put.
   const configFiles = [
@@ -14,6 +15,10 @@ void main() {
     'app/ishara_app/lib/firebase_options.dart',
     'app/ishara_app/firebase.defines.json',
     'firebase/.firebaserc',
+    'app/ishara_app/android/key.properties',
+    'app/ishara_app/android/app/upload-keystore.jks',
+    'ishara-release.jks',
+    'ishara-release.keystore',
   ];
 
   String git(List<String> args, {Set<int> ok = const {0}}) {
@@ -36,13 +41,23 @@ void main() {
     expect(tracked, isEmpty);
   });
 
-  test('the repo .gitignore (not only a local exclude) ignores each one', () {
+  test('a tracked .gitignore (not only a local exclude) ignores each one', () {
     for (final f in configFiles) {
       // -v names the rule that matched; .gitignore rules win over
-      // .git/info/exclude, so a local exclude alone would show here
+      // .git/info/exclude, so a local exclude alone would show here (the
+      // deepest .gitignore wins, e.g. android/.gitignore for key.properties)
       final out = git(['check-ignore', '-v', '--no-index', f], ok: {0, 1});
-      expect(out, startsWith('.gitignore:'), reason: '$f is not ignored');
+      expect(
+        out,
+        matches(RegExp(r'^([^\s:]+/)?\.gitignore:')),
+        reason: '$f is not ignored',
+      );
     }
+  });
+
+  test('no keystore is tracked', () {
+    final keystores = git(['ls-files', '*.jks', '*.keystore', '*.p12']);
+    expect(keystores.trim(), isEmpty);
   });
 
   test('no tracked file holds a Google API key', () {

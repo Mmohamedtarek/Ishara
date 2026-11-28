@@ -6,12 +6,32 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.Base64
+import java.util.Properties
 
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// --- Release signing (v1.0) -------------------------------------------------
+// The release key's details live in android/key.properties, git-ignored like
+// the Firebase files (the repo is public), with the keystore outside the
+// repo. A release build without them stops (checkReleaseSigning) instead of
+// signing with the debug key. Debug builds, CI and the tests don't need them.
+// Nothing here prints a value from the file.
+val keyPropertiesFile: File = rootProject.file("key.properties")
+val keyProperties = Properties().apply {
+    if (keyPropertiesFile.isFile) keyPropertiesFile.inputStream().use { load(it) }
+}
+val signingKeys = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+val missingSigningKeys = signingKeys.filter { keyProperties.getProperty(it).isNullOrBlank() }
+// storeFile: absolute, or relative to android/
+val releaseKeystore: File? = keyProperties.getProperty("storeFile")
+    ?.takeIf { it.isNotBlank() }
+    ?.let { File(it).let { f -> if (f.isAbsolute) f else rootProject.file(it) } }
+val releaseSigningReady =
+    keyPropertiesFile.isFile && missingSigningKeys.isEmpty() && releaseKeystore?.isFile == true
 
 // --- Backend (accounts and sync, step 10b) ---------------------------------
 // `--dart-define=BACKEND=fake|emulator|firebase` (none = fake). The repo is
@@ -249,11 +269,22 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseSigningReady) {
+                storeFile = releaseKeystore
+                storePassword = keyProperties.getProperty("storePassword")
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Only the release key (android/key.properties); never the debug
+            // key. Without it, checkReleaseSigning stops the build.
+            signingConfig = if (releaseSigningReady) signingConfigs.getByName("release") else null
         }
         if (moonshineBrokenModelTest) {
             create("moonshineBrokenTest") {
@@ -379,12 +410,43 @@ val fetchSherpaOnnx = tasks.register("fetchSherpaOnnx") {
     }
 }
 
-// Release builds need the models; debug builds and CI work without them
-// (the language then falls back to Google). Every build needs sherpa-onnx.
+val checkReleaseSigning = tasks.register("checkReleaseSigning") {
+    group = "ishara"
+    description = "Fails unless android/key.properties names a keystore that exists (release signing)."
+    doLast {
+        val problem = when {
+            !keyPropertiesFile.isFile -> "android/key.properties is missing."
+            missingSigningKeys.isNotEmpty() ->
+                "android/key.properties has no value for: ${missingSigningKeys.joinToString(", ")}."
+            releaseKeystore?.isFile != true ->
+                "the keystore named by storeFile in android/key.properties doesn't exist."
+            else -> null
+        }
+        if (problem != null) {
+            throw GradleException(
+                """
+                |Release signing: $problem
+                |A release build is signed with the Ishara release key, never the debug key.
+                |Create android/key.properties (git-ignored) with:
+                |  storeFile=<path to the .jks, absolute or relative to android/>
+                |  storePassword=<keystore password>
+                |  keyAlias=ishara
+                |  keyPassword=<key password>
+                |(see app/PROGRESS.md, release v1.0, for the keytool command)
+                """.trimMargin(),
+            )
+        }
+    }
+}
+
+// Release builds need the models and the release key; debug builds and CI
+// work without them (the language then falls back to Google). Every build
+// needs sherpa-onnx.
 tasks.configureEach {
     if (name == "preReleaseBuild" || name == "preMoonshineBrokenTestBuild") {
         dependsOn(checkMoonshineModel, checkEgyptalkModel)
     }
+    if (name == "preReleaseBuild") dependsOn(checkReleaseSigning)
     if (Regex("^pre.*Build$").matches(name)) dependsOn(fetchSherpaOnnx)
 }
 

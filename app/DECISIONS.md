@@ -234,6 +234,15 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | K33-1 | The app follows **AI-SPEC v3.3** (Kit v3.3, branch `ai-v3.3`, commits add8c1e and e9ed90c): `pair_level` and a word signed alone (`confirm_on_rest`, `rest_conf`, `rest_run`, `rest_null`, the `pending_*` state) in the Decider (§5), and the glove restart in the gap rule (§4: the 11th dropped sample in a row is a real gap; any sample that isn't dropped sets the count to 0). Copied line for line from the pseudo-code. The new keys are optional; their defaults (`active`, 0, 0, 0, 1) give exactly the v3.2.1 behaviour, checked against the kit v3.2.3 Decider vectors. |
 | K33-2 | Work on branch `app-v3.3` from `origin/ai-v3.3`, in the worktree `../Ishara-v3.3`; `AI/` and `app/Ishara-Mobile-Kit/` unchanged, the kit reaches the app only through `sync_kit.sh`. |
 
+## Release v1.0 (2026-11-28)
+| ID | Decision |
+|---|---|
+| R1-1 | (user) Release branch `release/v1.0` from `origin/main` c5e7669 (AI v3.5): merges `feature/backend-10b` (talk voice, Moonshine, EgypTalk, step 10b) and `app-v3.3` (Kit v3.3 with the `ai-v3.3` commits). Not merged: `hw-thumb`, `hw-five`, `step10`. |
+| K35-1 | (user) Kit v3.5: the AI team delivered it only in `AI/Ishara-AI-v3-5/_kit_v3.5` (model, mock, test). The app team copied it byte for byte into `app/Ishara-Mobile-Kit/` (one commit, the user's choice, an exception to "never change") and updated the kit's `AI-SPEC.md` §5 and `README.md` to v3.5 (`rest_per_class`, as in `live.py` and `tests/verify_kit.py`); then `sync_kit.sh` as always. |
+| K35-2 | `rest_per_class`: for the pending word, `conf`, `run` and `null` replace `rest_conf`, `rest_run`, `rest_null` when given; a word not listed, or a field not given, uses the global value; `confirm_on_rest` stays global. Without the key the Decider is exactly v3.3. |
+| R1-2 | (user) App version 1.0.0+1 (no branch had a build number above 1). |
+| R1-3 | (user) Release signing: `android/key.properties` (git-ignored, like the Firebase files; keystore outside the repo). A release build without it, with a key missing, or with a keystore that doesn't exist stops (`checkReleaseSigning`); release is never signed with the debug key. Debug builds, CI and the tests don't need it. The user creates the keystore; no password is ever asked for or written by the assistant. |
+
 ## Backend
 | ID | Decision |
 |---|---|
@@ -432,3 +441,5 @@ User decisions use the IDs from `PHASE0-REPORT.md` §7 (answered 2026-10-08, aft
 | 2026-10-23 | The count of samples dropped in a row is also set to 0 by a full reset (reconnect, new `#CAL`). | §4: the first sample after a reset is accepted as is, and any sample that isn't dropped sets the count to 0; the Python gap test has no reset, so this is the same rule. |
 | 2026-10-23 | The kit v3.2.3 Decider vectors (config, probabilities, events) are kept as a test fixture, `test/fixtures/kit_v3_2_3_decider_vectors.json` (from `main` b30507e), not as a kit file. | The kit folder now holds v3.3; the defaults (K33-1) stay tested against the old numbers. |
 | 2026-10-23 | `test/bench/kit_numbers_test.dart` (bench tag, skipped in normal runs) plays every mock file of any kit through the app's own recognizer and writes the words, events, Learn match % and top label per event; `ISHARA_KIT`, `ISHARA_MOCK`, `ISHARA_RULES=v3.2.1`, `ISHARA_OUT`. | The v3.2.3 / v3.3 comparison (PROGRESS) can be re-run for the next kit. |
+| 2026-11-28 | `rest_per_class` entries are checked strictly (an object; `conf` / `null` numbers, `run` an int >= 0; any other key is a `ParseFailure`; labels must be words in `labels.txt`): a misspelt key would otherwise silently fall back to the global value and change when a sign is confirmed. `live.py` ignores unknown keys; the kit's file has none. | AI-SPEC v3.5 §5; sign-correctness |
+| 2026-11-28 | `moonshineBrokenTest` (test-only APK) keeps the debug key; only `release` needs `key.properties`. | R1-3 |
