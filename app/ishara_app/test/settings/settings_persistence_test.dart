@@ -51,7 +51,8 @@ void main() {
       ..setBigText(on: true)
       ..setHighContrast(on: true)
       ..setVibrate(on: true)
-      ..setSubtitles(on: false);
+      ..setSubtitles(on: false)
+      ..setMicTap(on: true);
     c.read(developerModeProvider.notifier).set(on: true);
     await c.read(signSpeedProvider.notifier).save(.5);
     await c.read(savedCharacterProvider.notifier).save('nour');
@@ -68,6 +69,7 @@ void main() {
         highContrast: true,
         vibrate: true,
         subtitles: false,
+        micTap: true,
       ),
     );
     expect(again.read(developerModeProvider), isTrue);
@@ -80,6 +82,7 @@ void main() {
         SettingsStore.kLanguage,
         SettingsStore.kSignSpeed,
         SettingsStore.kDeveloper,
+        SettingsStore.kMicTap,
       ]),
     );
     await SettingsStore(kv).clear();
@@ -92,6 +95,7 @@ void main() {
     expect(s.themeMode, ThemeMode.system);
     expect(s.subtitles, isTrue);
     expect(s.vibrate, isFalse);
+    expect(s.micTap, isFalse, reason: 'hold to talk by default');
     expect(c.read(signSpeedProvider), 1);
     expect(c.read(developerModeProvider), isFalse);
   });

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,9 +17,17 @@ import 'package:ishara_app/l10n/gen/app_localizations.dart';
 /// (ASL; ArSL shows "coming soon", sign rule 8), the voice. Every answer is
 /// saved as it is chosen (S6-2). The avatar choice appears only when there is
 /// more than one character (`AvatarCast.showPicker`, S5-13): with Nour alone
-/// there is none.
+/// there is none. Continue: "I sign" goes on to Pair; "I speak" needs no
+/// glove, so it finishes onboarding and opens Talk (R1-4).
 class SetupScreen extends ConsumerWidget {
   const new({super.key});
+
+  /// "I speak" (R1-4): no Pair, no Calibrate, nothing about a glove saved.
+  static Future<void> _finish(BuildContext context, ProfileController p) async {
+    final router = GoRouter.of(context);
+    await p.finishOnboarding();
+    router.go(AppRoutes.talk);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -97,7 +107,9 @@ class SetupScreen extends ConsumerWidget {
             key: const ValueKey('setup-continue'),
             label: l.continueLabel,
             arrow: true,
-            onPressed: () => context.push(AppRoutes.pair),
+            onPressed: () => profile.role == UserRole.speak
+                ? unawaited(_finish(context, p))
+                : unawaited(context.push(AppRoutes.pair)),
           ),
         ],
       ),

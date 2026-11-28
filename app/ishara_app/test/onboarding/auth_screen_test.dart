@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ishara_app/core/auth/auth_repository.dart';
 import 'package:ishara_app/features/onboarding/presentation/auth_screen.dart';
 
 import '../support/screen_harness.dart';
@@ -59,6 +60,63 @@ void main() {
     await tapIt(t, find.byKey(const ValueKey('auth-submit')));
     expect(find.text('Wrong email or password.'), findsOneWidget);
     expect(h.auth.currentUser, isNull);
+  });
+
+  testWidgets('the name: at most 100 characters, on its field (step 10b)', (
+    t,
+  ) async {
+    final h = await pumpScreen(t, const AuthScreen(signUp: true));
+    await t.enterText(field('auth-name'), 'M' * 101);
+    await t.enterText(field('auth-email'), 'mona@example.com');
+    await t.enterText(field('auth-password'), 'secret123');
+    await tapIt(t, find.byKey(const ValueKey('auth-submit')));
+    expect(find.text('Name must be at most 100 characters'), findsOneWidget);
+    expect(t.widget<TextField>(field('auth-name')).focusNode!.hasFocus, isTrue);
+    expect(h.auth.currentUser, isNull);
+    await t.enterText(field('auth-name'), 'M' * 100);
+    await tapIt(t, find.byKey(const ValueKey('auth-submit')));
+    expect(h.auth.currentUser?.name, 'M' * 100);
+    await t.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets("the server's field problems land on their fields (step 10b)", (
+    t,
+  ) async {
+    final h = Harness();
+    await pumpScreen(t, const AuthScreen(signUp: true), harness: h);
+    await t.enterText(field('auth-name'), 'Mona');
+    await t.enterText(field('auth-email'), 'mona@example.com');
+    await t.enterText(field('auth-password'), 'secret123');
+    h.auth.failNext = AuthProblem.weakPassword;
+    await tapIt(t, find.byKey(const ValueKey('auth-submit')));
+    expect(find.text('Password must be at least 8 characters'), findsOneWidget);
+    expect(
+      t.widget<TextField>(field('auth-password')).focusNode!.hasFocus,
+      isTrue,
+    );
+    h.auth.failNext = AuthProblem.invalidEmail;
+    await tapIt(t, find.byKey(const ValueKey('auth-submit')));
+    expect(find.text('Enter a valid email address'), findsOneWidget);
+    h.auth.failNext = AuthProblem.tooManyRequests;
+    await tapIt(t, find.byKey(const ValueKey('auth-submit')));
+    expect(find.textContaining('Too many'), findsOneWidget);
+  });
+
+  testWidgets('accounts off this run (Firebase could not start): says so, '
+      'the guest way stays (N29)', (t) async {
+    final h = Harness();
+    await pumpScreen(t, const AuthScreen(signUp: false), harness: h);
+    await t.enterText(field('auth-email'), 'a@b.co');
+    await t.enterText(field('auth-password'), '12345678');
+    h.auth.failNext = AuthProblem.unavailable;
+    await tapIt(t, find.byKey(const ValueKey('auth-submit')));
+    expect(
+      find.text(
+        "Accounts aren't available right now. You can keep using Ishara "
+        'as a guest.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('offline', (t) async {

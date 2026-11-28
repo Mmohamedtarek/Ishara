@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/core/conversation/conversation_providers.dart';
+import 'package:ishara_app/core/conversation/conversation_repository.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/message_bubble.dart';
+import 'package:ishara_app/features/talk/application/talk_speech_controller.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
 /// `#feed`: "Today" (D1), then today's messages, newest at the bottom (it
@@ -57,7 +59,13 @@ class _TalkFeedState extends ConsumerState<TalkFeed> {
         for (final (i, m) in today.indexed) ...[
           const SizedBox(height: 8),
           // by position: two identical messages are still two widgets
-          MessageBubble(m, key: ValueKey(i)),
+          MessageBubble(
+            m,
+            key: ValueKey(i),
+            segments: m.side == MessageSide.them
+                ? ref.read(talkSpeechProvider.notifier).segmentsFor(m)
+                : null,
+          ),
         ],
       ],
     );

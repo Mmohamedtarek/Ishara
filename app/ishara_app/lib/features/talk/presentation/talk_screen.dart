@@ -1,7 +1,12 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ishara_app/core/avatar/avatar_host.dart';
 import 'package:ishara_app/core/device/keep_screen_on.dart';
+import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/ishara_icon.dart';
 import 'package:ishara_app/core/ui/onboarding_ui.dart';
@@ -43,18 +48,24 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   /// Kept: [dispose] can't use `ref` (the widget is unmounting).
   late final KeepScreenOn _keepOn = ref.read(keepScreenOnProvider);
   late final TalkGlove _glove = ref.read(talkGloveProvider.notifier);
+  late final TalkSpeech _speech;
 
   @override
   void initState() {
     super.initState();
+    // read now: [dispose] can't use `ref`
+    _speech = ref.read(talkSpeechProvider.notifier)..preloadSpeech();
     _life = AppLifecycleListener(
       onStateChange: (s) {
         _foreground = s == AppLifecycleState.resumed;
         _syncScreen();
       },
       // Back from the phone's settings: a microphone permission given there
-      // clears the mic card's notice.
-      onResume: () => ref.read(talkSpeechProvider.notifier).recheck(),
+      // clears the mic card's notice. A model freed under memory pressure
+      // while away reloads now, not during the next press (TV-21).
+      onResume: () => _speech
+        ..recheck().ignore()
+        ..preloadSpeech(),
     );
   }
 
@@ -70,6 +81,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   void _syncScreen() {
     final on = _visible && _foreground;
     _glove.setActive(active: _visible);
+    // hold to talk: a recording never goes on out of sight (another tab,
+    // the app in the background): it is thrown away
+    if (!on) _speech.cancelMic().ignore();
     if (on == _screenOn) return;
     _screenOn = on;
     _keepOn.set(on: on).ignore();
@@ -81,6 +95,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     if (_screenOn ?? false) _keepOn.set(on: false).ignore();
     // Talk is gone: the glove's words are not Talk's any more.
     _glove.setActive(active: false);
+    _speech.cancelMic().ignore();
     super.dispose();
   }
 
@@ -193,7 +208,10 @@ class _TopBar extends ConsumerWidget {
 }
 
 /// D19 (Q-T3): what speech to text does with the other person's voice,
-/// shown from the first use of the mic until "OK".
+/// shown from the first use of the mic until "OK". Three lines at most, so
+/// the avatar keeps its room (2026-11-25); "More" (or a tap on the text)
+/// opens Settings › Privacy with the full text, which a screen reader reads
+/// here too.
 class _PrivacyLine extends ConsumerWidget {
   const new();
 
@@ -201,6 +219,13 @@ class _PrivacyLine extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
     final l = AppLocalizations.of(context);
+    final style = context.text.rowSubtitle.copyWith(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      height: 1.4,
+      color: c.sub,
+    );
+    void more() => unawaited(context.push(AppRoutes.privacy));
     return Container(
       key: const ValueKey('talk-privacy'),
       margin: const EdgeInsets.only(top: 8),
@@ -215,13 +240,34 @@ class _PrivacyLine extends ConsumerWidget {
           IsharaIcon('shield', size: 16, color: c.sub),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              l.privacySpeech,
-              style: context.text.rowSubtitle.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                height: 1.4,
-                color: c.sub,
+            child: Semantics(
+              key: const ValueKey('talk-privacy-more'),
+              button: true,
+              label: l.privacySpeech,
+              hint: l.talkPrivacyMore,
+              onTap: more,
+              excludeSemantics: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: more,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: '${talkPrivacyShort(l)} '),
+                      TextSpan(
+                        text: l.talkPrivacyMore,
+                        style: style.copyWith(
+                          fontWeight: FontWeight.w800,
+                          decoration: TextDecoration.underline,
+                          decorationColor: c.ring,
+                        ),
+                      ),
+                    ],
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: style,
+                ),
               ),
             ),
           ),
@@ -236,3 +282,11 @@ class _PrivacyLine extends ConsumerWidget {
     );
   }
 }
+
+/// The card's short text: on Android English and Arabic are turned into
+/// text on the phone (TV-21, TV-24); iOS has neither, so it never says so.
+@visibleForTesting
+String talkPrivacyShort(AppLocalizations l, {TargetPlatform? platform}) =>
+    (platform ?? defaultTargetPlatform) == TargetPlatform.android
+    ? l.talkPrivacyAndroid
+    : l.talkPrivacyIos;

@@ -15,6 +15,8 @@ import '../support/screen_harness.dart';
 class _Haptics implements Haptics {
   final pulses = <String>[];
   @override
+  Future<void> tap() async => pulses.add('tap');
+  @override
   Future<void> short() async => pulses.add('short');
   @override
   Future<void> long() async => pulses.add('long');
@@ -73,7 +75,11 @@ void main() {
         store: {'settings.vibrate': true},
         heard: ['hello'],
       );
-      await tapIt(t, _key('talk-mic'));
+      // hold to talk: press, speak, let go
+      final g = await t.startGesture(t.getCenter(_key('talk-mic')));
+      await settle(t, n: 3);
+      await t.pump(const Duration(seconds: 1));
+      await g.up();
       await settle(t, n: 10);
       expect(h.pulses, contains('short'));
       await t.pump(const Duration(seconds: 10));

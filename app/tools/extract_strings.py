@@ -267,6 +267,84 @@ STEP10_DRAFTS = {
     "storageFull": ("Your phone is out of storage, so Ishara can't save new changes. Free up some space.", "مساحة الموبايل خلصت، فإشارة مش قادر يحفظ التغييرات الجديدة. فضّي شوية مساحة.", "N1: once per session, when a change can't be saved (your wording, step 10a review)", None),
 }
 
+# Talk voice privacy texts (TV-21 2026-11-25, TV-24 2026-11-26), approved and
+# copied word for word from the ARB files (2026-11-27). privacySpeech replaces the
+# step 7 D19 text above; the others follow it. key: (en, ar, full description).
+TALKVOICE_PRIVACY = {
+    "privacySpeech": ("On Android, English and Arabic speech is turned into text on this phone. If that isn't available, Ishara uses your phone's speech recognizer, which on some phones sends the other person's voice to Google or Apple. Your signs and sentences stay on your phone unless you save a phrase.", "على أندرويد، الكلام الإنجليزي والعربي بيتحول لنص على الموبايل ده. لو ده مش متاح، إشارة بيستخدم خاصية التعرف على الكلام في موبايلك، وفي بعض الموبايلات بتبعت صوت الشخص التاني لجوجل أو أبل. إشاراتك وجملك بيفضلوا على موبايلك، إلا لو حفظت جملة.", "approved text (2026-11-26, TV-24: Moonshine for English, EgypTalk for Arabic): D19: Q-T3 privacy line"),
+    "talkPrivacyAndroid": ("Speech is turned into text on this phone. If that isn't available, the other person's voice may go to Google or Apple.", "الكلام بيتحول لنص على الموبايل ده. لو ده مش متاح، صوت الشخص التاني ممكن يروح لجوجل أو أبل.", "approved text (2026-11-26, TV-24): Talk's 3-line privacy card (D19); the full text is privacySpeech in Settings › Privacy (Android: English and Arabic on the phone)"),
+    "talkPrivacyIos": ("Speech to text uses your phone's speech recognizer, which may send the other person's voice to Google or Apple.", "تحويل الكلام لنص بيستخدم خاصية التعرف على الكلام في موبايلك، واللي ممكن تبعت صوت الشخص التاني لجوجل أو أبل.", "approved text (2026-11-25, TV-21): Talk's 3-line privacy card (D19); the full text is privacySpeech in Settings › Privacy (iOS: no on-phone English)"),
+    "talkPrivacyMore": ("More", "المزيد", "approved text (2026-11-25): the cue at the end of Talk's privacy card; tapping opens Settings › Privacy"),
+}
+
+# Talk voice (2026-10-26): hold to talk. TV1-TV15 approved 2026-10-26
+# (app/tools/out/talk_voice/drafts.html).
+TALKVOICE_DRAFTS = {
+    "micHoldStrong": ("Hold the mic and speak.", "دوس مطوّل على الميكروفون واتكلم.", "TV1: mic hint, hold to talk (replaces micHintStrong «Tap the mic and speak.»)", None),
+    "micTapStrong": ("Tap the mic, speak, then tap again.", "دوس على الميكروفون، اتكلم، وبعدين دوس تاني.", "TV2: mic hint in tap mode (screen reader, Switch Access, or the setting)", None),
+    "micHoldLabel": ("Hold to talk", "دوس مطوّل واتكلم", "TV3: screen reader, mic button, hold to talk (replaces D18 «Tap and speak»)", None),
+    "micStartLabel": ("Start recording", "ابدأ التسجيل", "TV4: screen reader, mic button in tap mode, not recording", None),
+    "micStopLabel": ("Stop and send", "وقّف وابعت", "TV5: screen reader, mic button in tap mode, recording", None),
+    "micCancelAction": ("Cancel recording", "الغي التسجيل", "TV6: screen reader action while recording (throws it away)", None),
+    "micCancelled": ("Recording cancelled", "التسجيل اتلغى", "TV7: screen reader announcement after a cancel", None),
+    "micSlideCancel": ("Slide to cancel", "اسحب للإلغاء", "TV8: while holding (your wording)", None),
+    "micReleaseCancel": ("Release to cancel", "سيب عشان تلغي", "TV9: after sliding far enough", None),
+    "micTooShort": ("Hold the mic while you speak.", "خليك دايس على الميكروفون وانت بتتكلم.", "TV10: released under 0.4 s, nothing sent", None),
+    "micFinishing": ("One moment…", "لحظة…", "TV11: after release, waiting for the last words", None),
+    "sttNothingHeardHold": ("Didn't catch that. Hold the mic and try again.", "مسمعتش كويس. دوس مطوّل على الميكروفون وجرّب تاني.", "TV12: D9 for hold to talk (tap mode keeps D9)", None),
+    "micReplyHold": ("Hold the mic to reply", "دوس مطوّل على الميكروفون عشان ترد", "TV13: face to face, under your words (replaces micReply in hold mode)", None),
+    "sMicTap": ("Tap to start and stop", "دوسة تبدأ ودوسة توقّف", "TV14: Settings › Accessibility", None),
+    "sMicTapS": ("Record with a tap instead of holding the mic. On by itself with TalkBack.", "سجّل بدوسة بدل ما تفضل دايس على الميكروفون. بيشتغل لوحده مع TalkBack.", "TV15: under TV14", None),
+}
+
+# Talk voice: words with no sign (user decision 2026-10-26). NS1 approved, NS2 approved
+# with the "few" form changed to «مالهمش» (user, 2026-10-27).
+TALKVOICE_NS_DRAFTS = {
+    "noSignYet": ("No sign yet", "لسه مالهاش إشارة", "NS1: screen reader, after a word the avatar has no sign for (caption and feed)", None),
+    "noSignCount": ("{n, plural, =1{1 word has no sign yet} other{{n} words have no sign yet}}", "{n, plural, =1{كلمة واحدة لسه مالهاش إشارة} =2{كلمتين لسه مالهمش إشارة} few{{n} كلمات لسه مالهمش إشارة} other{{n} كلمة لسه مالهاش إشارة}}", "NS2: under a heard sentence in the feed when some words had no sign", {"n": "int"}),
+}
+
+# Step 10b texts N2-N29 (app/tools/out/step10/drafts.html), approved by the
+# user word for word on 2026-11-28 (DECISIONS S10-14).
+# key: (en, ar, why, placeholders).
+STEP10B_DRAFTS = {
+    "verifyNote": ("Verify your email to keep your progress in your account. We sent you a link.", "أكّد إيميلك عشان تقدّمك يتحفظ في حسابك. بعتنالك لينك على الإيميل.", "N2: Settings, signed in, email not verified (Q-B3)", None),
+    "verifyResend": ("Resend email", "ابعت الإيميل تاني", "N3: Settings, resend the verification email", None),
+    "verifyResendIn": ("Resend in {s} s", "ابعته تاني بعد {s} ث", "N4: the resend button during its 60 s cooldown", {"s": "int"}),
+    "verifyCheck": ("I've verified", "أكّدت خلاص", "N5: Settings, check the verification again", None),
+    "toastVerifySent": ("Email sent. Check your inbox.", "الإيميل اتبعت. شوف صندوق الوارد.", "N6: toast after Resend", None),
+    "toastNotVerified": ("Not verified yet. Open the link in the email first.", "لسه متأكدش. افتح اللينك اللي في الإيميل الأول.", "N7: toast, I've verified but it isn't yet", None),
+    "toastVerified": ("Email verified. Your progress now syncs.", "الإيميل اتأكد. تقدّمك بقى بيتحفظ في حسابك.", "N8: toast, verified", None),
+    "syncDone": ("Synced with your account", "متزامن مع حسابك", "N9: Settings, signed in and verified, nothing waiting (S10-8)", None),
+    "syncPending": ("Not synced yet. Your changes will upload when you're online.", "لسه متزامنش. تغييراتك هتترفع أول ما يبقى فيه نت.", "N10: Settings, changes waiting (S10-8)", None),
+    "signOutUnsyncedTitle": ("Sign out anyway?", "تخرج برضه؟", "N11: sign-out with changes not uploaded (S10-6)", None),
+    "signOutUnsyncedBody": ("Some changes haven't uploaded yet. If you sign out now, they'll be lost.", "فيه تغييرات لسه متترفعتش. لو خرجت دلوقتي هتضيع.", "N12: its body", None),
+    "deleteAccount": ("Delete account", "امسح الحساب", "N13: Settings row and the confirm button (Q-B1)", None),
+    "deleteAccountS": ("Your account and everything saved in it", "حسابك وكل اللي متسجّل فيه", "N14: the row's subtitle", None),
+    "deleteTitle": ("Delete your account?", "تمسح حسابك؟", "N15: confirm dialog title", None),
+    "deleteBody": ("This deletes {email} and everything saved in it, on every phone: settings, Learn progress and saved phrases. Conversations and emergency contacts on this phone are deleted too. This can't be undone.", "ده هيمسح {email} وكل اللي متسجّل فيه على كل الموبايلات: الإعدادات وتقدّمك في التعلّم والجمل المحفوظة. والمحادثات وأرقام الطوارئ اللي على الموبايل ده هتتمسح كمان. مينفعش ترجع في ده.", "N16: confirm dialog body", {"email": "String"}),
+    "deleteTypeEmail": ("Type your email to confirm", "اكتب إيميلك عشان تأكّد", "N17: the field in the confirm dialog", None),
+    "deleting": ("Deleting your account…", "بنمسح حسابك…", "N18: while deleting", None),
+    "deletePasswordTitle": ("Enter your password", "اكتب كلمة السر", "N19: the server asks for a recent sign-in", None),
+    "deletePasswordBody": ("For your safety, enter your password to finish deleting your account.", "عشان أمانك، اكتب كلمة السر عشان نكمّل مسح حسابك.", "N20: its body", None),
+    "continueAction": ("Continue", "كمّل", "N21: its button", None),
+    "deleteFailed": ("Couldn't delete your account. Check your connection and try again. Ishara will finish it the next time it opens.", "مقدرناش نمسح حسابك. اتأكد من النت وجرّب تاني. إشارة هيكمّل المسح أول ما تفتحه.", "N22: deletion failed (still pending)", None),
+    "toastDeleted": ("Your account was deleted.", "حسابك اتمسح.", "N23: toast, back on Welcome", None),
+    "privacyStoredPhone": ("Your conversations stay on this phone. They're never uploaded or backed up.", "محادثاتك بتفضل على الموبايل ده. عمرها ما بتترفع ولا بيتعملها نسخة احتياطية.", "N24: Privacy, replaces step 9 P3 (deleted): Learn progress now syncs", None),
+    "signOutUnverifiedBody": ("Your email isn't verified yet, so your phrases and Learn progress aren't in your account. They'll stay on this phone.", "إيميلك لسه متأكدش، فجملك وتقدّمك في التعلّم مش في حسابك. هيفضلوا على الموبايل ده.", "N26: sign-out dialog, email not verified (your wording)", None),
+    "syncParked": ("Some changes couldn't be saved to your account.", "فيه تغييرات متحفظتش في حسابك.", "N27: Settings sync line, writes the account refused three times (your wording)", None),
+    "errNameTooLong": ("Name must be at most 100 characters", "الاسم لازم يكون 100 حرف على الأكتر", "N28: sign-up name field, over 100 characters (same style as errPw)", None),
+    "privacySynced": ("With an account and a verified email, your settings, Learn progress and saved phrases are kept in your account, so they come back on another phone. Signing out removes them from this phone.", "لو عندك حساب وإيميلك متأكد، إعداداتك وتقدّمك في التعلّم والجمل المحفوظة بتتحفظ في حسابك، فترجعلك على أي موبايل تاني. ولما تخرج بتتمسح من الموبايل ده.", "N25: Privacy, replaces step 9 P4 (deleted): what syncs now", None),
+    "authErrUnavailable": ("Accounts aren't available right now. You can keep using Ishara as a guest.", "الحسابات مش متاحة دلوقتي. تقدر تكمّل استخدام إشارة كزائر.", "N29: sign in / create / reset when Firebase couldn't start (accounts off this run; user 2026-11-27)", None),
+}
+
+# Release v1.0 texts (user, 2026-11-28, approved as final with the request,
+# DECISIONS R1-4): getting in without a glove. key: (en, ar, why, placeholders).
+RELEASE_V1_TEXTS = {
+    "pairSkip": ("Skip for now", "تخطّى دلوقتي", "R1-4: Pair, onboarding only: finish onboarding without a glove and open Talk", None),
+    "pairSkipHint": ("You can pair your glove later in Settings.", "تقدر توصّل الجوانتي بعدين من الإعدادات.", "R1-4: under Skip for now", None),
+}
+
 # Prototype texts whose Arabic the user changed (key: (ar, why)).
 AR_CHANGED = {
     "starred": ("المحفوظة", "Starred = «المحفوظة» everywhere (step 9 review, 2026-10-15)"),
@@ -314,8 +392,6 @@ STEP9_DRAFTS = {
     # Privacy, About
     "privacyIntro": ("Ishara works on your phone. Here is what it keeps and where.", "إشارة بيشتغل على موبايلك. ده اللي بيحتفظ بيه ومكانه فين.", "P1", None),
     "privacyGlove": ("Your signs are recognized on this phone. Glove data never leaves it.", "إشاراتك بتتعرف على الموبايل ده. بيانات الجوانتي مش بتخرج منه.", "P2", None),
-    "privacyStored": ("Your conversations and your Learn progress stay on this phone.", "محادثاتك وتقدّمك في التعلّم بيفضلوا على الموبايل ده.", "P3", None),
-    "privacyPhrases": ("Starred phrases stay on this phone too. A later version will keep them in your account when you're signed in.", "الجمل المحفوظة بتفضل على الموبايل ده كمان. إصدار جاي هيحفظها في حسابك لما تكون مسجّل دخول.", "P4: Q-B4, sync comes with step 10", None),
     "privacyLocation": ("Your location is read only when you press SOS, to put it in the message you choose to send. It is never tracked, stored or uploaded.", "مكانك بيتقري بس لما تدوس SOS، عشان يتحط في الرسالة اللي تختار تبعتها. مش بيتتبّع ولا بيتحفظ ولا بيترفع.", "P5: Q-T4 phase 1", None),
     "privacyContacts": ("Emergency contacts stay on this phone and are never sent anywhere.", "أرقام الطوارئ بتفضل على الموبايل ده ومش بتتبعت لأي مكان.", "P6", None),
     "exportData": ("Export my data", "صدّر بياناتي", "P7", None),
@@ -481,6 +557,14 @@ def main() -> int:
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta
+        if key == "privacySpeech":
+            # talk voice: the new privacy line, then Talk's privacy card
+            for k, (te, ta, desc) in TALKVOICE_PRIVACY.items():
+                if k != key and k in out_en:
+                    print(f"error: talk voice privacy key {k} clashes with an existing key", file=sys.stderr)
+                    return 1
+                out_en[k], out_ar[k] = te, ta
+                out_en["@" + k] = {"description": desc}
 
     for key, (e, a, why, ph) in STEP7_NEW_DRAFTS.items():
         if key in out_en:
@@ -542,6 +626,46 @@ def main() -> int:
             return 1
         out_en[key], out_ar[key] = e, a
         meta = {"description": f"approved new text (step 10, 2026-10-17): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
+    for key, (e, a, why, ph) in TALKVOICE_DRAFTS.items():
+        if key in out_en:
+            print(f"error: talk voice draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"approved new text (talk voice, 2026-10-26): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
+    for key, (e, a, why, ph) in TALKVOICE_NS_DRAFTS.items():
+        if key in out_en:
+            print(f"error: no-sign draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"approved new text (talk voice, 2026-10-27): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
+    for key, (e, a, why, ph) in STEP10B_DRAFTS.items():
+        if key in out_en:
+            print(f"error: step 10b draft key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"approved new text (step 10b, 2026-11-28): {why}"}
+        if ph:
+            meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
+        out_en["@" + key] = meta
+
+    for key, (e, a, why, ph) in RELEASE_V1_TEXTS.items():
+        if key in out_en:
+            print(f"error: release v1.0 key {key} clashes with an existing key", file=sys.stderr)
+            return 1
+        out_en[key], out_ar[key] = e, a
+        meta = {"description": f"approved new text (release v1.0, 2026-11-28): {why}"}
         if ph:
             meta["placeholders"] = {k: {"type": v} for k, v in ph.items()}
         out_en["@" + key] = meta

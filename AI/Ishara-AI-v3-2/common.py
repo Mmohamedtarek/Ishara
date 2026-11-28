@@ -12,9 +12,31 @@ common.py — الحاجات المشتركة بين كل السكريبتات
 import glob
 import json
 import os
+import sys
 
 import numpy as np
 import pandas as pd
+
+
+# ===== الطباعة بالعربي على أي terminal =====
+def setup_console():
+    """
+    كل السكريبتات بتطبع عربي. على Windows لو الـ console مش UTF-8 (cp1252/cp1256)، أو الطباعة رايحة لملف أو pipe،
+    Python بيقع بـ UnicodeEncodeError. هنا بنخلي stdout و stderr (و stdin عشان input) UTF-8 دايمًا،
+    من غير ما نحتاج PYTHONUTF8. على Linux هي أصلاً UTF-8، فمفيش حاجة بتتغير.
+    """
+    for stream in (sys.stdout, sys.stderr, sys.stdin):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):    # مش TextIOWrapper (مثلاً متغيّر في test) أو مقفول
+            pass
+
+
+def show_help(doc):
+    """للسكريبتات اللي من غير argparse: -h أو --help بيطبع طريقة الاستخدام ويخرج من غير ما يشغّل حاجة"""
+    if any(a in ("-h", "--help") for a in sys.argv[1:]):
+        print((doc or "").strip())
+        raise SystemExit(0)
 
 # ===== شكل الداتا =====
 # كل سطر في ملفات data/*.csv:
@@ -89,7 +111,7 @@ def parse_glove_cal(line):
 def save_calib(person, cal, folder=CALIB_DIR):
     os.makedirs(folder, exist_ok=True)
     cal = dict(cal, person=person)
-    with open(os.path.join(folder, f"{person}.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(folder, f"{person}.json"), "w", encoding="utf-8", newline="\n") as f:   # LF زي Linux
         json.dump(cal, f, ensure_ascii=False, indent=1)
     return cal
 
@@ -100,6 +122,17 @@ def load_calib(person, folder=CALIB_DIR):
         return None
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def calib_arrays(cal):
+    """
+    (open، fist، gyro bias) من أي شكل معايرة. ملفات data/calib بتحفظ الـ bias باسم gyro_bias،
+    وسطر #CAL (والـ Kit بتاع الموبايل) باسم gyro_bias_raw، والاتنين بنفس الوحدة الخام.
+    قبل كده StreamRecognizer كان بيدور على gyro_bias_raw بس، فكان بيقع مع المعايرة المحفوظة.
+    """
+    bias = cal.get("gyro_bias_raw", cal.get("gyro_bias"))
+    return (np.asarray(cal["open"], float), np.asarray(cal["fist"], float),
+            np.asarray(bias if bias is not None else [0, 0, 0], float))
 
 
 def load_raw(folder="data"):
@@ -122,8 +155,7 @@ def calibration(df, folder="data"):
     for person, g in df.groupby("person"):
         cal = load_calib(person, cdir)
         if cal is not None:
-            calib[person] = (np.asarray(cal["open"], float), np.asarray(cal["fist"], float),
-                             np.asarray(cal.get("gyro_bias", [0, 0, 0]), float))
+            calib[person] = calib_arrays(cal)
             continue
         open_rows = g[g["label"] == CALIB_OPEN]
         fist_rows = g[g["label"] == CALIB_FIST]
@@ -183,6 +215,14 @@ def load_takes(folder="data"):
         y.append(label)
         persons.append(person)
     return np.stack(X), np.array(y), np.array(persons)
+
+
+def sign_people(y, persons):
+    """
+    الأشخاص اللي سجّلوا إشارات. أشخاص الـ mining (m1_0، m2_5، ...) عندهم other بس،
+    فلو اختبرنا عليهم "الدقة على أشخاص جداد" بتطلع أعلى من الحقيقة.
+    """
+    return sorted(set(persons[~np.isin(y, NON_WORDS)]))
 
 
 def context_windows(X, y, persons, copies=3, max_shift=30, seed=0):

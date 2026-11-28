@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:ishara_app/core/errors/failure.dart';
 import 'package:meta/meta.dart';
 
-/// Constants fixed by AI-SPEC v3.2.1 (not by the model files).
+/// Constants fixed by AI-SPEC v3.3 (not by the model files).
 abstract final class AiSpec {
   /// Samples per second (§4: one run every 0.2 s = 10 samples).
   static const sampleRateHz = 50;
@@ -17,12 +17,23 @@ abstract final class AiSpec {
   /// Raw values per sample (§1).
   static const channels = 11;
 
+  /// The hand at rest (§4); a word signed alone is confirmed after `rest`
+  /// steps (§5, v3.3).
+  static const rest = 'rest';
+
   /// Labels that are never shown or spoken (§4).
-  static const nonWords = {'rest', 'other'};
+  static const Set<String> nonWords = {rest, 'other'};
 
   /// BLE gap rule (§4): up to this many missing samples are filled in.
   static const maxFilledGap = 5;
+
+  /// Glove restart (§4, v3.3): up to this many samples in a row may be
+  /// dropped (duplicate or older `seq`); the next one is a real gap.
+  static const maxDroppedInARow = 10;
 }
+
+/// The three Decider levels (AI-SPEC §5), also the values of `pair_level`.
+enum DeciderLevel { idle, tentative, active }
 
 /// The model's output labels, in `model/labels.txt` order.
 @immutable
@@ -130,10 +141,69 @@ class LevelConfig {
   double thresholdFor(String label) => perClass[label] ?? confidence;
 }
 
-/// `model/decider.json` -> object `"cnn"` (AI-SPEC §5).
+/// `rest_per_class` (AI-SPEC v3.5 §5): one word's own conditions for a word
+/// signed alone. A null field uses the global `rest_conf` / `rest_run` /
+/// `rest_null`.
+@immutable
+class RestRule {
+  const new({this.conf, this.run, this.nullP});
+
+  /// One entry of `rest_per_class`: `{"conf": num, "run": int >= 0,
+  /// "null": num}`, each optional. Any other key is a [ParseFailure]: a
+  /// misspelt key would otherwise silently fall back to the global value.
+  factory fromJson(String label, Object? json) {
+    if (json is! Map<String, Object?>) {
+      throw ParseFailure(
+        'rest_per_class.$label must be an object',
+        source: 'decider.json',
+      );
+    }
+    final unknown = json.keys.where((k) => !_keys.contains(k)).toList();
+    if (unknown.isNotEmpty) {
+      throw ParseFailure(
+        'rest_per_class.$label has unknown keys ${unknown.join(', ')} '
+        '(conf, run, null)',
+        source: 'decider.json',
+      );
+    }
+    double? number(String k) => switch (json[k]) {
+      null => null,
+      final num n => n.toDouble(),
+      _ => throw ParseFailure(
+        'rest_per_class.$label.$k must be a number',
+        source: 'decider.json',
+      ),
+    };
+    final run = switch (json['run']) {
+      null => null,
+      final int n when n >= 0 => n,
+      _ => throw ParseFailure(
+        'rest_per_class.$label.run must be an int >= 0',
+        source: 'decider.json',
+      ),
+    };
+    return RestRule(conf: number('conf'), run: run, nullP: number('null'));
+  }
+
+  static const _keys = {'conf', 'run', 'null'};
+
+  /// `conf`: replaces `rest_conf` for this word.
+  final double? conf;
+
+  /// `run`: replaces `rest_run` for this word.
+  final int? run;
+
+  /// `null`: replaces `rest_null` for this word.
+  final double? nullP;
+}
+
+/// `model/decider.json` -> object `"cnn"` (AI-SPEC v3.5 §5).
 ///
-/// Only the keys of the spec are read. `confirm_rf` is always false in the app
-/// and ignored, and so are `live.py` extras such as `confirm_on_rest` (C8).
+/// Only the keys of the spec are read; `confirm_rf` is always false in the app
+/// and ignored. The v3.3 keys (`pair_level`, `confirm_on_rest`, `rest_conf`,
+/// `rest_run`, `rest_null`) and the v3.5 key `rest_per_class` are optional:
+/// their defaults give exactly the v3.2.1 behaviour, so an older
+/// `decider.json` still works.
 @immutable
 class DeciderConfig {
   const new({
@@ -144,6 +214,12 @@ class DeciderConfig {
     required this.idle,
     required this.tentative,
     required this.active,
+    this.pairLevel = DeciderLevel.active,
+    this.confirmOnRest = 0,
+    this.restConf = 0,
+    this.restRun = 0,
+    this.restNull = 1,
+    this.restPerClass = const {},
   });
 
   factory parse(String jsonText) {
@@ -193,6 +269,39 @@ class DeciderConfig {
         source: 'decider.json',
       ),
     };
+    // v3.3 keys: absent = the v3.2.1 default.
+    final pairLevel = switch (j['pair_level']) {
+      null => DeciderLevel.active,
+      'idle' => DeciderLevel.idle,
+      'tentative' => DeciderLevel.tentative,
+      'active' => DeciderLevel.active,
+      _ => throw const ParseFailure(
+        'pair_level must be "idle", "tentative" or "active"',
+        source: 'decider.json',
+      ),
+    };
+    int count(String k) => switch (j[k]) {
+      null => 0,
+      final int n when n >= 0 => n,
+      _ => throw ParseFailure('$k must be an int >= 0', source: 'decider.json'),
+    };
+    double number(String k, double byDefault) => switch (j[k]) {
+      null => byDefault,
+      final num n => n.toDouble(),
+      _ => throw ParseFailure('$k must be a number', source: 'decider.json'),
+    };
+    // v3.5: absent = no word has its own conditions (v3.3).
+    final restPerClass = switch (j['rest_per_class']) {
+      null => const <String, RestRule>{},
+      final Map<String, Object?> m => Map<String, RestRule>.unmodifiable({
+        for (final MapEntry(:key, :value) in m.entries)
+          key: RestRule.fromJson(key, value),
+      }),
+      _ => throw const ParseFailure(
+        'rest_per_class must be an object',
+        source: 'decider.json',
+      ),
+    };
     return DeciderConfig(
       smooth: smooth,
       activeSeconds: seconds('active_s'),
@@ -201,6 +310,12 @@ class DeciderConfig {
       idle: LevelConfig.fromJson(level('idle'), 'idle'),
       tentative: LevelConfig.fromJson(level('tentative'), 'tentative'),
       active: LevelConfig.fromJson(level('active'), 'active'),
+      pairLevel: pairLevel,
+      confirmOnRest: count('confirm_on_rest'),
+      restConf: number('rest_conf', 0),
+      restRun: count('rest_run'),
+      restNull: number('rest_null', 1),
+      restPerClass: restPerClass,
     );
   }
 
@@ -214,6 +329,39 @@ class DeciderConfig {
   final LevelConfig tentative;
   final LevelConfig active;
 
+  /// `pair_level`: the level a second word must pass to confirm a pending
+  /// tentative word. Default `active` (v3.2.1).
+  final DeciderLevel pairLevel;
+
+  /// `confirm_on_rest`: a word signed alone is confirmed after this many
+  /// `rest` steps in a row. 0 = off (default).
+  final int confirmOnRest;
+
+  /// `rest_conf`: the pending word's highest `conf` must reach this.
+  /// Default 0.
+  final double restConf;
+
+  /// `rest_run`: the pending word must have passed the tentative level this
+  /// many steps in a row at some point. Default 0.
+  final int restRun;
+
+  /// `rest_null`: at some step where the pending word was the top label,
+  /// `null` was this low or lower. Default 1.
+  final double restNull;
+
+  /// `rest_per_class` (v3.5): a word's own `conf` / `run` / `null` for a
+  /// word signed alone; `confirm_on_rest` stays global. Default empty.
+  final Map<String, RestRule> restPerClass;
+
+  /// `rest_conf` for [label]: its own value, else the global one.
+  double restConfFor(String label) => restPerClass[label]?.conf ?? restConf;
+
+  /// `rest_run` for [label]: its own value, else the global one.
+  int restRunFor(String label) => restPerClass[label]?.run ?? restRun;
+
+  /// `rest_null` for [label]: its own value, else the global one.
+  double restNullFor(String label) => restPerClass[label]?.nullP ?? restNull;
+
   /// Model runs per second (AI-SPEC §5: one run = 0.2 s).
   static const double runsPerSecond = AiSpec.sampleRateHz / AiSpec.step;
 
@@ -223,8 +371,23 @@ class DeciderConfig {
   /// `confirm_s` in model runs, rounded like `live.py` (Python `round`).
   int get confirmSteps => roundHalfEven(confirmSeconds * runsPerSecond);
 
-  /// Checks that every `per_class` label exists in [labels].
+  /// Checks that every `per_class` and `rest_per_class` label exists in
+  /// [labels], and that `rest_per_class` names only words.
   void validateAgainst(Labels labels) {
+    for (final label in restPerClass.keys) {
+      if (labels.indexOf(label) == null) {
+        throw ParseFailure(
+          'rest_per_class names unknown label "$label"',
+          source: 'decider.json',
+        );
+      }
+      if (!labels.isWord(label)) {
+        throw ParseFailure(
+          'rest_per_class names "$label", which is not a word',
+          source: 'decider.json',
+        );
+      }
+    }
     for (final (name, l) in [
       ('idle', idle),
       ('tentative', tentative),

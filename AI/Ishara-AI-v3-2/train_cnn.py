@@ -19,7 +19,8 @@ import sys
 
 import numpy as np
 
-from common import CHANNELS, LABELS, WINDOW, context_windows, load_takes, transition_windows
+from common import (CHANNELS, LABELS, WINDOW, context_windows, load_takes, setup_console, show_help, sign_people,
+                    transition_windows)
 
 EPOCHS = 40
 BATCH = 32
@@ -132,24 +133,29 @@ def export_tflite(model, X):
 
     # 1) float32 للموبايل (Flutter: tflite_flutter)
     data = converter().convert()
-    open(f"{NAME}.tflite", "wb").write(data)
-    print(f"ishara_cnn.tflite      {len(data) / 1024:6.1f} KB  ← للموبايل")
+    with open(f"{NAME}.tflite", "wb") as f:
+        f.write(data)
+    print(f"{NAME + '.tflite':22s} {len(data) / 1024:6.1f} KB  ← للموبايل")
 
     # 2) int8 للـ ESP32-S3 (TFLite Micro): أصغر 4 مرات تقريباً
+    # نوافذ المعايرة من كل الفئات: X مترتبة بالفئة، فأول 300 كانوا bye و call بس
+    # والـ int8 كان بيتظبط على مدى أرقام إشارتين بس
+    calib_idx = np.random.default_rng(0).choice(len(X), min(500, len(X)), replace=False)
     try:
         conv = converter()
         conv.optimizations = [tf.lite.Optimize.DEFAULT]
-        conv.representative_dataset = lambda: ([X[i:i + 1]] for i in range(min(300, len(X))))
+        conv.representative_dataset = lambda: ([X[i:i + 1]] for i in calib_idx)
         conv.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
         conv.inference_input_type = tf.int8
         conv.inference_output_type = tf.int8
         data = conv.convert()
-        open(f"{NAME}_int8.tflite", "wb").write(data)
-        print(f"ishara_cnn_int8.tflite {len(data) / 1024:6.1f} KB  ← للـ ESP32-S3")
+        with open(f"{NAME}_int8.tflite", "wb") as f:
+            f.write(data)
+        print(f"{NAME + '_int8.tflite':22s} {len(data) / 1024:6.1f} KB  ← للـ ESP32-S3")
     except Exception as e:                            # مش هيوقف الباقي لو فشل
         print("تحويل int8 مانجحش:", e)
 
-    with open("labels.txt", "w") as f:
+    with open("labels.txt", "w", encoding="utf-8", newline="\n") as f:     # LF: نفس الملف بالظبط على Windows و Linux
         f.write("\n".join(LABELS))
     print("labels.txt           ترتيب الفئات اللي الموديل بيطلعها")
 
@@ -162,8 +168,8 @@ def main():
     tf.random.set_seed(MEMBER - 1)
     X, y, persons = load_takes("data")
     y_idx = np.array([LABELS.index(label) for label in y])
-    people = sorted(set(persons))
-    print(f"{len(y)} take | {len(people)} أشخاص | شكل كل take {X.shape[1:]}\n")
+    people = sign_people(y, persons)                  # أشخاص الـ mining (other بس) مش بيتحسبوا في الدقة
+    print(f"{len(y)} take | {len(people)} أشخاص بيعملوا إشارات | شكل كل take {X.shape[1:]}\n")
 
     test_people = people if "--full" in sys.argv else ([] if MEMBER > 1 else people[-1:])
     correct = total = 0
@@ -182,9 +188,11 @@ def main():
     print("تدريب الموديل النهائي على كل الناس...")
     model = train(X, y, persons)
     model.save(f"{NAME}.keras")
-    print("ishara_cnn.keras       الموديل الأصلي")
+    print(f"{NAME + '.keras':22s} الموديل الأصلي")
     export_tflite(model, X)
 
 
 if __name__ == "__main__":
+    setup_console()
+    show_help(__doc__)
     main()

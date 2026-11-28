@@ -91,6 +91,39 @@ abstract final class SpeechToSign {
     return out;
   }
 
+  /// A word (not only punctuation) the avatar has no sign for: Talk greys
+  /// it and says "No sign yet" (NS1, user decision 2026-10-26).
+  static bool noSign(SignSegment s) =>
+      s.label == null && WordNormalizer.normalize(s.text).isNotEmpty;
+
+  /// How many heard words had no sign ([noSign]).
+  static int noSignWords(List<SignSegment> segments) => [
+    for (final s in segments)
+      if (noSign(s)) ...s.words,
+  ].length;
+
+  /// For the debug speech log: each segment's words, their normalized form,
+  /// the sign, and why there is none (`punctuation`, `noAvatar`: the
+  /// catalogue has the word but the avatar can't sign it, `notInCatalogue`).
+  static List<Map<String, Object?>> explain(
+    List<SignSegment> segments,
+    SignCatalogue catalogue,
+    SpokenLanguage lang,
+  ) => [
+    for (final s in segments)
+      {
+        'words': s.text,
+        'normalized': WordNormalizer.normalize(s.text),
+        'sign': s.label,
+        if (s.label == null)
+          'why': switch (WordNormalizer.normalize(s.text)) {
+            '' => 'punctuation',
+            final n when catalogue.labelFor(n, lang) != null => 'noAvatar',
+            _ => 'notInCatalogue',
+          },
+      },
+  ];
+
   /// Words i..i+n-1 can form one phrase: none is punctuation only, and no
   /// word before the last ends a sentence or clause.
   static bool _isPhrase(List<String> words, List<String> norm, int i, int n) {

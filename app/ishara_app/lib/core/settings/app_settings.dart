@@ -37,6 +37,11 @@ abstract class AppSettings with _$AppSettings {
     /// Settings › Subtitles under the avatar: Talk's caption (S9-2;
     /// prototype default on).
     @Default(true) bool subtitles,
+
+    /// Settings › Tap to start and stop: Talk's mic records with a tap to
+    /// start and a tap to send instead of hold to talk (2026-10-26; also
+    /// on by itself while a screen reader or Switch Access is on).
+    @Default(false) bool micTap,
   }) = _AppSettings;
 }
 
@@ -65,6 +70,7 @@ class AppSettingsController extends _$AppSettingsController {
       highContrast: flag(SettingsStore.kHighContrast, fallback: false),
       vibrate: flag(SettingsStore.kVibrate, fallback: false),
       subtitles: flag(SettingsStore.kSubtitles, fallback: true),
+      micTap: flag(SettingsStore.kMicTap, fallback: false),
     );
   }
 
@@ -99,6 +105,11 @@ class AppSettingsController extends _$AppSettingsController {
   void setVibrate({required bool on}) {
     state = state.copyWith(vibrate: on);
     _flag(SettingsStore.kVibrate, on: on);
+  }
+
+  void setMicTap({required bool on}) {
+    state = state.copyWith(micTap: on);
+    _flag(SettingsStore.kMicTap, on: on);
   }
 
   void setSubtitles({required bool on}) {

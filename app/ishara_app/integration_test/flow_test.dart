@@ -205,7 +205,12 @@ void main() {
       await t.pump(const Duration(milliseconds: 200));
     }
     plays.clear();
-    await tapAndWait(t, find.byKey(const ValueKey('talk-mic')));
+    // hold to talk: press, speak, let go
+    final mic = find.byKey(const ValueKey('talk-mic'));
+    await waitFor(t, mic);
+    final hold = await t.startGesture(t.getCenter(mic));
+    await t.pump(const Duration(seconds: 1));
+    await hold.up();
     final heard = DateTime.now().add(const Duration(seconds: 30));
     while (plays.isEmpty) {
       if (DateTime.now().isAfter(heard)) throw TimeoutException('no play');

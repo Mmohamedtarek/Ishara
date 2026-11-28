@@ -6,6 +6,7 @@ import 'package:ishara_app/core/logging/log.dart';
 import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:ishara_app/core/storage/legacy_store.dart';
 import 'package:ishara_app/core/storage/storage_health.dart';
+import 'package:ishara_app/core/sync/outbox.dart';
 import 'package:ishara_app/features/learn/domain/activity_event.dart';
 
 /// Learn's append-only activity log (Phase 0 model
@@ -88,16 +89,60 @@ class LocalActivityRepository implements ActivityRepository {
     _events.add(event);
     _changes.add(events);
     await storeOrKeepGoing(
-      () => _db
-          .into(_db.activityEntries)
-          .insert(
-            ActivityEntriesCompanion.insert(
-              id: event.id,
-              json: jsonEncode(json),
-            ),
-            mode: InsertMode.insertOrIgnore,
-          ),
+      () => _db.transaction(() async {
+        await _db
+            .into(_db.activityEntries)
+            .insert(
+              ActivityEntriesCompanion.insert(
+                id: event.id,
+                json: jsonEncode(json),
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+        await enqueue(_db, Synced.activity, event.id);
+      }),
     );
+  }
+
+  /// Every stored entry by id, as written (the sync reads them to send).
+  Map<String, Object?> get rawById => {
+    for (final r in _raw)
+      if (r is Map && r['id'] is String) r['id'] as String: r,
+  };
+
+  /// Events from the account (the sync): those not here yet are added
+  /// (append-only, Phase 0), not queued again.
+  Future<void> applyRemote(Iterable<ActivityEvent> remote) async {
+    final have = {for (final e in _events) e.id};
+    final fresh = [
+      for (final e in remote)
+        if (have.add(e.id)) e,
+    ];
+    if (fresh.isEmpty) return;
+    for (final e in fresh) {
+      _raw.add(e.toJson());
+      _events.add(e);
+    }
+    _changes.add(events);
+    await storeOrKeepGoing(
+      () => _db.batch(
+        (b) => b.insertAll(_db.activityEntries, [
+          for (final e in fresh)
+            ActivityEntriesCompanion.insert(
+              id: e.id,
+              json: jsonEncode(e.toJson()),
+            ),
+        ], mode: InsertMode.insertOrIgnore),
+      ),
+    );
+  }
+
+  /// Sign-out (S10-6): the account's Learn progress leaves the phone.
+  Future<void> clearAll() async {
+    _raw.clear();
+    _events.clear();
+    _changes.add(events);
+    await storeOrKeepGoing(() => _db.delete(_db.activityEntries).go());
   }
 
   /// The same shape as before step 10 (Privacy › Export keeps its format;

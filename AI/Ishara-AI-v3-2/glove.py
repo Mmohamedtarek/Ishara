@@ -11,28 +11,47 @@ import time
 from common import parse_glove_cal
 
 BAUD = 115200
+ESPRESSIF_VID = 0x303A                                # ESP32-S3 native USB (Windows: "USB Serial Device (COM5)")
+UART_VIDS = (0x10C4, 0x1A86)                          # CP210x (Silicon Labs) و CH340 / CH343 (WCH) على الـ DevKit
+PORT_HELP = ("حدد البورت بنفسك: python record.py water ahmed COM5   أو   python live.py --port COM5\n"
+             "  (على Windows: Device Manager ← Ports (COM & LPT). على Ubuntu: /dev/ttyACM0 أو /dev/ttyUSB0)")
 
 
 def find_port():
     from serial.tools import list_ports
     ports = list(list_ports.comports())
     for p in ports:                                   # ESP32-S3 (Espressif USB)
-        if p.vid == 0x303A:
+        if p.vid == ESPRESSIF_VID:
             return p.device
-    for p in ports:                                   # DevKit UART (CP2102 / CH343) أو Ubuntu
-        if p.device.startswith(("/dev/ttyACM", "/dev/ttyUSB")) or "USB" in (p.description or ""):
+    for p in ports:                                   # DevKit UART (CP2102 / CH343) بالـ VID، نفس الكلام على Windows و Ubuntu
+        if p.vid in UART_VIDS:
             return p.device
-    if len(ports) == 1:
-        return ports[0].device
-    names = ", ".join(p.device for p in ports) or "مفيش"
+    for p in ports:                                   # أي USB serial تاني: Ubuntu بالاسم، Windows بوصف الدرايفر
+        desc = f"{p.description or ''} {p.hwid or ''}".upper()
+        if p.device.startswith(("/dev/ttyACM", "/dev/ttyUSB")) or "USB" in desc:
+            return p.device
+    # بورتات Windows اللي جوه الجهاز نفسه (COM1، Intel AMT SOL، Bluetooth) عمرها ما تبقى الجلوف: الجلوف دايمًا USB
+    real = [p for p in ports if not (p.hwid or "").upper().startswith(("PCI\\", "ACPI\\", "BTHENUM\\"))
+            and "BLUETOOTH" not in (p.description or "").upper()]
+    if len(real) == 1:
+        return real[0].device
+    names = ", ".join(f"{p.device} ({p.description})" if p.description and p.description != "n/a" else p.device
+                      for p in ports) or "مفيش"
     raise SystemExit(f"مش لاقي الجلوف. البورتات الموجودة: {names}\n"
-                     "حدد البورت بنفسك: python record.py water ahmed COM5   (أو /dev/ttyACM0 على Ubuntu)")
+                     "اتأكد إن الجلوف متوصل بكابل داتا (مش شحن بس)، ولو بورد بـ CP210x أو CH340 اتأكد إن الدرايفر متسطب.\n"
+                     + PORT_HELP)
 
 
 def open_glove(port=None):
     import serial
     port = port or find_port()
-    ser = serial.Serial(port, BAUD, timeout=0.5)
+    try:
+        ser = serial.Serial(port, BAUD, timeout=0.5)
+    except serial.SerialException as e:
+        raise SystemExit(f"مش قادر أفتح البورت {port}: {e}\n"
+                         "  - لو البورت مستخدم (Serial Monitor بتاع Arduino، أو التطبيق، أو سكريبت تاني) اقفله الأول.\n"
+                         "  - على Ubuntu لو Permission denied: sudo usermod -aG dialout $USER واعمل logout.\n"
+                         + PORT_HELP)
     print(f"متوصل على {port} ... ثانيتين لحد البورد ما تقوم")
     time.sleep(2.0)                                   # فتح البورت بيعمل reset للـ DevKit
     ser.reset_input_buffer()

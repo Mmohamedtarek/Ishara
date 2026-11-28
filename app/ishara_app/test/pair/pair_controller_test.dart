@@ -188,4 +188,33 @@ void main() {
       expect(s().stage, PairStage.found);
     },
   );
+
+  group('skip (R1-4)', () {
+    test('while connecting: the connect is dropped and no glove is saved, '
+        'even when it still finishes', () async {
+      // this fake ignores the disconnect and still reaches "ready"
+      glove.connectTime = const Duration(milliseconds: 20);
+      await ctl().start();
+      await settle();
+      final connecting = ctl().connect(s().gloves.single);
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      expect(s().stage, PairStage.connecting);
+      await ctl().skip();
+      await connecting;
+      expect(OnboardingStore(kv).glove, isNull);
+      expect(s().stage, isNot(PairStage.connected));
+      expect(glove.commands.where((x) => x == 'disconnect'), hasLength(2));
+    });
+
+    test('stops the scan; start / scan again do nothing afterwards', () async {
+      await ctl().start();
+      await settle();
+      await ctl().skip();
+      await ctl().start();
+      await ctl().scanAgain();
+      await settle();
+      expect(glove.commands, ['scan']);
+      expect(OnboardingStore(kv).glove, isNull);
+    });
+  });
 }

@@ -82,9 +82,8 @@ void main() {
     expect(glove.device?.name, 'Ishara-M0CK');
   }
 
-  testWidgets('onboarding: account, setup, pair, calibrate, ready, talk', (
-    t,
-  ) async {
+  testWidgets('onboarding (I sign): account, setup, pair, calibrate, ready, '
+      'talk', (t) async {
     final store = await SharedPrefsKeyValueStore.open();
     await OnboardingStore(store).clear();
     await OnboardingStore(store).forgetGlove();
@@ -121,7 +120,8 @@ void main() {
     await tapKey(t, 'auth-submit');
     await waitFor(t, find.byKey(const ValueKey('screen-setup')));
     mark('setup');
-    await tapKey(t, 'setup-who-speak');
+    // I sign: the glove path (I speak skips Pair, R1-4)
+    await tapKey(t, 'setup-who-sign');
     await tapKey(t, 'setup-voice-en');
     await tapKey(t, 'setup-continue');
     await waitFor(t, find.byKey(const ValueKey('screen-pair')));
@@ -157,7 +157,7 @@ void main() {
 
     final saved = OnboardingStore(store);
     expect(saved.done, isTrue);
-    expect(saved.role, UserRole.speak);
+    expect(saved.role, UserRole.sign);
     expect(saved.glove?.name, startsWith('Ishara-'));
     mark('saved: ${saved.export()}');
   });
@@ -182,7 +182,7 @@ void main() {
     await tapKey(t, 'auth-guest');
     await waitFor(t, find.byKey(const ValueKey('screen-setup')));
     await linger(t);
-    await tapKey(t, 'setup-who-speak');
+    await tapKey(t, 'setup-who-sign');
     await linger(t, _pace ~/ 2);
     await tapKey(t, 'setup-voice-en');
     await linger(t, _pace ~/ 2);
@@ -217,8 +217,67 @@ void main() {
 
     final saved = OnboardingStore(store);
     expect(saved.done, isTrue);
-    expect(saved.role, UserRole.speak);
+    expect(saved.role, UserRole.sign);
     expect(saved.glove?.name, startsWith('Ishara-'));
     debugPrint('ONBOARDING guest saved: ${saved.export()}');
+  });
+
+  /// Onboarding from Welcome as a guest up to Setup, on the phone's store
+  /// with nothing saved.
+  Future<KeyValueStore> toSetup(WidgetTester t) async {
+    final store = await SharedPrefsKeyValueStore.open();
+    await OnboardingStore(store).clear();
+    await OnboardingStore(store).forgetGlove();
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [
+          keyValueStoreProvider.overrideWithValue(store),
+          appRouterProvider.overrideWith(
+            (ref) => buildRouter(initialLocation: AppRoutes.welcome),
+          ),
+        ],
+        child: const IsharaApp(),
+      ),
+    );
+    await tapKey(t, 'welcome-sign-in');
+    await tapKey(t, 'auth-guest');
+    await waitFor(t, find.byKey(const ValueKey('screen-setup')));
+    return store;
+  }
+
+  /// Done, and nothing about a glove saved (R1-4).
+  void expectDoneWithoutGlove(KeyValueStore store) {
+    final saved = OnboardingStore(store);
+    expect(saved.done, isTrue);
+    expect(saved.glove, isNull);
+    debugPrint('ONBOARDING saved: ${saved.export()}');
+  }
+
+  testWidgets('I speak: setup, then Talk (no Pair, no Calibrate)', (t) async {
+    final store = await toSetup(t);
+    await tapKey(t, 'setup-who-speak');
+    await tapKey(t, 'setup-continue');
+    await waitFor(t, find.byKey(const ValueKey('talk-mic-card')));
+    expect(find.byKey(const ValueKey('screen-pair')), findsNothing);
+    expect(find.byKey(const ValueKey('screen-calibrate')), findsNothing);
+    expect(OnboardingStore(store).role, UserRole.speak);
+    expectDoneWithoutGlove(store);
+  });
+
+  testWidgets('I sign: setup, pair, Skip for now, Talk', (t) async {
+    final store = await toSetup(t);
+    await tapKey(t, 'setup-who-sign');
+    await tapKey(t, 'setup-continue');
+    await waitFor(t, find.byKey(const ValueKey('screen-pair')));
+    expect(
+      find.text('You can pair your glove later in Settings.'),
+      findsOneWidget,
+    );
+    await tapKey(t, 'pair-skip');
+    await waitFor(t, find.byKey(const ValueKey('talk-mic-card')));
+    expect(OnboardingStore(store).role, UserRole.sign);
+    expectDoneWithoutGlove(store);
+    // the app starts on Talk from now on; pairing is offered there
+    expect(find.byKey(const ValueKey('talk-live-action')), findsOneWidget);
   });
 }

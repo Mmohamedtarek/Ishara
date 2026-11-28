@@ -1,0 +1,17 @@
+{
+  "name": "ishara-firebase",
+  "private": true,
+  "description": "Firestore security rules and their tests (step 10b). The Firebase CLI is not a dependency: use firebase-tools 15.33.0 on the PATH (CI installs it; locally the global CLI).",
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-ishara 'node --test test/*.test.js'",
+    "test:only": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

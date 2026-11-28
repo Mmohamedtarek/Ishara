@@ -44,10 +44,34 @@ class _FixedGlove extends TalkGlove {
 
 /// Talk's speech state fixed for one scenario.
 class _FixedTalk extends TalkSpeech {
-  new(this.fixed);
+  new(this.fixed, {this.levelNow = 0});
   final TalkSpeechState fixed;
+  final double levelNow;
   @override
-  TalkSpeechState build() => fixed;
+  TalkSpeechState build() {
+    setLevelForTest(levelNow);
+    return fixed;
+  }
+
+  // the state is fixed: a press only moves the mic (slide to cancel)
+  @override
+  Future<void> pressMic() async {}
+  @override
+  Future<void> releaseMic({
+    bool checkLength = true,
+    bool bySilence = false,
+  }) async {}
+  @override
+  Future<void> cancelMic() async {}
+
+  // the last heard sentence was signed this session: the feed greys its
+  // words with no sign
+  @override
+  List<SignSegment>? segmentsFor(TalkMessage message) =>
+      fixed.sentence.isNotEmpty &&
+          message.text == fixed.sentence.map((s) => s.text).join(' ')
+      ? fixed.sentence
+      : null;
 }
 
 // Every async provider Talk reads gets its value before the first frame
@@ -87,11 +111,15 @@ Widget _app(
   TalkSpeechState talk,
   List<TalkMessage> Function(AppLanguage) feed,
   TalkGloveState glove,
-  FakeGloveSource Function() source,
-) => ProviderScope(
+  FakeGloveSource Function() source, {
+  bool tapMode = false,
+  double level = 0,
+}) => ProviderScope(
   overrides: [
     appSettingsControllerProvider.overrideWith(
-      () => _Fixed(AppSettings(language: language, themeMode: mode)),
+      () => _Fixed(
+        AppSettings(language: language, themeMode: mode, micTap: tapMode),
+      ),
     ),
     appRouterProvider.overrideWith(
       (ref) => buildRouter(initialLocation: AppRoutes.talk),
@@ -104,7 +132,7 @@ Widget _app(
     avatarCastProvider.overrideWithValue(AsyncData(_cast)),
     avatarRuntimeProvider.overrideWithValue(AsyncData(_runtime())),
     conversationProvider.overrideWithValue(AsyncData(feed(language))),
-    talkSpeechProvider.overrideWith(() => _FixedTalk(talk)),
+    talkSpeechProvider.overrideWith(() => _FixedTalk(talk, levelNow: level)),
     talkGloveProvider.overrideWith(() => _FixedGlove(glove)),
     ...TalkFakes().overrides,
   ],
@@ -117,6 +145,9 @@ Future<void> _screen(
   List<TalkMessage> Function(AppLanguage)? feed,
   TalkGloveState Function(AppLanguage)? glove,
   FakeGloveSource Function()? source,
+  bool tapMode = false,
+  double level = 0,
+  bool slideToCancel = false,
 }) => goldenTest(
   '$name: EN / AR x light / dark',
   fileName: 'talk_$name',
@@ -126,6 +157,19 @@ Future<void> _screen(
       await t.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 2)),
       );
+      await t.pump(const Duration(milliseconds: 200));
+    }
+    if (slideToCancel) {
+      // hold each mic and slide it toward the start side, past the cancel
+      // distance ("Release to cancel"); never let go
+      final mics = find.byKey(const ValueKey('talk-mic'));
+      for (var i = 0; i < mics.evaluate().length; i++) {
+        final mic = mics.at(i);
+        final rtl = Directionality.of(t.element(mic)) == TextDirection.rtl;
+        final g = await t.startGesture(t.getCenter(mic));
+        await g.moveBy(Offset(rtl ? 60 : -60, 0));
+        await g.moveBy(Offset(rtl ? 60 : -60, 0));
+      }
       await t.pump(const Duration(milliseconds: 200));
     }
   },
@@ -144,6 +188,8 @@ Future<void> _screen(
               feed ?? (_) => const [],
               glove?.call(lang) ?? const TalkGloveState(),
               source ?? _connected,
+              tapMode: tapMode,
+              level: level,
             ),
           ),
     ],
@@ -222,7 +268,29 @@ Future<void> main() async {
     'listening_f2f',
     (_) => const TalkSpeechState(mic: MicState.listening, faceToFace: true),
     glove: _words,
+    level: .6,
   );
+  // hold to talk (2026-10-26): recording, sliding to cancel, tap mode,
+  // released too soon, waiting for the last words
+  // no start time: the timer counts the golden's own frames (0:01)
+  const recording = TalkSpeechState(mic: MicState.listening);
+  await _screen('recording', (_) => recording, level: .6);
+  await _screen(
+    'recording_cancel',
+    (_) => recording,
+    level: .3,
+    slideToCancel: true,
+  );
+  await _screen('recording_tap', (_) => recording, level: .6, tapMode: true);
+  await _screen(
+    'too_short',
+    (_) => const TalkSpeechState(notice: MicNotice.tooShort),
+  );
+  await _screen(
+    'finishing',
+    (_) => const TalkSpeechState(mic: MicState.finishing),
+  );
+  await _screen('idle_tap', (_) => const TalkSpeechState(), tapMode: true);
   await _screen(
     'glove_words',
     (_) => const TalkSpeechState(),

@@ -1,0 +1,17 @@
+EgypTalk-ASR-v2 by NAMAA-Space
+https://huggingface.co/NAMAA-Space/EgypTalk-ASR-v2
+Licence: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+Fine-tuned from stt_ar_fastconformer_hybrid_large_pcd_v1.0 by NVIDIA
+https://huggingface.co/nvidia/stt_ar_fastconformer_hybrid_large_pcd_v1.0
+Licence: CC BY 4.0
+
+Ishara uses a modified version: the model's CTC branch was exported to
+ONNX and quantized to int8 (metadata and the token list added for
+sherpa-onnx; not retrained). The modified files are published under
+CC BY 4.0 at
+https://github.com/Mmohamedtarek/Ishara/releases/tag/model-egyptalk-asr-v2-ctc-int8-r1
+
+Not endorsed by NAMAA-Space or NVIDIA. Provided as is, without warranties
+of any kind; see the licence.

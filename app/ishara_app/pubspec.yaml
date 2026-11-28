@@ -1,7 +1,7 @@
 name: ishara_app
 description: Ishara turns sign language from the glove into speech, and speech into signs.
 publish_to: 'none'
-version: 0.1.0+1
+version: 1.0.0+1
 
 environment:
   sdk: ^3.13.5
@@ -9,7 +9,10 @@ environment:
 
 dependencies:
   clock: ^1.1.3
+  cloud_firestore: 6.10.2
   drift: ^2.35.2
+  firebase_auth: 6.7.1
+  firebase_core: 4.15.2
   flutter:
     sdk: flutter
   flutter_litert: ^3.9.3
@@ -73,6 +76,8 @@ flutter:
   assets:
     # App rules kept as data (conversation gap, emergency numbers)
     - assets/config/
+    # Licence texts of the native libraries in the Android app (TV-21)
+    - assets/licenses/
     # ASL pack: sign catalogue (signs.json)
     - assets/packs/asl/
     # Mobile Kit: copied ONLY by app/tools/sync_kit.sh, checked by test/kit/kit_sync_test.dart

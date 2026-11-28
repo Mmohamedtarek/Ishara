@@ -24,7 +24,7 @@ import sys
 import time
 
 import glove
-from common import CALIB_DIR, CALIB_FIST, CALIB_OPEN, LABELS, load_calib, save_calib
+from common import CALIB_DIR, CALIB_FIST, CALIB_OPEN, LABELS, load_calib, save_calib, setup_console, show_help
 
 SECONDS = 2.0
 COUNTDOWN = 3          # 3، 2، 1، ابدأ
@@ -60,7 +60,7 @@ def record_wear(ser, person, minutes):
     print(f"هسجّل {minutes:.0f} دقيقة. اعمل يومك العادي من غير إشارات. Ctrl+C يوقف بدري والتسجيل بيتحفظ.")
     take = int(time.time() * 1000)
     rows, end, last = 0, time.time() + minutes * 60, time.time()
-    with open(os.path.join("data", "wear.csv"), "a", newline="") as f:
+    with open(os.path.join("data", "wear.csv"), "a", encoding="utf-8", newline="") as f:
         out = csv.writer(f)
         try:
             ser.reset_input_buffer()
@@ -79,7 +79,17 @@ def record_wear(ser, person, minutes):
     print(f"خلص: {rows / 50 / 60:.1f} دقيقة في data/wear.csv. دلوقتي: python mine_negatives.py --from-recording {person}")
 
 
+def ask(prompt):
+    """input، بس Ctrl+C أو Ctrl+Z/Ctrl+D (EOF) = خروج عادي، والـ takes اللي اتسجلت بتفضل محفوظة"""
+    try:
+        return input(prompt).strip()
+    except (KeyboardInterrupt, EOFError):
+        print()
+        return "q"
+
+
 def main():
+    show_help(__doc__)
     if len(sys.argv) < 3:
         raise SystemExit(__doc__)
     label, person = sys.argv[1], sys.argv[2].lower()
@@ -107,9 +117,9 @@ def main():
         record_wear(ser, person, minutes)
         return
     count = 0
-    with open(os.path.join("data", f"{label}.csv"), "a", newline="") as f:
+    with open(os.path.join("data", f"{label}.csv"), "a", encoding="utf-8", newline="") as f:
         out = csv.writer(f)
-        while input(f"[{label} | {person} | {count} take] Enter = سجّل، q = خروج: ").strip() != "q":
+        while ask(f"[{label} | {person} | {count} take] Enter = سجّل، q = خروج: ") != "q":
             countdown()
             ser.reset_input_buffer()
             ser.readline()                            # أول سطر بعد المسح ممكن يكون نصه مقطوع
@@ -128,4 +138,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    setup_console()
+    try:
+        main()
+    except KeyboardInterrupt:               # Ctrl+C في نص العدّ أو الـ take: اللي اتسجل قبله محفوظ
+        raise SystemExit("\nاتوقف.")

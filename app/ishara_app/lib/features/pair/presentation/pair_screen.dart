@@ -7,6 +7,7 @@ import 'package:ishara_app/core/glove/glove_failures.dart';
 import 'package:ishara_app/core/glove/glove_permissions.dart';
 import 'package:ishara_app/core/glove/glove_providers.dart';
 import 'package:ishara_app/core/glove/glove_source.dart';
+import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/onboarding_ui.dart';
@@ -16,7 +17,10 @@ import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
 /// Prototype `#s-pair` (step 2 of 3): find the glove, connect with the three
 /// real checks (Q-K3), then calibrate. Adds the states the prototype lacks
-/// (permissions, Bluetooth off, not found, failed checks).
+/// (permissions, Bluetooth off, not found, failed checks). During onboarding
+/// "Skip for now" (R1-4) gets a user without a glove in: it finishes
+/// onboarding and opens Talk, in every state but connected (then Q-K6
+/// applies as before).
 class PairScreen extends ConsumerStatefulWidget {
   const new({this.back, super.key});
 
@@ -32,6 +36,7 @@ class PairScreen extends ConsumerStatefulWidget {
 class _PairScreenState extends ConsumerState<PairScreen>
     with WidgetsBindingObserver {
   bool _tips = false;
+  bool _skipping = false;
 
   @override
   void initState() {
@@ -64,6 +69,17 @@ class _PairScreenState extends ConsumerState<PairScreen>
     }
   }
 
+  /// "Skip for now" (R1-4): no glove is saved, onboarding counts as done.
+  Future<void> _skip() async {
+    setState(() => _skipping = true);
+    final router = GoRouter.of(context);
+    final profile = ref.read(profileControllerProvider.notifier);
+    await ref.read(pairControllerProvider.notifier).skip();
+    await profile.finishOnboarding();
+    if (!mounted) return;
+    router.go(AppRoutes.talk);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -71,6 +87,12 @@ class _PairScreenState extends ConsumerState<PairScreen>
     final t = context.text;
     final s = ref.watch(pairControllerProvider);
     final ctl = ref.read(pairControllerProvider.notifier);
+    // only during onboarding (Pair opened later from Settings, Talk or a
+    // practice step has none); never once connected (Q-K6)
+    final canSkip =
+        !ref.watch(profileControllerProvider.select((p) => p.onboardingDone)) &&
+        widget.back == null &&
+        s.stage != PairStage.connected;
     ref.listen(pairControllerProvider.select((s) => s.stage), (prev, stage) {
       // from a practice step: a calibrated glove goes straight back (after
       // "Connected" was seen, 0.75 s as Calibrate's "Captured")
@@ -198,6 +220,19 @@ class _PairScreenState extends ConsumerState<PairScreen>
               label: l.ctaHelp,
               onPressed: () => setState(() => _tips = !_tips),
             ),
+          if (canSkip) ...[
+            IsharaLink(
+              key: const ValueKey('pair-skip'),
+              label: l.pairSkip,
+              onPressed: _skipping ? null : () => unawaited(_skip()),
+            ),
+            Text(
+              l.pairSkipHint,
+              key: const ValueKey('pair-skip-hint'),
+              textAlign: TextAlign.center,
+              style: t.rowSubtitle.copyWith(fontSize: 12.5, color: c.muted),
+            ),
+          ],
         ],
       ),
     );

@@ -550,7 +550,7 @@ Your answers: S8-1 … S8-4 (DECISIONS). Static screens `08-learn` / `08b`: a ca
 
 ## Step 9: History, Settings, Avatar studio, SOS (2026-10-15, Linux laptop; devices: emulator `ishara_api36` early on, then the user's Galaxy A52)
 
-Your answers: S9-1 … S9-6 and the Q-T4 change (DECISIONS). **Device checks:** the emulator froze this laptop and crashed with the host GPU (exit 139, 4 times); at your request the final integration runs, the SOS checks and the recording ran on your **Galaxy A52 (RZ8R317P1EW, Android 14)** instead of the emulator. The app data on the phone was allowed to go (each `flutter test` run uninstalls the app).
+Your answers: S9-1 … S9-6 and the Q-T4 change (DECISIONS). **Device checks:** the emulator froze this laptop and crashed with the host GPU (exit 139, 4 times); at your request the final integration runs, the SOS checks and the recording ran on your **Galaxy A52 (Android 14)** instead of the emulator. The app data on the phone was allowed to go (each `flutter test` run uninstalls the app).
 
 | # | Requirement | Source | Status |
 |---|---|---|---|
@@ -579,7 +579,7 @@ Your answers: S9-1 … S9-6 and the Q-T4 change (DECISIONS). **Device checks:** 
 
 **Tests (Linux laptop):** analyze 0 issues (`--fatal-infos`); format 0 changed; `flutter test --coverage --concurrency=2`: **939 passed, 4 skipped** (the Cairo tests outside Cairo); `lib/core` 92.9 % (4293/4620), `lib/features/*/domain` 99.7 % (338/339). New: history domain / screen, saved phrases, settings persistence / screen (Settings, About, Privacy, Avatar studio), vibrate + subtitles in Talk, practice-pass vibrate, SOS domain / screens / platform (LocationManager only, no Accuracy offer during SOS, default SMS app / dialer), conversation ids (Clear, midnight, 9:59 vs 10:01, background, legacy, delete newest), Talk closing mid-sign, architecture (no sample history). The step 9 goldens pass locally against images rendered on this laptop (not committed).
 
-**Integration (Galaxy A52, RZ8R317P1EW, one file at a time, final code):** onboarding_test ✓ 2/2 (the auth fields now wait for the page: slower transition on a phone); talk_test ✓ 1/1 (DeveloperMode on for the Mock panel); learn_test ✓ 3/3; avatar_test ✓ 1/1 (ready 3.96 s, 25 signs, 23.7–38.7 fps); history_test ✓ 1/1 (mock glove signs hello → History "Today" → star → Starred speaks it); settings_test ✓ 1/1 (vibrate, subtitles, dark and 0.5x survive a restart; Talk plays hello at 0.5x); flow_test ✓ 1/1 (new, the recording's flow); sos_test ✓ 1/1 (with `tools/sos_watch.sh`: fresh fix ±15 m, Google Messages with both recipients and the link, Samsung dialer with 123, nothing sent). Earlier the same day on the emulator (software GPU): all 6 files then present ✓, and sos_test ✓ (fresh fix from `adb emu geo fix`, no dialog).
+**Integration (the user's Galaxy A52, one file at a time, final code):** onboarding_test ✓ 2/2 (the auth fields now wait for the page: slower transition on a phone); talk_test ✓ 1/1 (DeveloperMode on for the Mock panel); learn_test ✓ 3/3; avatar_test ✓ 1/1 (ready 3.96 s, 25 signs, 23.7–38.7 fps); history_test ✓ 1/1 (mock glove signs hello → History "Today" → star → Starred speaks it); settings_test ✓ 1/1 (vibrate, subtitles, dark and 0.5x survive a restart; Talk plays hello at 0.5x); flow_test ✓ 1/1 (new, the recording's flow); sos_test ✓ 1/1 (with `tools/sos_watch.sh`: fresh fix ±15 m, Google Messages with both recipients and the link, Samsung dialer with 123, nothing sent). Earlier the same day on the emulator (software GPU): all 6 files then present ✓, and sos_test ✓ (fresh fix from `adb emu geo fix`, no dialog).
 
 **SOS device checks (S9-6):** emulator: no dialog, fresh fix, SMS app + dialer. Galaxy A52: Location Accuracy on → fresh ±19 m; off → fresh ±6 m (GPS), no system dialog in either (screenshots at 1.5 s: D23 spoken, "Getting your location…", call buttons ready); location off → "Couldn't get your location", SMS "I need help. I couldn't get my location."; before the fix a plain sms: link opened the "Open with" chooser (fixed). Screenshots were in `tools/out/step9/sos/`; deleted after your review (they showed your real location and contacts).
 
@@ -615,7 +615,7 @@ New drafts (7): `tools/out/step9/drafts.html`, top section.
 
 **Checks (Linux laptop):** analyze 0 issues, format 0 changed; `flutter test --concurrency=2`: 945 passed, 4 skipped; `lib/core` 92.9 %, domain 99.7 % (345/346). The integration tests were not rerun on the phone for this round (the changes are texts and the SOS sheet, covered by widget tests).
 
-## Step 10a: the local database (2026-10-17, Linux laptop; device: the user's Galaxy A52 RZ8R317P1EW)
+## Step 10a: the local database (2026-10-17, Linux laptop; device: the user's Galaxy A52)
 
 Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/drafts.html`); `app/ishara_app/run.txt`, `runB.log` and the root `stt.txt` deleted (old logs, referenced nowhere but a step 6 note here).
 
@@ -665,3 +665,280 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 | 4 | Delete `tools/out/step10/device/` | ✓ deleted |
 
 **Checks:** analyze 0 issues, format clean; `flutter test --concurrency=2`: **979 passed, 4 skipped**. CI on `53fbcee` (10a): run 39036934472 green (Flutter app, AI, Firmware, Android build).
+
+## Kit v3.3 / AI-SPEC v3.3 (2026-10-23, Linux laptop; branch `app-v3.3` from `origin/ai-v3.3`, worktree `../Ishara-v3.3`)
+
+Read first: `git diff origin/main...origin/ai-v3.3` of `AI-SPEC.md` and the kit `README.md`, commits add8c1e and e9ed90c. The spec pseudo-code was checked against the AI team's `tests/verify_kit.py` (same lines, same order): no contradiction found.
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Kit v3.3 into the app only through `sync_kit.sh` | CLAUDE.md; kit README | ✓ 102 files synced; `test/kit` byte-for-byte ✓ |
+| 2 | `pair_level`: the word that confirms a pending tentative word must pass this level | AI-SPEC v3.3 §5 | ✓ `DeciderConfig.pairLevel` (`DeciderLevel`), `Decider.step` |
+| 3 | A word signed alone: `confirm_on_rest`, `rest_conf`, `rest_run`, `rest_null`, state `pending_rest/peak/run/best/null`, line for line | §5 pseudo-code | ✓ `decider.dart` (the `rest` name is `AiSpec.rest`, no label hard-coded) |
+| 4 | Glove restart: the 11th dropped sample in a row is a real gap; any non-dropped sample sets the count to 0 | §4 | ✓ `Recognizer.feed` (`_dropped`, `AiSpec.maxDroppedInARow = 10`); reset also clears it (DECISIONS) |
+| 5 | Defaults = v3.2.1 behaviour; an old `decider.json` still works | §5 table | ✓ the kit v3.2.3 Decider vectors reproduced exactly with the v3.2.1 config |
+| 6 | Decider stays pure Dart | brief | ✓ no new imports beyond `dart:math` |
+| 7 | test_vectors (normalize 1e-4, models 1e-3, Decider steps, gaps) | §8 | ✓ |
+| 8 | mock/expected.json, words and events | C6 | ✓ **88 / 88** |
+| 9 | Learn practice files: each confirms its sign once | kit README | ✓ 40 / 40 (`mission_pipeline_test`, kit numbers below) |
+| 10 | Calibration mock tests unchanged | v3.2.3 | ✓ unchanged and green |
+| 11 | New tests per rule, defaults, mutation check | brief §3 | ✓ `test/recognition/decider_v33_test.dart` (22 tests); 12 / 12 mutations fail a test (each rule, each `rest_*` condition, the restart, the count reset by a sample and by `reset()`, both defaults, the Talk fix) |
+| 12 | Talk: a Decider confirm and a tap on the same word: no double word or speech | Q-T1, S7-9 | ✓ both orders tested; one bug fixed (below) |
+| 13 | Learn practice pass rule unchanged on the mock | S8, sign rule 4 | ✓ every practice file still gives one tentative + one confirm of its sign, at most at sample 270 (5.4 s) of the 8 s window; none through the rest rule |
+| 14 | ME / YOU against the avatar and vocabulary | sign rules 1, 2 | Reported, nothing changed (below) |
+| 15 | Integration tests `talk_test`, `learn_test` on the phone | review protocol 4 | ✗ **not run yet: no phone attached** (`adb devices` empty) |
+
+**Built:** `recognition_config.dart` (v3.3 keys with defaults, `DeciderLevel`, `AiSpec.rest`, `AiSpec.maxDroppedInARow`), `decider.dart` (pending-word state, rest confirm, `pair_level`), `recognizer.dart` (glove restart), `talk_glove_controller.dart` (S7-9 fix). Tests: `decider_v33_test.dart`, fixture `test/fixtures/kit_v3_2_3_decider_vectors.json`, 4 Talk tests, `test/bench/kit_numbers_test.dart` (bench tag). `CLAUDE.md`'s gap-rule line now names spec v3.3 and the restart.
+
+**Review:** line by line, then `/code-review` (8 findings): the hard-coded `'rest'` (also caught by `architecture_test`) → `AiSpec.rest`; Talk: an older tapped word with the same label swallowed a later Decider `confirm` whose faded word had been cleared (e.g. Talk hidden), so a real sign was neither shown nor spoken → only the tapped word's own confirm is skipped now (S7-9 unchanged), with tests; unused `DeciderConfig.level()` removed; the restart path uses an explicit flag instead of a faked gap; the bench's v3.2.1 mode drops the keys from the JSON instead of rebuilding the config; the bench closes the models in a tear-down. Not changed, open question: the Learn match % of a word confirmed on rest (Q1 below).
+
+**Checks:** analyze 0 issues (`--fatal-infos`), format clean; `flutter test --coverage --concurrency=2`: **1005 passed, 5 skipped** (benches); Cairo time-zone test ✓; coverage `lib/core` 92.2 %, domain 99.7 % (345/346).
+
+**Numbers (§5 of the brief), through the app's own recognizer** (`kit_numbers_test.dart`; the app reproduces each kit's `expected.json` words 88 / 88 for both kits):
+
+| | v3.2.3 kit | v3.3 kit | v3.3 models + mock, v3.2.1 rules |
+|---|---|---|---|
+| Sign files (20 signs × 2 people × 3 repeats = 120): right words | 94 | **118** | 113 |
+| … wrong words | 0 | 0 | 1 (`two` in B/me) |
+| … files exactly 3× their sign / 40 | 31 | **39** | 33 |
+| `sentences.csv` A, B (15 words each): errors | 0, 0 | 0, 0 | 0, 0 |
+| `rest.csv`, `other.csv` (4 files): stray words | 0 | 0 | 0 |
+| `everyday.csv` A + B (10 min): **stray words** | **0** | **0** | 0 |
+| … faded word shown and cancelled | 0 | 2 (one per file) | 2 |
+| Practice files confirming their sign once / 40 | 40 | 40 | 40 |
+
+Missing in v3.2.3: A come, drink, hungry, me, one (all 0 of 3), B drink, me, one (0 of 3), B hungry (1 of 3). In v3.3: A drink (1 of 3). The v3.3 rules alone add 4 confirmed words on the v3.3 mock and remove one wrong word (`pair_level`).
+Cross runs (each model version on the other kit's everyday files too, 20 min per version): 0 stray words for both. v3.3 models on the v3.2.3 mock: 110 / 120 right, 0 wrong, B/practice/me gives `one` then `me` (the old ME without its pointing movement reads as ONE first).
+**Caveats:** the kit's sign and sentence files are regenerated up to 25 times until the model gets them right (`build_kit.py`), so those rows lean towards 100 % for the kit's own models. `everyday.csv` is generated once, but 10 minutes can't measure a rate of one stray word per 3–4 h (expected ≈ 0.05 in 10 min): 0 is consistent with both the AI team's v3.2 and v3.3 figures.
+
+**ME / YOU (v3.3 data: `simulate_data.py` `jab_in` / `jab_out`, a short ≈ 0.5 s movement in and back):**
+- Vocabulary PDF v2.1: ME "points to your own chest, touches it"; YOU "points forward at the other person" (no movement); ONE "still". `signs.json` descriptions say the same.
+- Avatar (`assets/packs/asl/avatar/library.json`): ME moves the fingertip ≈ 4 cm in to touch the chest in 0.22 s and holds; YOU pushes ≈ 4 cm forward in 0.3 s and holds; ONE still. Neither goes back out before the sign ends (the return is the move back to the ready pose).
+- Differences: YOU has a movement in the avatar and the new model but none in the PDF / Learn description; the model's jab goes out *and back*, the avatar's stops. Nothing changed (sign rules 1–2).
+
+**Open questions**
+1. Learn match % (Q-L4) for a word confirmed on rest: the `confirm` fires on a `rest` step, where the word's own smoothed probability is low (on the v3.3 mock: 0 % for `me`, `one`, `five`, `drink`, `hungry`, 26 % for `thanks`). No practice mock file is affected, but with the real glove a passed step could show "0 % match". Keep Q-L4 as is, or show the pending word's highest probability (`pending_peak`, already in the Decider)?
+2. YOU: add the short forward movement to the vocabulary / Learn description, and should the avatar's ME / YOU jab go back out (new previews for your approval)?
+3. `.gitattributes` for Windows (proposal below), not added yet.
+4. For the AI team: the gap stream in `test_vectors.json` has no run of 11+ dropped samples, so the restart rule isn't covered by a kit vector (only by the app's own tests).
+
+## Talk voice: speech → sign words, hold to talk (2026-10-26, branch `talk-voice`, worktree `~/Ishara-talk`; device: the user's Galaxy A52, Android 14)
+
+**Checklist (source → status)**
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1a-1 | Debug-only word log (developer mode): locale, on-device, partials, final, alternatives + confidences, normalized tokens, matches | user brief 1a | ✓ `SpeechTrace` (`lib/core/speech/speech_trace.dart`), plugin Android log with it (TV-5); 10 tests |
+| 1a-2 | Word script, phone run, diagnosis word by word | user brief 1a | ✓ English run 1 (Arabic not run yet): see TV-1. The word trace stayed off (developer mode was never saved on the phone); the diagnosis comes from the recognizer's own log |
+| 1a-3 | "bye" heard as "boy": biasing reaches the recognizer? | brief; S7-27 | ✓ biasing reaches it (`Adding phrases biasing...` every listen); "boy" itself not seen in run 1 (the word trace was off): rerun |
+| 1a-4 | Words with no sign: propose how Talk shows them, ask | brief | ✓ built after the user's answer (TV-9), NS1/NS2 drafts; tests: caption, bubble, NS2, screen reader, all signed → plain, session only |
+| 2 | Hold to talk: press/haptic/grow/timer/level, release, slide to cancel (RTL right), too short 0.4 s, 60 s, face to face, S8 states | brief §2 | ✓ TV-2, TV-7; tests below |
+| 2-a11y | Screen reader / Switch Access alternative, asked first | brief §2 | ✓ asked: "Auto + setting" (TV-3) |
+| 2-texts | Every new text a draft, EN + Egyptian Arabic, drafts page | brief; CLAUDE.md | ✓ TV1–TV15 approved 2026-10-26; NS1/NS2 drafts; `tools/out/talk_voice/drafts.html` (`tools/talk_voice_drafts.py`) |
+| 3 | Unit + widget tests for each state, EN/AR, light/dark, TalkBack labels | brief §3 | ✓ |
+| 3-it | `talk_test.dart` for hold to talk, on the phone | brief §3 | ✓ 2/2 |
+| 3-gold | Goldens for the new mic states on the runner, approved before commit | brief §3 | ✓ approved (TV-8); runner run 40400106229 (after the finishing fix and the no-sign marks), 14 images × ci/linux committed; local golden tests pass with them |
+| 3-table | Same word script again, before → after table from the phone | brief §3 | waiting for the user's rerun |
+
+**Diagnosis (English, run 1, 46 listens, `en-GB`, on-device):** for every word said alone, Android System Intelligence's recognizer (SODA, `AMBIENT_CONTINUOUS`) detected speech and returned an empty final result (`withSpeech: false`, `NO_SPEECH_DETECTED`); the app got only empty `intermediate` results and showed "Didn't catch that". In sentences it returned the words. Not cut off, not a matching problem, not Talk dropping it. The phone's default service is `com.google.android.tts` (Speech Recognition & Synthesis); the app's on-device request goes to Android System Intelligence.
+
+**Built:** speech layer: no pause limit (pauseFor = 65 s asked of the recognizer), 65 s backstop, `SpeechLevel` events (RMS dB → 0..1), `stop()` always sent + 2.5 s grace then the plugin is cancelled, cancel always sent, a listen cancelled while starting never opens the mic, debug `STT_LISTEN_MODE=search` (TV-4). Talk controller: `pressMic` / `releaseMic` / `cancelMic` / `tapMic` (tap mode), `MicState.finishing`, `MicNotice.tooShort`, 60 s max, live level, never stuck if a listen closes without a result. Mic card: hold / slide / tap mode, recording strip (red dot, m:ss, "‹ Slide to cancel" / "Release to cancel" / "Stop and send"), live level bars (still with reduced motion), screen reader labels and "Cancel recording" action (announced). Talk hidden / app in background / Talk closed: a recording is thrown away. Settings › Accessibility › "Tap to start and stop" (`settings.micTap`). Plugin copy: two debug log lines (ISHARA.md item 3, `ISHARA.patch` regenerated).
+
+**Tests (Linux laptop):** analyze 0 issues, format clean; `flutter test --coverage --concurrency=2`: **1005 passed, 4 skipped, 28 failed = golden images only** (every Talk golden shows the changed mic hint, plus 6 new mic states and the 2 SOS goldens that show the Talk mic card; none committed until approved). Coverage: `lib/core` 92.2 % (unchanged), `lib/core/speech/speech_to_text.dart` 98 %, `lib/features/talk` 98.3 %, `lib/core/catalogue` 98.9 %. Mutation-checked: removing each of the three speech-layer race fixes fails its test.
+
+**Review:** line by line, then `/code-review` (first run reviewed the wrong worktree, `~/Ishara` on `ai-v3.3`; rerun on `~/Ishara-talk`): 10 findings, 8 fixed with tests (cancel / stop before the plugin starts, the grace timer leaving the mic open, Android's default end-of-speech pause, a release during the start, a second press while preparing, recording off screen, level bars with reduced motion, the timer not using the recorded start). Not changed: the haptic choice (TV-6, a question for the user) and the unused prototype keys `micLabel` / `micHintStrong` (generated from the prototype, kept like other unused prototype keys).
+
+**Integration (Galaxy A52, one file at a time):** talk ✓ 2/2 (new hold-to-talk test: hold → "hello" signed, too short, slide to cancel, face to face cancel to the right, tap mode → "thank you"); settings ✓ 1/1; flow ✓ 1/1 (both now hold the mic); onboarding ✓ 2/2, learn ✓ 3/3, avatar ✓ 1/1, history ✓ 1/1 (all on the final code); sos ✗ 0/1: location is off on the phone ("Couldn't get your location"), not related to this work (asked).
+
+**Open questions:** see the summary to the user (no-sign display, haptic vs Vibrate, SOS location, golden approval, drafts approval, the Arabic run).
+
+**After the user's answers (2026-10-26):** TV1–TV15 and goldens approved; haptic confirmed (TV-6); finishing shows "One moment…" (test); no-sign marks built (TV-9). `flutter test --concurrency=2`: 1009 passed, 4 skipped, the 28 failures were the golden images now committed from the runner (golden tests 52/52 pass with them). The SOS run (location on over adb, user allowed) waits until after the user's word rerun, because a test run uninstalls the app.
+
+**Phone run 2 (user, 2026-10-27, hold to talk):** nothing signed, sentences included. Cause and fix: TV-10 (the speech layer took the plugin's immediate `done` after a release as "nothing heard"; the words came 0.4 s later). Test replaying the phone's order (fails without the fix). Checks: analyze 0 issues; Talk / speech / settings tests 203 passed; `talk_test` ✓ 2/2 on the phone with `--no-uninstall` (the user's setup kept; the normal debug build reinstalled over the test build; developer mode still on).
+
+## Talk voice: the mic stays open while held; "no word heard" (2026-11-20 → 21, Windows laptop `D:\ishara_project\Ishara`; no device connected)
+
+**Checklist (source → status)**
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Review the user's uncommitted mic fix (the mic closed while held) line by line, fix what is wrong | user 2026-11-20 | ✓ the idea kept (TV-2: the user ends the listen); 7 problems fixed (TV-11); with the fix as found, 21 of 49 speech tests failed |
+| 2 | A lower recognizer guess that has a sign word replaced the first guess | user decision | ✓ removed, with its second normalizer (TV-12) |
+| 3 | On-device → normal recognizer on any error before the first word | user decision | ✓ back to Q-T3 as recorded (TV-13) |
+| 4 | `kotlin.incremental=false` (Windows build) | user decision | ✓ committed with a comment (TV-14) |
+| 5 | "No word heard at all": find the cause in the code | user 2026-11-21 | ✓ found in the plugin + speech layer and fixed (TV-15, ISHARA.md item 4); ✗ not yet confirmed with a phone log |
+| 6 | Phone run: hold with a pause and go on, English and Arabic, word trace (developer mode) | protocol; TV-1 | ✗ not done: no phone connected to this laptop |
+
+**Built:** `PlatformSpeechToText` (`lib/core/speech/speech_to_text.dart`): while the mic is held, a session the phone ends (final result, `notListening`, `done`, `error_no_match`, `error_speech_timeout`, `error_busy`, `error_client`) is followed by a new one after `restartDelay` (300 ms; at most `maxRestarts` 20), with the plugin's session cancelled first; the words of every session of the hold are kept; a final result replaces only its own session's phrases; release between two sessions or while one starts gives the sentence at once; other errors end the listen with the words heard. The patched plugin (`app/third_party/speech_to_text`, `ISHARA.patch` regenerated and checked to apply on upstream 7.5.0): `onResults` reports the end of the session at once.
+
+**Tests (Windows laptop):** `dart format` clean; `flutter analyze --fatal-infos --fatal-warnings` 0 issues; `test/speech/speech_to_text_test.dart` **64/64** (21 tests adapted to hold to talk: the phone ending a session no longer ends the listen, the release does; 17 new). Mutation-checked: removing each of 6 fixes (cancel before a new session, final replaces its own session, release between sessions, only session-end errors restart, `notListening` as the end, late errors ignored) fails its test. Full suite, `CI=true flutter test --coverage`, run before the review fixes (since then only the speech layer and its test changed): **920 passed, 4 skipped, 63 failed**, all in files that don't use the speech layer: CI goldens (calibrate, Learn, onboarding…), the kit / three.js / prototype checksum tests, the architecture scans. Likely this Windows checkout (`core.autocrlf=true` writes CRLF, so the checksums differ; goldens rendered on Windows); not yet run on Linux / CI. Android debug build (`--dart-define=GLOVE=mock`): ✓ built (the plugin's Kotlin change compiles; Kotlin's compile daemon couldn't start on this laptop and Gradle compiled without it).
+
+**Review:** line by line, then `/code-review` (high): 5 findings; 3 fixed (a late error of a cancelled session restarted the new one: now ignored until "listening", test; any error after words now signs them: recorded in TV-11; a duplicated cancel helper), 1 no change (the cancel before a new session stays in the speech layer), 1 skipped (the debug trace calls a kept partial "phrases").
+
+**Integration:** not run (no device; the emulator image `google_apis` has no Google speech service, and these tests use a fake recognizer).
+
+**Open:** (1) phone run with the word trace, English and Arabic, holding through a pause; also listen for a start sound at each new session; (2) a CI run of the branch for the 63 Windows-only failures.
+
+## Talk voice: the tester's phone run, answers (2026-11-21, Windows laptop; results relayed by the user)
+
+**Tester's results** (branch at `7b2ef5c`): sentences come out whole when the finger stays ~1 s after speaking; the end is lost in 4 of 5 sentences released right after speaking; the mic stayed open through 20 s of silence (tester: a bug); "Didn't catch that" while talking, 5 times in quick presses; numbers said alone are not signed.
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Keep listening after the release | tester (500–800 ms); user picked 800 ms | ✓ TV-16 (`PlatformSpeechToText.stopTail`) |
+| 2 | Silence ends a hold | tester; user picked 5 s | ✓ TV-17, changes TV-2 (`TalkSpeech.silenceLimit`) |
+| 3 | Quick presses | tester; user | ✓ TV-18. Cause found in the code: the mic button and Talk both dropped a press during "One moment…" |
+| 4 | Numbers said alone | tester | ✗ not changed: needs the phone log (TV-1: the recognizer drops single words; or it hears "for" / "to" / "won") |
+| 5 | Phone rerun | protocol | ✗ not done |
+
+**Tests (Windows laptop):** analyze 0 issues, format clean; speech 70/70; Talk + speech 207/207; mutation-checked: removing each of 5 new behaviors (the silence limit, a word restarting it, the queued press, the moment after the release, a session ending in that moment) fails its test. Full suite `CI=true flutter test`: **938 passed, 4 skipped, 62 failed**: the same Windows-only failures as before today's changes (CI goldens, checksums, architecture scans, and `open_storage_test`, where Windows can't delete a temp folder still in use); none in speech or Talk. Android build not rerun (no native change since `7b2ef5c`).
+
+**Review:** line by line, then `/code-review` (high): 4 findings: DECISIONS updated (fixed); the silence limit counts words heard, not sound (to check on the phone, TV-17); TalkBack gets no feedback for a queued tap (skipped: the recording starts within seconds with the usual haptic); the dimmed mic slides while a press is queued (no change: sliding away drops it, as it should).
+
+**Not run:** integration tests, phone. **Open:** phone rerun with the word trace (numbers alone; the 5 s limit with a recognizer that sends few partials).
+
+**Correction (2026-11-21, later):** "analyze 0 issues" above was wrong: after adding the last speech tests I analyzed only `lib/features/talk` and `test/talk`, and `test/speech/speech_to_text_test.dart` had one info (`avoid_escaping_inner_quotes`). CI run #39 on `674f1e0` failed in the Flutter job after ~2 min, before the tests (the logs need a GitHub sign-in; the analyze step is the likely cause). Fixed in the next commit; `flutter analyze --fatal-infos --fatal-warnings` on the whole app is now clean. CI run #38 on `7b2ef5c` passed on Linux: the 62–63 failures seen on this laptop are Windows-only.
+
+## Talk voice: the tester's second run (2026-11-21, results relayed by the user)
+
+**Fixed per the tester:** the end of a sentence is no longer lost on a quick release ("I love you" whole, signed: TV-16); a press with no speech ends by itself after ~5 s with "Didn't catch that" (TV-17).
+
+**Still wrong:** (1) numbers said alone: "one" signed once, then never; "two"…"five" never, each time "Didn't catch that" (most of the "Didn't catch that" in the video). (2) "bye" heard as "Boy", "goodbye" as "Good boy". (3) "please" heard once as "believe" ("water please" → "Water believe").
+
+**From the code (no phone log yet):** "Didn't catch that" comes only when nothing at all came back (no partial, phrase or final); a word heard as "to" / "for" / "won" would show greyed with "No sign yet". So those number attempts got nothing from the recognizer. The tester's two remedies for that case are already in place: a held mic doesn't end at the first empty result (TV-11), and the numbers are in the bias list as words and digits (`signs.json`: "one", "1", …). Two causes are left to tell apart with the trace: the recognizer drops a short word said alone (TV-1), or the word is said before the microphone really records ("Listening…" and the haptic come just before the listen is asked for). The alias decision ("to"/"too" → two, "for" → four, "won" → one, only when the whole press is that word) was left open by the tester ("[قراري: أوافق / مش موافق]" not filled): to decide after the trace. "bye": options listed to the user (keep greyed, the short-query model, the normal recognizer, a whole-press alias); TV-12 stays removed.
+
+**Built:** the debug log notes when the microphone really started in each session (`stt_mic_on` in debug builds, `trace_mic_on` with developer mode: ms since the listen began, session number), from the recognizer's first sound level. Test added (speech 71/71); analyze clean on the whole app; Talk + speech tests pass.
+
+## Talk voice: the user's phone log (2026-11-21, Galaxy A56 "SM A566B", debug build, on-device recognizer, en-GB; developer mode off, so no words in the log)
+
+**What the log shows (10 listens):** the microphone started 860–886 ms after the listen (1143 ms the first time) in every listen; in 6 listens (numbers said alone) the recognizer sent only empty phrases and no words, so "Didn't catch that" was right; the phone never sent a final result after the stop, so the plugin made one after its 2 s wait: each sentence came ~2.8 s after the release; one sentence of 5 words was signed whole; two of 2 words had no sign (probably "Good boy"). The video could not be looked at here (no video tool on this laptop).
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Haptic and "Listening…" when the microphone really records | log; user | ✓ TV-19 |
+| 2 | Shorter wait for the phone's final result | log; user (1 s) | ✓ TV-20 |
+| 3 | Numbers alone, "bye" | tester | ✗ still needs the runs with developer mode on and the two other recognizer settings (search, normal recognizer) |
+
+**Tests:** analyze clean (whole app), format clean; speech + Talk 217/217; full suite `CI=true`: 948 passed, 4 skipped, 62 failed, all the known Windows-only ones (CI goldens, checksums, architecture scans, `open_storage_test`); mutation-checked: haptic at the press, a release before the microphone, the 2 s final wait: each fails its test. **Review:** `/code-review` (high): 3 findings: a final made from the last phrase dropped the phrases before it (fixed, test); the 2 s backstop can show "Listening…" on a mic that never starts (kept: as before, and the silence limit ends it); no visible change during the ~0.9 s wait (to watch on the phone; a cue would be a design change). **Not run:** integration tests, phone.
+
+
+## Talk voice: Moonshine for English in release (2026-11-24, branch `feature/stt-moonshine`, Linux laptop; phone: the user's Galaxy A56)
+
+User decision TV-21: Moonshine Small ships in the APK and is English's recognizer in release; Arabic stays on Google. Phone run 1 (debug, TV-22) is the evidence.
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Model never committed; fetch task with pinned URLs + SHA-256, Windows and Linux, local cache reused; stored uncompressed; release fails with the command; debug and CI build without it | user 1, 2026-11-24 #1 | built; checks below |
+| 2 | Copy on first use through a temp folder (free space, SHA-256, atomic rename); marker per app install and model version; sizes only on normal starts; load failure → copied again once only if a full SHA-256 check finds it damaged, else straight to Google (user, 2026-11-25); never the UI thread; errors never crash | user 2, #2 | built (`MoonshineModelStore.kt`) |
+| 3 | Preload when Talk opens in English, when the app resumes and when the spoken language changes (never during a listen); no haptic / "Listening…" before the mic records; a press during the load waits | #3, TV-19, user 2026-11-24 | built; tests |
+| 4 | Free the model under memory pressure, never during a listen or within 10 s of a press's "ready"; reload on use; log load / free / fallback | #4 | built (`onTrimMemory`) |
+| 5 | `implementation`, not transitive; plugin in `main`; stubs gone; minSdk kept, no Moonshine below API 26; R8 keep rules; no network | user 3 | built; merged manifest and APK contents checked below |
+| 6 | Moonshine's `ACCESS_NETWORK_STATE` and `MicrophonePermissionActivity` removed. `tools:selector` left both in the merged release manifest, so they are removed without it, and the build fails if another library ever declares `ACCESS_NETWORK_STATE` (user, 2026-11-25) | #5 | ✓ merged release manifest has neither; the activity class is gone from the APK |
+| 7 | Fallback to Google for one listen, reason logged; debug toast | user 4, #6 | built; tests |
+| 8 | Licence notices for every linked third-party library | B | built: 9 notices, none GPL / non-commercial |
+| 9 | Privacy text (approved): full text in Settings › Privacy; Talk's card 3 lines (Android / iOS texts approved 2026-11-25), "More" opens Privacy, screen readers get the full text, the avatar keeps ≥ 120 px | A, user 2026-11-25 | ✓ tests + goldens (EN/AR × light/dark) |
+| 10 | Test-only broken-model build, off by default, separate APK, fails with a release build | approved | built |
+
+**Checks (laptop, 2026-11-25):**
+- `dart format`: clean. `flutter analyze --fatal-infos --fatal-warnings`: no issues.
+- `flutter test --concurrency=2 --coverage`: **1132 passed, 4 skipped (benchmarks), 0 failed**. Coverage gate (90 %): lib/core 92.4 % (`moonshine_speech_to_text.dart` 92 %), `lib/features/*/domain` 99.7 %: ✓.
+- Goldens: `step9_privacy` and `talk_mic_blocked` re-rendered (new privacy text and Talk card), Linux and CI variants rendered locally; the CI ones must be replaced by the runner's (`goldens.yml`) after the push.
+- Debug APK without the model: builds; no model in it (English falls back to Google, debug toast). `checkMoonshineModel` and `flutter build apk --release` without the model: fail with the Linux and Windows commands.
+- `:app:fetchMoonshineModel`: the 8 files from the local cache, all SHA-256 ✓; git-ignored.
+- Release (`flutter build apk --release --split-per-abi --target-platform android-arm64 --dart-define=GLOVE=ble`): **`app-arm64-v8a-release.apk` 212,296,678 bytes (212.3 MB)**. The 8 model files and the 3 native libraries are stored (not compressed). Dex: only `ai.moonshine.voice` JNI + the 8 classes the native code uses; no downloader, OkHttp, WorkManager or `MicrophonePermissionActivity`. R8 needed no new `-dontwarn`.
+- Merged release manifest permissions: BLUETOOTH_SCAN (neverForLocation), BLUETOOTH_CONNECT, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, RECORD_AUDIO, BLUETOOTH and BLUETOOTH_ADMIN (maxSdk 30), the app's DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION. No `ACCESS_NETWORK_STATE`, no Moonshine entry. The network-permission check fails as expected when told Moonshine's entry is another library's.
+- Broken-model APK (`-PmoonshineBrokenModelTest=true :app:assembleMoonshineBrokenTest`): `app-moonshineBrokenTest.apk` 273 MB (all ABIs), id `….brokenmodeltest`, label "Ishara MODEL TEST", tokenizer.bin's last byte changed; with a release task in the same run the build fails. Flutter copies the build type into the plugins with minify on, which stripped their classes: the plugins now use their own release settings for it.
+- `/code-review`: 7 findings; fixed: a prepare error could end the app; a verified copy that won't load was copied again on every start; a model freed between "ready" and the start lost the first words; a preload cancelled a listen; a language change didn't preload; DECISIONS said `tools:selector`. Kept: the licence texts (~370 KB) are bundled on every platform, used on Android only (iOS isn't released in v1).
+- Not run: `integration_test/` on the phone.
+
+**Phone (release APK, Galaxy A56, 2026-11-25, run and relayed by the user; TV-22):**
+- First launch: copy 414 ms, verify 117 ms, load 311 ms, all during the preload. PSS 855,783 → 1,292,913 kB.
+- 25 English listens: 0 empty, 0 errors, 0 fallback. Mic on ~0.5 s after the press. Release → final ~1.13–1.17 s (800 ms tail included). 3 listens gave text but no sign.
+- Airplane mode: 8/8 English listens worked, no fallback.
+- Restart: copy kept (no recopy), load 920 ms.
+- Arabic through Google in release: worked.
+- Not phone-tested yet: the broken-model APK (fallback on a damaged copy), `onTrimMemory` free / reload, storage numbers (TV-23 storage figure: not measured).
+
+## Talk voice: EgypTalk for Arabic (2026-11-26, branch `feature/stt-egyptalk`, Linux laptop; phone: the user's Galaxy A56)
+
+User decision TV-24: EgypTalk-ASR-v2 (sherpa-onnx CTC int8) is Arabic's recognizer on Android in release; Google stays the fallback. Laptop evaluation (137 clips): 86.3 % exact signs, 0 wrong signs.
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | sherpa-onnx's ONNX Runtime never collides with Moonshine's (no blind `pickFirst`) | user #1 | built: static-link AAR (ORT 1.28.2 inside `libsherpa-onnx-jni.so`, no `Ort*` exports); not yet built into an APK |
+| 2 | No live partials: TV-17 still works (last 1.5 s every 1 s, a partial only when non-empty and changed: auto-stop at most 6.5 s after the last word + one window decode; user 2026-11-27); windows never overlap (tick skipped), never shown, never the sentence; window time and `word_to_stop_ms` logged; after a skipped tick the next window covers the audio since the last one (up to 5 s); one decode at a time, no time limit; under 0.25 s not decoded; final limit 10 s + 0.5 × recording (EgypTalk only). TV-16, TV-19, TV-20, TV-12 hold | user #2, 2026-11-27 | ✓ Dart tests; JVM `WordWindowsTest` 6, `WindowedListenTest` 5 (mutation-checked); phone ✓ A56: 40 listens, 0 skipped windows, window 50–170 ms, silence stop 5.1 s after the last word |
+| 3 | One model loaded at a time; switching frees the other (also when the model is cached; a waiting start keeps its model, counted on the engine thread); `onTrimMemory` as Moonshine; PSS logged | user #3, review 2026-11-27 | ✓ JVM `LoadedModelsTest` 4 (mutation-checked); phone ✓ A56: Moonshine freed before EgypTalk loaded, PSS +156 MB; back to English and `onTrimMemory`: to test later |
+| 4 | Model on this repo's release, pinned URL + SHA-256, Gradle fetch (Windows, Linux), export script committed | user #4, A | ✓ release `model-egyptalk-asr-v2-ctc-int8-r1` (files re-downloaded, all SHA-256 match); fetch task built, not run |
+| 5 | In the APK uncompressed, never committed; loaded straight from the APK (no copy, user 2026-11-26), SHA-256 marker; crash guard (API 30+: exit record, only crashes count; below 30: every ended load); preload in Arabic; fallback reasons logged; debug toast; R8; manifest check | user #5, 2026-11-27 | ✓ release APK: both files stored, same SHA-256, zipalign OK; R8 keeps sherpa-onnx; JVM `EndedLoadRuleTest` 3; phone ✓ A56: loaded from the APK, no copy, 1399 ms (check 251 ms), 0 fallbacks; broken-model APK: to test later |
+| 6 | Licences: EgypTalk (credit), NVIDIA base, sherpa-onnx and everything it links | user #6 | built (7 new texts, upstream, pinned tags); ORT 1.28.2's third-party notices are the 1.28.0 release's (no 1.28.2 package reachable) |
+| 7 | Privacy texts (full EN/AR, Android card EN/AR); iOS unchanged | user, approved 2026-11-26 | ✓ tests; goldens re-rendered: `linux/step9_privacy`, `ci/step9_privacy`, `linux/talk_mic_blocked` (CI one unchanged); the CI ones must come from `goldens.yml` after the push |
+| 8 | APK size, TV-24 | user #8 | ✓ release arm64 **369,002,977 bytes (369.0 MB)**, was 212.3 MB; one `libonnxruntime.so` (Moonshine's 1.23.2); permissions unchanged |
+| — | Every Moonshine / TV-21 test still passes with the same meaning; English phone checks again before any push | user condition | ✓ suite (Moonshine tests renamed only); A56 English re-check 5/5, release to final ~1.14 s |
+
+**Checks (laptop, 2026-11-27):** `fetchSherpaOnnx`, `fetchEgyptalkModel -PegyptalkCache=$HOME/…` ✓; analyze 0 issues, format clean; full suite `CI=true` 1083 passed, 4 skipped; with Linux goldens 1153 passed, 4 skipped; coverage gate ✓ (lib/core 92.4 %, domain 99.7 %); JVM unit tests 18/18 (`:app:testDebugUnitTest`, junit 4.13.2 test-only); release build ✓.
+**Review:** `/code-review` (high) found 9, all fixed (user 2026-11-27), with tests where testable: (1) an empty recording was decoded (sherpa-onnx may end the app); (2) a cached prepare skipped freeing the other model, and a stale main-thread state could keep both loaded; (3) Moonshine's 10 s final limit for a whole-recording decode; (4) a window wait that gave up after 10 s could let two decodes overlap or release the model under one; (5) a late window could reach the next listen; (6) any process death during a load counted as a crash; (7) skipped ticks left audio out of every window; (8) a misplaced KDoc; (9) junit 4.12 (CVE-2020-15250). Not unit-testable here: the plugin's wiring of (2) and the exit-record read of (6) (Android only): on the phone log.
+**Phone (Galaxy A56, release APK, 2026-11-27, user's run):** English re-check 5/5 listens signed, release to final ~1.14 s. Switch to Arabic: Moonshine freed, EgypTalk loaded from the APK (no copy) in 1399 ms (SHA-256 check 251 ms), PSS +156 MB. 40 Arabic listens: 0 errors, 0 fallbacks, 0 skipped windows; window decode 50–170 ms, final decode 83–658 ms, release to final ~1.25 s; 5 of the 40 gave no sign (release logs hold no text, cause unknown). Silence stop: recording 6900 ms, last word heard at 1000 ms → **5.1 s** from the word to the stop. Found: `word_to_stop_ms` used the last non-empty window (noise decoded as the same text up to 6000 ms → logged 100); fixed: the last window with a word heard, logged after a silence stop only (`stop()` now says `bySilence`; tests, mutation-checked). Laptop after the fix: analyze, full suite, coverage gate, JVM tests (below); no APK rebuilt (log-only change, user).
+
+**To test later (mobile team):**
+- a 30 s Arabic sentence (final decode time against the 10 s + 0.5 × recording limit);
+- switching back to English: EgypTalk freed, Moonshine loaded again;
+- the broken-model APK (`moonshineBrokenTest`), both languages: each falls back to Google with reason `corrupt`;
+- `onTrimMemory`: the model freed in the background, loaded again at the next use;
+- why 5 Arabic listens gave no sign: a debug build with the speech trace on shows the text (not "ميه"/"مية": ة → ه is already normalized, `word_normalizer.dart`).
+
+**Not run yet:** integration tests; APK with the `word_to_stop_ms` fix.
+
+## Step 10b: Firebase accounts, sync, rules, account deletion (2026-11-27, branch `feature/backend-10b` from `feature/stt-egyptalk` f3e5ad6, Linux laptop; phone: the user's Galaxy A56)
+
+The 10b work from 2026-10-17 (local WIP on `step10`) applied as one 3-way patch, then brought up to date. The real Firebase project (Spark, Email/Password, Firestore in production mode); its config never enters git.
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | WIP applied, conflicts resolved, nothing of talk voice lost | user | ✓ conflicts: `extract_strings.py` (both lists kept), `settings_screen_test.dart` (talk voice's scroll + 10b's check), ARBs merged from data (no key changed on both sides) |
+| 2 | String generator reproduces the ARBs | user | ✓ the 4 talk-voice privacy texts copied in; HEAD's generator + this fix gives HEAD's ARBs byte for byte; the merged ARBs are the generator's output |
+| 3 | Firebase packages: newest 4.x / 6.x patches, licences, no analytics | user A | ✓ firebase_core 4.15.2, firebase_auth 6.7.1, cloud_firestore 6.10.2 (security patches only; Android BoM 34.19.0) |
+| 4 | Config out of git; fake backend by default; `BACKEND=firebase` without the values fails the build | user C | ✓ root `.gitignore`, guard test, `firebase_defines.py`, Gradle check (both failure messages checked on a real build), Dart check |
+| 5 | `micTap` stays on the phone | user B, S10-9 | ✓ test |
+| 6 | Rules tests in the emulator, mutation check | brief | ✓ 28/28; rules opened to everyone: 19/28 fail; global CLI locally (D), CI installs firebase-tools 15.33.0 |
+| 7 | `ACCESS_NETWORK_STATE` for exactly the four Firebase libraries | user, TV-21a | ✓ guard allows Moonshine + those four, fails for any other |
+| 8 | Licences from the real dependency list | user A | ✓ 39 artifacts only through the Firebase plugins: 29 open source with full texts (Apache-2.0, gRPC and PerfMark NOTICEs, MIT checker-qual and animal-sniffer, Go licence re2j), 10 under Google terms by name, version and link; test |
+| 9 | Release build with `BACKEND=firebase` | user | ✓ 522.0 MB (models); licence assets inside |
+| 10 | Old phone serial out of the records; `storage_probe.py --serial` required | user | ✓ no serial in any tracked file |
+
+**Checks (laptop, 2026-11-27):** analyze `--fatal-infos` 0 issues, format clean; full suite 1234 passed, 4 skipped; CI goldens 76 passed; coverage gate `lib/core` 91.0 %, domain 99.7 % (Firebase-only files low: `firebase_auth_repository.dart` 17 %, `remote_store.dart` 60 %, `backend.dart` 40 %: the emulator test on the phone covers them).
+**Goldens:** re-rendered (Linux and CI, locally): `step9_privacy`, `step9_settings_signed_in`, `step10_delete_confirm`, `step10_delete_password`, `step10_sign_out_unsynced`, `step10_storage_notice` (dialogs unchanged; the Settings row behind them moved with the mic-tap row). The CI images must come from the runner (`goldens.yml`) before merge.
+**Review:** sync logs no longer carry the account id (`users/{uid}/…`). `/code-review` found 9 + 1 nit; fixed with tests (each test fails with its fix undone): sign-out clear serialized and listener jobs checked against the account (1); separate pull-retry timer (2); sync resumes after a deletion run (3); suspend waits for a write under way (4); push errors other than the server's answer back off (8); create account succeeds when only the name update fails (9); fake account ids never reused (nit). Open for the user: password dialog cancelled mid-deletion (5), runtime fallback to the fakes (6), phrases over 500 characters (7).
+**In the release APK (R8):** of the 10 Google-terms artifacts, classes kept: firebase-auth 653/1410, firebase-auth-interop 5/7, play-services-auth 49/179, play-services-auth-base 0/309, play-services-auth-api-phone 6/38, play-services-fido 61/309, googleid 0/10, recaptcha 562/562, core-common 1/4, integrity 123/133. New in the merged manifest: `READ_GSERVICES` (reCAPTCHA); exported `GenericIdpActivity`, `RecaptchaActivity` (Firebase Auth), `RevocationBoundService` (Google Sign-In).
+
+**Your answers (2026-11-27), done with tests (each fails with its change undone):** deletion asks the password first, every time (S10-11); Firebase failing at run time turns accounts off, never the fakes (S10-12, new text N29); phrases over 500 UTF-16 units stay on the phone, no sign-out warning (S10-13; the emulator showed the rules count UTF-16 units: 500 Arabic letters, 250 emoji; a new rules test pins it); `READ_GSERVICES` kept (S10-10a).
+**Checks after them:** analyze `--fatal-infos` 0 issues, format clean; full suite 1242 passed, 4 skipped; CI goldens 76 passed (none changed); coverage `lib/core` 91.0 %, domain 99.7 %; rules 29/29 (`firestore.rules` unchanged); release APK with `BACKEND=firebase` 522.0 MB.
+
+**Texts (2026-11-28):** N2–N29 approved as written (S10-14): ARB descriptions marked approved, `app_ar.arb` byte-identical to before (Arabic exactly as on the drafts page), English texts unchanged; drafts page regenerated.
+
+**Project id out of git (2026-11-28):** the real project's id is no longer in any tracked file (docs say "the real Firebase project"); `firebase_defines.py` checks exactly one project and the app id, `--expect-project <id>` optional, and never prints the id; the guard test reads the id from the local `google-services.json` and fails if a tracked file holds it (mutation-checked; skipped where the file is absent, i.e. CI).
+
+**Open (deferred by the user, 2026-11-28):** integration tests on the phone (`tools/run_integration_phone.sh`); the real-account checklist; CI goldens from the runner (after the push).
+
+## Release v1.0 (2026-11-28, branch `release/v1.0` from `origin/main` c5e7669, Linux laptop; not pushed)
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | Branch from `origin/main` c5e7669 (AI v3.5) | user | ✓ |
+| 2 | Merge `feature/backend-10b`; conflict `.gitignore` only, both sides kept | user | ✓ merge 299ce4b |
+| 3 | Merge `app-v3.3` (with the `ai-v3.3` commits); conflicts DECISIONS / PROGRESS, every entry kept in date order | user | ✓ merge 7372d29; every line of both sides present except 5 lines one side had edited on purpose (C8 updated by v3.3; the old phone serial removed by 10b) |
+| 4 | Kit v3.5 through `sync_kit.sh`; `rest_per_class` as the v3.5 README and `decider.json` say; Decider tests; test vectors and 88 mock files | user; AI-SPEC v3.5 §5 | ✓ kit copied into `app/Ishara-Mobile-Kit/` (K35-1, commit 9dd227f), spec and README v3.5; `verify_kit.py` OK; `DeciderConfig.restPerClass` + `Decider`; `test/recognition/decider_v35_test.dart` (13 tests; with the Decider on the global values 4 fail); test vectors and mock 88/88 ✓ |
+| 5 | `hw-thumb`, `hw-five`, `step10` not merged | user | ✓ |
+| 6 | Version 1.0.0+1 | user | ✓ no branch had a higher build number |
+| 7 | Release signing from `android/key.properties`, clear failure | user | ✓ `checkReleaseSigning` before `preReleaseBuild`; checked: file missing, keys missing (names only), keystore missing; root `.gitignore` + guard test (key.properties, no keystore tracked) |
+
+**Checks (laptop):** analyze `--fatal-infos` 0 issues, format clean; full suite **1283 passed, 5 skipped** (local), **1207 passed, 5 skipped** (`CI=true`: the 76 Linux golden variants are not run; no other difference); against the step 10b run no test was lost (two renamed: C8 by v3.3, the `.gitignore` guard); rules 29/29; `verify_kit.py` on `app/Ishara-Mobile-Kit`: gaps OK, test vectors OK, mock 88/88. No golden image changed.
+
+**For the AI team:** the kit's test vectors and mock files don't exercise `rest_per_class`: `verify_kit.py` with `rest_per_class` ignored still gives OK and 88/88, and the app's kit tests pass with the Decider on the global values. Only the app's own tests (`decider_v35_test.dart`) cover it; a vector where `one` is confirmed alone only through its own conditions would close the gap.
+
+**Without a glove (R1-4, 2026-11-28):** "I speak" → Talk; "I sign" → Pair → "Skip for now" → Talk (texts approved as final, `extract_strings.py` `RELEASE_V1_TEXTS`). `PairController.skip()` stops the scan and a connect in progress; a connect that finishes afterwards saves no glove. Tests: `test/onboarding/glove_skip_test.dart` (15: speak → Talk; sign → Pair → Skip → Talk, then Talk's Connect opens Pair without the skip; connect → Calibrate with and without a stored #CAL; skip in permission denied (both), Bluetooth off, location off, not found, found, checks failed, connecting; none after onboarding or from a practice step; Arabic), `pair_controller_test.dart` (+2). Mutation-checked: each part undone fails a test. `integration_test/onboarding_test.dart`: the two full flows now pick "I sign"; new: speak → Talk, sign → Skip → Talk (not run: phone tests deferred). Goldens changed (local, Linux and CI): `onboarding_pair_found`, `onboarding_pair_not_found`, `onboarding_pair_permission` (the link and hint); `onboarding_pair_connected` unchanged.
+
+**CI on PR #2 (runs 46095880005 push, 46095921704 pull_request, at bdfde6a):** only "AI (Python + kit)" failed: it still ran in `AI/Ishara-AI-v3-2` (v3.3 models) against the v3.5 kit (2 of 33: the kit-model SHA, the gap vectors). The job now runs in `AI/Ishara-AI-v3-5` (working directory and pip cache path; `verify_kit.py ../../app/Ishara-Mobile-Kit` unchanged); no AI code or model changed. Locally there: pytest 33 passed, `verify_kit.py` gaps OK, test vectors OK, mock 88/88. "Flutter app" passed in both runs (no golden replaced); "Android build" was still running.
+
+**Signed release APK (2026-11-28, `bdfde6a`):** `BACKEND=firebase`, `GLOVE=ble`, 1.0.0 (1), 522.0 MB, release certificate (not the debug one).
+
+**Open:** integration tests and the real-account checklist on the phone (deferred); CI goldens from the runner (after a push).
