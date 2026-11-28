@@ -1402,9 +1402,21 @@
   "@micLabel": {
     "description": "approved new text (step 7, 2026-10-12): D18: screen reader, mic button (prototype aria-label)"
   },
-  "privacySpeech": "Speech to text uses your phone's speech recognizer. On some phones it sends the other person's voice to Google or Apple to turn it into text. Your signs and sentences stay on your phone.",
+  "privacySpeech": "On Android, English and Arabic speech is turned into text on this phone. If that isn't available, Ishara uses your phone's speech recognizer, which on some phones sends the other person's voice to Google or Apple. Your signs and sentences stay on your phone unless you save a phrase.",
   "@privacySpeech": {
-    "description": "approved new text (step 7, 2026-10-12): D19: Q-T3 privacy line"
+    "description": "approved text (2026-11-26, TV-24: Moonshine for English, EgypTalk for Arabic): D19: Q-T3 privacy line"
+  },
+  "talkPrivacyAndroid": "Speech is turned into text on this phone. If that isn't available, the other person's voice may go to Google or Apple.",
+  "@talkPrivacyAndroid": {
+    "description": "approved text (2026-11-26, TV-24): Talk's 3-line privacy card (D19); the full text is privacySpeech in Settings › Privacy (Android: English and Arabic on the phone)"
+  },
+  "talkPrivacyIos": "Speech to text uses your phone's speech recognizer, which may send the other person's voice to Google or Apple.",
+  "@talkPrivacyIos": {
+    "description": "approved text (2026-11-25, TV-21): Talk's 3-line privacy card (D19); the full text is privacySpeech in Settings › Privacy (iOS: no on-phone English)"
+  },
+  "talkPrivacyMore": "More",
+  "@talkPrivacyMore": {
+    "description": "approved text (2026-11-25): the cue at the end of Talk's privacy card; tapping opens Settings › Privacy"
   },
   "clearLabel": "Clear and move to the conversation",
   "@clearLabel": {
@@ -1765,14 +1777,6 @@
   "@privacyGlove": {
     "description": "approved new text (step 9, 2026-10-15): P2"
   },
-  "privacyStored": "Your conversations and your Learn progress stay on this phone.",
-  "@privacyStored": {
-    "description": "approved new text (step 9, 2026-10-15): P3"
-  },
-  "privacyPhrases": "Starred phrases stay on this phone too. A later version will keep them in your account when you're signed in.",
-  "@privacyPhrases": {
-    "description": "approved new text (step 9, 2026-10-15): P4: Q-B4, sync comes with step 10"
-  },
   "privacyLocation": "Your location is read only when you press SOS, to put it in the message you choose to send. It is never tracked, stored or uploaded.",
   "@privacyLocation": {
     "description": "approved new text (step 9, 2026-10-15): P5: Q-T4 phase 1"
@@ -2043,5 +2047,200 @@
   "storageFull": "Your phone is out of storage, so Ishara can't save new changes. Free up some space.",
   "@storageFull": {
     "description": "approved new text (step 10, 2026-10-17): N1: once per session, when a change can't be saved (your wording, step 10a review)"
+  },
+  "micHoldStrong": "Hold the mic and speak.",
+  "@micHoldStrong": {
+    "description": "approved new text (talk voice, 2026-10-26): TV1: mic hint, hold to talk (replaces micHintStrong «Tap the mic and speak.»)"
+  },
+  "micTapStrong": "Tap the mic, speak, then tap again.",
+  "@micTapStrong": {
+    "description": "approved new text (talk voice, 2026-10-26): TV2: mic hint in tap mode (screen reader, Switch Access, or the setting)"
+  },
+  "micHoldLabel": "Hold to talk",
+  "@micHoldLabel": {
+    "description": "approved new text (talk voice, 2026-10-26): TV3: screen reader, mic button, hold to talk (replaces D18 «Tap and speak»)"
+  },
+  "micStartLabel": "Start recording",
+  "@micStartLabel": {
+    "description": "approved new text (talk voice, 2026-10-26): TV4: screen reader, mic button in tap mode, not recording"
+  },
+  "micStopLabel": "Stop and send",
+  "@micStopLabel": {
+    "description": "approved new text (talk voice, 2026-10-26): TV5: screen reader, mic button in tap mode, recording"
+  },
+  "micCancelAction": "Cancel recording",
+  "@micCancelAction": {
+    "description": "approved new text (talk voice, 2026-10-26): TV6: screen reader action while recording (throws it away)"
+  },
+  "micCancelled": "Recording cancelled",
+  "@micCancelled": {
+    "description": "approved new text (talk voice, 2026-10-26): TV7: screen reader announcement after a cancel"
+  },
+  "micSlideCancel": "Slide to cancel",
+  "@micSlideCancel": {
+    "description": "approved new text (talk voice, 2026-10-26): TV8: while holding (your wording)"
+  },
+  "micReleaseCancel": "Release to cancel",
+  "@micReleaseCancel": {
+    "description": "approved new text (talk voice, 2026-10-26): TV9: after sliding far enough"
+  },
+  "micTooShort": "Hold the mic while you speak.",
+  "@micTooShort": {
+    "description": "approved new text (talk voice, 2026-10-26): TV10: released under 0.4 s, nothing sent"
+  },
+  "micFinishing": "One moment…",
+  "@micFinishing": {
+    "description": "approved new text (talk voice, 2026-10-26): TV11: after release, waiting for the last words"
+  },
+  "sttNothingHeardHold": "Didn't catch that. Hold the mic and try again.",
+  "@sttNothingHeardHold": {
+    "description": "approved new text (talk voice, 2026-10-26): TV12: D9 for hold to talk (tap mode keeps D9)"
+  },
+  "micReplyHold": "Hold the mic to reply",
+  "@micReplyHold": {
+    "description": "approved new text (talk voice, 2026-10-26): TV13: face to face, under your words (replaces micReply in hold mode)"
+  },
+  "sMicTap": "Tap to start and stop",
+  "@sMicTap": {
+    "description": "approved new text (talk voice, 2026-10-26): TV14: Settings › Accessibility"
+  },
+  "sMicTapS": "Record with a tap instead of holding the mic. On by itself with TalkBack.",
+  "@sMicTapS": {
+    "description": "approved new text (talk voice, 2026-10-26): TV15: under TV14"
+  },
+  "noSignYet": "No sign yet",
+  "@noSignYet": {
+    "description": "approved new text (talk voice, 2026-10-27): NS1: screen reader, after a word the avatar has no sign for (caption and feed)"
+  },
+  "noSignCount": "{n, plural, =1{1 word has no sign yet} other{{n} words have no sign yet}}",
+  "@noSignCount": {
+    "description": "approved new text (talk voice, 2026-10-27): NS2: under a heard sentence in the feed when some words had no sign",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "verifyNote": "Verify your email to keep your progress in your account. We sent you a link.",
+  "@verifyNote": {
+    "description": "approved new text (step 10b, 2026-11-28): N2: Settings, signed in, email not verified (Q-B3)"
+  },
+  "verifyResend": "Resend email",
+  "@verifyResend": {
+    "description": "approved new text (step 10b, 2026-11-28): N3: Settings, resend the verification email"
+  },
+  "verifyResendIn": "Resend in {s} s",
+  "@verifyResendIn": {
+    "description": "approved new text (step 10b, 2026-11-28): N4: the resend button during its 60 s cooldown",
+    "placeholders": {
+      "s": {
+        "type": "int"
+      }
+    }
+  },
+  "verifyCheck": "I've verified",
+  "@verifyCheck": {
+    "description": "approved new text (step 10b, 2026-11-28): N5: Settings, check the verification again"
+  },
+  "toastVerifySent": "Email sent. Check your inbox.",
+  "@toastVerifySent": {
+    "description": "approved new text (step 10b, 2026-11-28): N6: toast after Resend"
+  },
+  "toastNotVerified": "Not verified yet. Open the link in the email first.",
+  "@toastNotVerified": {
+    "description": "approved new text (step 10b, 2026-11-28): N7: toast, I've verified but it isn't yet"
+  },
+  "toastVerified": "Email verified. Your progress now syncs.",
+  "@toastVerified": {
+    "description": "approved new text (step 10b, 2026-11-28): N8: toast, verified"
+  },
+  "syncDone": "Synced with your account",
+  "@syncDone": {
+    "description": "approved new text (step 10b, 2026-11-28): N9: Settings, signed in and verified, nothing waiting (S10-8)"
+  },
+  "syncPending": "Not synced yet. Your changes will upload when you're online.",
+  "@syncPending": {
+    "description": "approved new text (step 10b, 2026-11-28): N10: Settings, changes waiting (S10-8)"
+  },
+  "signOutUnsyncedTitle": "Sign out anyway?",
+  "@signOutUnsyncedTitle": {
+    "description": "approved new text (step 10b, 2026-11-28): N11: sign-out with changes not uploaded (S10-6)"
+  },
+  "signOutUnsyncedBody": "Some changes haven't uploaded yet. If you sign out now, they'll be lost.",
+  "@signOutUnsyncedBody": {
+    "description": "approved new text (step 10b, 2026-11-28): N12: its body"
+  },
+  "deleteAccount": "Delete account",
+  "@deleteAccount": {
+    "description": "approved new text (step 10b, 2026-11-28): N13: Settings row and the confirm button (Q-B1)"
+  },
+  "deleteAccountS": "Your account and everything saved in it",
+  "@deleteAccountS": {
+    "description": "approved new text (step 10b, 2026-11-28): N14: the row's subtitle"
+  },
+  "deleteTitle": "Delete your account?",
+  "@deleteTitle": {
+    "description": "approved new text (step 10b, 2026-11-28): N15: confirm dialog title"
+  },
+  "deleteBody": "This deletes {email} and everything saved in it, on every phone: settings, Learn progress and saved phrases. Conversations and emergency contacts on this phone are deleted too. This can't be undone.",
+  "@deleteBody": {
+    "description": "approved new text (step 10b, 2026-11-28): N16: confirm dialog body",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteTypeEmail": "Type your email to confirm",
+  "@deleteTypeEmail": {
+    "description": "approved new text (step 10b, 2026-11-28): N17: the field in the confirm dialog"
+  },
+  "deleting": "Deleting your account…",
+  "@deleting": {
+    "description": "approved new text (step 10b, 2026-11-28): N18: while deleting"
+  },
+  "deletePasswordTitle": "Enter your password",
+  "@deletePasswordTitle": {
+    "description": "approved new text (step 10b, 2026-11-28): N19: the server asks for a recent sign-in"
+  },
+  "deletePasswordBody": "For your safety, enter your password to finish deleting your account.",
+  "@deletePasswordBody": {
+    "description": "approved new text (step 10b, 2026-11-28): N20: its body"
+  },
+  "continueAction": "Continue",
+  "@continueAction": {
+    "description": "approved new text (step 10b, 2026-11-28): N21: its button"
+  },
+  "deleteFailed": "Couldn't delete your account. Check your connection and try again. Ishara will finish it the next time it opens.",
+  "@deleteFailed": {
+    "description": "approved new text (step 10b, 2026-11-28): N22: deletion failed (still pending)"
+  },
+  "toastDeleted": "Your account was deleted.",
+  "@toastDeleted": {
+    "description": "approved new text (step 10b, 2026-11-28): N23: toast, back on Welcome"
+  },
+  "privacyStoredPhone": "Your conversations stay on this phone. They're never uploaded or backed up.",
+  "@privacyStoredPhone": {
+    "description": "approved new text (step 10b, 2026-11-28): N24: Privacy, replaces step 9 P3 (deleted): Learn progress now syncs"
+  },
+  "signOutUnverifiedBody": "Your email isn't verified yet, so your phrases and Learn progress aren't in your account. They'll stay on this phone.",
+  "@signOutUnverifiedBody": {
+    "description": "approved new text (step 10b, 2026-11-28): N26: sign-out dialog, email not verified (your wording)"
+  },
+  "syncParked": "Some changes couldn't be saved to your account.",
+  "@syncParked": {
+    "description": "approved new text (step 10b, 2026-11-28): N27: Settings sync line, writes the account refused three times (your wording)"
+  },
+  "errNameTooLong": "Name must be at most 100 characters",
+  "@errNameTooLong": {
+    "description": "approved new text (step 10b, 2026-11-28): N28: sign-up name field, over 100 characters (same style as errPw)"
+  },
+  "privacySynced": "With an account and a verified email, your settings, Learn progress and saved phrases are kept in your account, so they come back on another phone. Signing out removes them from this phone.",
+  "@privacySynced": {
+    "description": "approved new text (step 10b, 2026-11-28): N25: Privacy, replaces step 9 P4 (deleted): what syncs now"
+  },
+  "authErrUnavailable": "Accounts aren't available right now. You can keep using Ishara as a guest.",
+  "@authErrUnavailable": {
+    "description": "approved new text (step 10b, 2026-11-28): N29: sign in / create / reset when Firebase couldn't start (accounts off this run; user 2026-11-27)"
   }
 }

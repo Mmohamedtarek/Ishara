@@ -8,12 +8,20 @@ part 'haptics.g.dart';
 /// heard sentence starts signing or a practice step passes; a long one when
 /// SOS is pressed. The phone's haptic feedback: no permission.
 abstract interface class Haptics {
+  /// Touch feedback (hold to talk: recording started). The phone's own
+  /// touch-feedback setting decides whether it is felt, not Settings ›
+  /// Vibrate (2026-10-26, to confirm with the user).
+  Future<void> tap();
+
   Future<void> short();
   Future<void> long();
 }
 
 class PlatformHaptics implements Haptics {
   const new();
+
+  @override
+  Future<void> tap() => HapticFeedback.lightImpact();
 
   @override
   Future<void> short() => HapticFeedback.mediumImpact();

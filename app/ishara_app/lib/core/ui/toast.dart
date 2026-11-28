@@ -10,7 +10,11 @@ import 'package:ishara_app/core/theme/ishara_theme.dart';
 /// 0.35 s fade and slide. It sits on the root overlay, so it stays while the
 /// screen changes. Screen readers announce it.
 void showToast(BuildContext context, String message) {
-  final overlay = Overlay.of(context, rootOverlay: true);
+  // the overlay's own context (the app root's flows use it) is no
+  // ancestor of itself
+  final overlay = context is StatefulElement && context.state is OverlayState
+      ? context.state as OverlayState
+      : Overlay.of(context, rootOverlay: true);
   _current?.remove();
   // the caller's theme: the root overlay may sit above it
   final entry = _ToastEntry(message, Theme.of(context));

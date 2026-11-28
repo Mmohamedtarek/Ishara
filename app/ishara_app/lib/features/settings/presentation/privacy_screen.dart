@@ -69,8 +69,8 @@ class PrivacyScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(18, 8, 18, 22),
                 children: [
                   line('hand', l.privacyGlove),
-                  line('clock', l.privacyStored),
-                  line('star', l.privacyPhrases),
+                  line('clock', l.privacyStoredPhone),
+                  line('star', l.privacySynced),
                   line(
                     'mic',
                     l.privacySpeech,

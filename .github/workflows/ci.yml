@@ -7,8 +7,10 @@ name: CI
 #   ai        AI kit: pytest, and the independent kit verifier against app/Ishara-Mobile-Kit
 #   firmware  PlatformIO builds of every board, plus the Wokwi calibration test when the
 #             WOKWI_CLI_TOKEN secret exists
-# app, ai and firmware run in parallel. Firebase rules and emulator tests are added with the
-# backend step. What to do when a job fails: app/README.md, "CI".
+#   rules     Firestore security rules: every allowed and denied case in the Firestore
+#             emulator (firebase/test/, demo project: nothing reaches a real Firebase)
+# app, ai, firmware and rules run in parallel. What to do when a job fails: app/README.md,
+# "CI".
 on:
   push:
   pull_request:
@@ -202,3 +204,34 @@ jobs:
             https://github.com/wokwi/wokwi-cli/releases/download/v0.27.1/wokwi-cli-linuxstatic-x64
           chmod +x "$RUNNER_TEMP/wokwi-cli"
           "$RUNNER_TEMP/wokwi-cli" --timeout 60000 --scenario test/calibration.test.yaml .
+
+  rules:
+    name: Firebase rules
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: firebase
+    steps:
+      - uses: actions/checkout@v4
+
+      # the Firestore emulator runs on Java
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: firebase/package-lock.json
+
+      - name: Dependencies (exact versions from package-lock.json)
+        run: npm ci --no-audit --no-fund
+
+      # the Firebase CLI (emulator) is not in package.json: locally the global one is used
+      - name: Firebase CLI
+        run: npm install --global --no-audit --no-fund firebase-tools@15.33.0
+
+      - name: Rules tests in the Firestore emulator
+        run: npm test

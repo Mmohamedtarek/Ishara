@@ -6,7 +6,7 @@ STEP10_DRAFTS). Usage: python3 app/tools/step10_drafts.py
 """
 import html
 
-from extract_strings import STEP10_DRAFTS
+from extract_strings import STEP10_DRAFTS, STEP10B_DRAFTS
 from proto_common import REPO
 
 OUT = REPO / "app" / "tools" / "out" / "step10" / "drafts.html"
@@ -16,18 +16,24 @@ def esc(s: str) -> str:
     return html.escape(s)
 
 
-rows = "\n".join(
+def table(drafts):
+    return "\n".join(
     f"<tr><td><b>{esc(why.split(':')[0])}</b><br><code>{esc(k)}</code></td><td>{esc(e)}</td>"
     f'<td dir="rtl" lang="ar">{esc(a)}</td><td>{esc(why)}</td></tr>'
-    for k, (e, a, why, _ph) in STEP10_DRAFTS.items()
+    for k, (e, a, why, _ph) in drafts.items()
 )
 page = f"""<!doctype html><html><head><meta charset="utf-8"><title>Step 10 drafts</title>
 <style>body{{font:14px system-ui,sans-serif;margin:24px;max-width:1100px}}table{{border-collapse:collapse;width:100%;margin-bottom:28px}}
 td,th{{border:1px solid #ccc;padding:6px 8px;vertical-align:middle;text-align:start}}th{{background:#eee}}
 td[dir=rtl]{{font-size:15px}}</style></head><body>
-<h1>Step 10a: texts ({len(STEP10_DRAFTS)}), approved 2026-10-17</h1>
+<h1>Step 10: texts</h1>
+<h2>Step 10b ({len(STEP10B_DRAFTS)}), approved 2026-11-28</h2>
+<p>Placeholders in braces are filled by the app. Password = «كلمة السر», as on the sign-in screen.</p>
 <table><tr><th>ID / key</th><th>English</th><th>Egyptian Arabic</th><th>Where / why</th></tr>
-{rows}</table>
+{table(STEP10B_DRAFTS)}</table>
+<h2>Step 10a ({len(STEP10_DRAFTS)}), approved 2026-10-17</h2>
+<table><tr><th>ID / key</th><th>English</th><th>Egyptian Arabic</th><th>Where / why</th></tr>
+{table(STEP10_DRAFTS)}</table>
 </body></html>"""
 OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(page, encoding="utf-8")

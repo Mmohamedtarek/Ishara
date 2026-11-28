@@ -105,6 +105,9 @@ void main() {
       expect(_key('settings-create-account'), findsNothing);
       await _scrollTo(t, 'settings-sign-out');
       await tapIt(t, _key('settings-sign-out'));
+      // not verified: the data stays on the phone, said first (N26)
+      expect(_key('sign-out-unverified'), findsOneWidget);
+      await tapIt(t, _key('sign-out-anyway'));
       expect(auth.currentUser, isNull);
       expect(find.text('route:/welcome'), findsOneWidget);
       await t.pump(const Duration(seconds: 3));
@@ -120,6 +123,7 @@ void main() {
         ('settings-vibrate', () => s().vibrate),
         ('settings-big-text', () => s().bigText),
         ('settings-contrast', () => s().highContrast),
+        ('settings-mic-tap', () => s().micTap),
       ]) {
         await _scrollTo(t, key);
         final before = read();
@@ -226,6 +230,11 @@ void main() {
     });
   });
 
+  const privacySynced =
+      'With an account and a verified email, your settings, Learn progress '
+      'and saved phrases are kept in your account, so they come back on '
+      'another phone. Signing out removes them from this phone.';
+
   group('Privacy', () {
     testWidgets('says what stays where (speech line, location); export '
         'shares the JSON; clear asks first and keeps starred phrases', (
@@ -250,6 +259,16 @@ void main() {
         ),
       );
       await c.read(savedPhrasesRepositoryProvider).star('hello');
+      // the longer speech line (TV-21) pushes it below the fold
+      await t.scrollUntilVisible(
+        _key('privacy-export'),
+        200,
+        scrollable: find.descendant(
+          of: find.byKey(const ValueKey('screen-privacy')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(find.text(privacySynced), findsOneWidget);
       await tapIt(t, _key('privacy-export'));
       expect(sharer.shared.single.$1, 'ishara-data.json');
       final data = jsonDecode(

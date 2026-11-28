@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 import 'package:ishara_app/core/storage/database/app_database.dart';
 import 'package:ishara_app/core/storage/hex_id.dart';
 import 'package:ishara_app/core/storage/storage_health.dart';
+import 'package:ishara_app/core/sync/outbox.dart';
 import 'package:meta/meta.dart';
 
 /// A starred sentence (Q-B4): it syncs (step 10b; Phase 0 model
@@ -205,8 +206,85 @@ class LocalSavedPhrasesRepository implements SavedPhrasesRepository {
   Future<void> _save(SavedPhrase p) async {
     _changes.add(phrases);
     await storeOrKeepGoing(
-      () => _db.into(_db.phrases).insertOnConflictUpdate(row(p)),
+      () => _db.transaction(() async {
+        await _db.into(_db.phrases).insertOnConflictUpdate(row(p));
+        // too long for the account: on this phone only
+        if (Synced.phraseFits(p.text)) {
+          await enqueue(_db, Synced.phrases, p.id);
+        }
+      }),
     );
+  }
+
+  /// Every stored phrase, tombstones included (the sync).
+  List<SavedPhrase> get all => List.unmodifiable(_all);
+
+  /// The phrase with [id], tombstone or not.
+  SavedPhrase? byId(String id) {
+    for (final p in _all) {
+      if (p.id == id) return p;
+    }
+    return null;
+  }
+
+  /// Phrases from the account (the sync): each replaces the local one with
+  /// its id when it is newer (last writer wins by `updatedAt`; equal times:
+  /// the larger content wins, the same on every phone). Not queued again.
+  /// Then two live phrases with the same text keep one: the larger id
+  /// becomes a tombstone (queued), the same on every phone.
+  Future<void> applyRemote(Iterable<SavedPhrase> remote) async {
+    final changed = <SavedPhrase>[];
+    for (final r in remote) {
+      final i = _all.indexWhere((p) => p.id == r.id);
+      if (i < 0) {
+        _all.add(r);
+        changed.add(r);
+      } else if (newer(r, _all[i])) {
+        _all[i] = r;
+        changed.add(r);
+      }
+    }
+    final dupes = <SavedPhrase>[];
+    final live = <String, SavedPhrase>{};
+    for (final p in [..._all]..sort((a, b) => a.id.compareTo(b.id))) {
+      if (p.deleted) continue;
+      if (live.containsKey(p.text)) {
+        final dead = p.copyWith(deleted: true, at: _now());
+        _all[_all.indexWhere((q) => q.id == p.id)] = dead;
+        dupes.add(dead);
+      } else {
+        live[p.text] = p;
+      }
+    }
+    if (changed.isEmpty && dupes.isEmpty) return;
+    _changes.add(phrases);
+    await storeOrKeepGoing(
+      () => _db.transaction(() async {
+        for (final p in changed) {
+          await _db.into(_db.phrases).insertOnConflictUpdate(row(p));
+        }
+        for (final p in dupes) {
+          await _db.into(_db.phrases).insertOnConflictUpdate(row(p));
+          if (Synced.phraseFits(p.text)) {
+            await enqueue(_db, Synced.phrases, p.id);
+          }
+        }
+      }),
+    );
+  }
+
+  /// Whether [a] wins over [b] (the same phrase id).
+  static bool newer(SavedPhrase a, SavedPhrase b) {
+    final c = a.updatedAt.compareTo(b.updatedAt);
+    if (c != 0) return c > 0;
+    return jsonEncode(a.toJson()).compareTo(jsonEncode(b.toJson())) > 0;
+  }
+
+  /// Sign-out (S10-6): the account's phrases leave the phone.
+  Future<void> clearAll() async {
+    _all.clear();
+    _changes.add(phrases);
+    await storeOrKeepGoing(() => _db.delete(_db.phrases).go());
   }
 
   /// The same shape as before step 10 (Privacy › Export keeps its format;

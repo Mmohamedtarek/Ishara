@@ -107,5 +107,11 @@ class LocalEmergencyContactsRepository implements EmergencyContactsRepository {
     );
   }
 
+  /// Account deletion (Q-B1): the phone's data goes too.
+  Future<void> clearAll() async {
+    _list.clear();
+    await _save();
+  }
+
   Future<void> dispose() => _changes.close();
 }
