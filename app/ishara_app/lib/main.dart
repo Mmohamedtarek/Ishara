@@ -3,7 +3,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ishara_app/app.dart';
+import 'package:ishara_app/core/auth/auth_providers.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
+import 'package:ishara_app/core/backend/backend.dart';
+import 'package:ishara_app/core/backend/firebase_project.dart';
 import 'package:ishara_app/core/config/app_rules.dart';
 import 'package:ishara_app/core/errors/failure.dart';
 import 'package:ishara_app/core/licenses/native_licenses.dart';
@@ -11,6 +14,7 @@ import 'package:ishara_app/core/logging/log.dart';
 import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/storage/open_storage.dart';
 import 'package:ishara_app/core/storage/storage_providers.dart';
+import 'package:ishara_app/core/sync/sync_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,8 +43,13 @@ Future<void> main() async {
   // The phone's database, with the old key-value store migrated into it
   // (step 10a). If it can't open, the app still runs on the old store.
   final storage = await openStorage();
+  // Accounts and the sync (step 10b): fake, the emulators, or Firebase.
+  final backend = await startBackend(
+    resolveBackend(hasOptions: firebaseProjectOptions() != null),
+  );
   final container = ProviderContainer(
     overrides: [
+      backendProvider.overrideWithValue(backend),
       keyValueStoreProvider.overrideWithValue(storage.kv),
       appDatabaseProvider.overrideWithValue(storage.db),
       localDataProvider.overrideWithValue(storage.data),
@@ -66,6 +75,8 @@ Future<void> main() async {
       UnexpectedFailure('cast.json', cause: e, stackTrace: st),
     );
   }
+  // the sync starts with the app (signed in and verified only, Q-B3)
+  container.read(syncEngineProvider);
   runApp(
     UncontrolledProviderScope(container: container, child: const IsharaApp()),
   );

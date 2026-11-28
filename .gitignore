@@ -20,3 +20,15 @@ hardware/**/fp-info-cache
 .DS_Store
 # app: regenerated outputs
 app/tools/out/
+
+# Firebase project config (step 10b): the repo is public, these stay on the
+# developer's machine. The build reads them only with
+# --dart-define=BACKEND=firebase (app/tools/firebase_defines.py).
+# Guarded by app/ishara_app/test/backend/firebase_config_guard_test.dart.
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
+firebase.defines.json
+.firebaserc
+firebase-debug.log
+firestore-debug.log

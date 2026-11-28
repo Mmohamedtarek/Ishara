@@ -6,7 +6,8 @@ its database (step 10a) from a debug build with `adb run-as`, prints key
 names, value types, list sizes and table counts, then deletes the pulled
 copies. For the step 10a before / after check; safe to paste anywhere.
 
-Usage: python3 app/tools/storage_probe.py [--serial RZ8R317P1EW]
+Usage: python3 app/tools/storage_probe.py --serial <your phone's serial, from `adb devices`>
+(required; no serial is written in the repo: it is public)
 """
 import argparse
 import json
@@ -120,7 +121,7 @@ def db_report(path: str) -> list[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--serial", default=os.environ.get("ANDROID_SERIAL", "RZ8R317P1EW"))
+    ap.add_argument("--serial", required=True, help="the phone, as `adb devices` lists it")
     a = ap.parse_args()
     with tempfile.TemporaryDirectory() as d:
         p = os.path.join(d, "prefs.pb")

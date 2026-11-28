@@ -5,6 +5,7 @@ import 'package:ishara_app/core/router/app_router.dart';
 import 'package:ishara_app/core/settings/app_settings.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/storage_notice.dart';
+import 'package:ishara_app/features/settings/presentation/account_flows.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
 /// Root widget: theme (light / dark / system), language and RTL, router.
@@ -38,7 +39,9 @@ class IsharaApp extends ConsumerWidget {
       builder: (context, child) => ColoredBox(
         color: context.colors.bg,
         child: StorageNotice(
-          child: AvatarHost(child: child ?? const SizedBox.shrink()),
+          child: PendingDeletionResumer(
+            child: AvatarHost(child: child ?? const SizedBox.shrink()),
+          ),
         ),
       ),
     );

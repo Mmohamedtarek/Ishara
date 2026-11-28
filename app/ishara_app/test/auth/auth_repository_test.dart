@@ -90,4 +90,24 @@ void main() {
     expect(AuthValidation.passwordTooShort('1234567'), isTrue);
     expect(AuthValidation.passwordTooShort('12345678'), isFalse);
   });
+
+  test('account ids are never reused after a deletion (sync owner checks '
+      'and server paths depend on them)', () async {
+    await repo.createAccount(name: 'A', email: 'a@b.co', password: 'secret123');
+    await repo.signOut();
+    final b = await repo.createAccount(
+      name: 'B',
+      email: 'b@b.co',
+      password: 'secret123',
+    );
+    await repo.signOut();
+    await repo.signIn(email: 'a@b.co', password: 'secret123');
+    await repo.deleteUser(); // A goes; B still exists
+    final c = await repo.createAccount(
+      name: 'C',
+      email: 'c@b.co',
+      password: 'secret123',
+    );
+    expect(c.id, isNot(b.id));
+  });
 }

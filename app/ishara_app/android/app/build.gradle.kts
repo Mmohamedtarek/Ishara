@@ -5,11 +5,49 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
+import java.util.Base64
 
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// --- Backend (accounts and sync, step 10b) ---------------------------------
+// `--dart-define=BACKEND=fake|emulator|firebase` (none = fake). The repo is
+// public, so the real project's values are never committed: a build with
+// BACKEND=firebase must also get them from the git-ignored file that
+// app/tools/firebase_defines.py writes, or it stops here rather than ship an
+// app that silently runs on the fakes. The values themselves are never
+// printed. Flutter hands the dart-defines to Gradle as base64, comma-separated.
+run {
+    val defines = (findProperty("dart-defines") as String?)
+        .orEmpty()
+        .split(",")
+        .filter { it.isNotBlank() }
+        .map { Base64.getDecoder().decode(it).toString(Charsets.UTF_8) }
+        .associate { it.substringBefore("=") to it.substringAfter("=", "") }
+    val backend = defines["BACKEND"].orEmpty()
+    if (backend !in setOf("", "fake", "emulator", "firebase")) {
+        throw GradleException("--dart-define=BACKEND=$backend: use fake, emulator or firebase.")
+    }
+    if (backend == "firebase") {
+        val missing = listOf(
+            "FIREBASE_API_KEY",
+            "FIREBASE_APP_ID",
+            "FIREBASE_SENDER_ID",
+            "FIREBASE_PROJECT_ID",
+        ).filter { defines[it].isNullOrEmpty() }
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                "BACKEND=firebase needs the Firebase project's values (missing: " +
+                    missing.joinToString() + "). Put google-services.json in " +
+                    "android/app/, run python3 app/tools/firebase_defines.py, then build " +
+                    "with --dart-define=BACKEND=firebase " +
+                    "--dart-define-from-file=firebase.defines.json.",
+            )
+        }
+    }
 }
 
 // --- Moonshine model (English speech to text, DECISIONS TV-21) -------------
@@ -350,10 +388,17 @@ tasks.configureEach {
     if (Regex("^pre.*Build$").matches(name)) dependsOn(fetchSherpaOnnx)
 }
 
-// AndroidManifest.xml removes ACCESS_NETWORK_STATE without tools:selector (a
-// selector keeps the removing entry as a declaration). Only Moonshine's
-// downloader asked for it; if any other library declares it, the merge report
-// shows that library and the build stops, so nothing is dropped unnoticed.
+// ACCESS_NETWORK_STATE (DECISIONS TV-21, amended 2026-11-27 for step 10b):
+// the app declares it for Firebase; only these libraries may declare it too.
+// If any other library does, the merge report names it and the build stops,
+// so no library gets the permission unnoticed.
+val networkStateAllowed = setOf(
+    "ai.moonshine:moonshine-voice",
+    "com.google.firebase:firebase-auth",
+    "com.google.firebase:firebase-firestore",
+    "io.grpc:grpc-android",
+    "com.google.android.recaptcha:recaptcha",
+)
 val manifestLogs = layout.buildDirectory.dir("outputs/logs").get().asFile
 tasks.configureEach {
     val variant = Regex("^process(.+)MainManifest$").find(name)?.groupValues?.get(1)
@@ -364,15 +409,18 @@ tasks.configureEach {
         val lines = report.readLines()
         val start = lines.indexOfFirst { it == "uses-permission#android.permission.ACCESS_NETWORK_STATE" }
         if (start < 0) return@doLast
+        val from = Regex("^(?:ADDED|MERGED|REJECTED|IMPLIED) from \\[([^:\\]]+):([^:\\]]+):")
         val others = lines.drop(start + 1)
             .takeWhile { it.startsWith("\t") || Regex("^(ADDED|MERGED|REJECTED|IMPLIED) ").containsMatchIn(it) }
-            .filter { Regex("^(MERGED|REJECTED|IMPLIED) from \\[").containsMatchIn(it) }
-            .filterNot { it.contains("[ai.moonshine:moonshine-voice:") }
+            .filter { line ->
+                val m = from.find(line) ?: return@filter false
+                "${m.groupValues[1]}:${m.groupValues[2]}" !in networkStateAllowed
+            }
         if (others.isNotEmpty()) {
             throw GradleException(
-                "ACCESS_NETWORK_STATE is removed in AndroidManifest.xml for Moonshine, but another " +
-                    "library declares it too:\n  ${others.joinToString("\n  ")}\n" +
-                    "Decide whether that library needs it, then change the remove (DECISIONS TV-21).",
+                "ACCESS_NETWORK_STATE: a library outside the allowed list declares it:\n  " +
+                    others.joinToString("\n  ") +
+                    "\nDecide whether that library needs it, then change the list (DECISIONS TV-21).",
             )
         }
     }

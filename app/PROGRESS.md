@@ -550,7 +550,7 @@ Your answers: S8-1 … S8-4 (DECISIONS). Static screens `08-learn` / `08b`: a ca
 
 ## Step 9: History, Settings, Avatar studio, SOS (2026-10-15, Linux laptop; devices: emulator `ishara_api36` early on, then the user's Galaxy A52)
 
-Your answers: S9-1 … S9-6 and the Q-T4 change (DECISIONS). **Device checks:** the emulator froze this laptop and crashed with the host GPU (exit 139, 4 times); at your request the final integration runs, the SOS checks and the recording ran on your **Galaxy A52 (RZ8R317P1EW, Android 14)** instead of the emulator. The app data on the phone was allowed to go (each `flutter test` run uninstalls the app).
+Your answers: S9-1 … S9-6 and the Q-T4 change (DECISIONS). **Device checks:** the emulator froze this laptop and crashed with the host GPU (exit 139, 4 times); at your request the final integration runs, the SOS checks and the recording ran on your **Galaxy A52 (Android 14)** instead of the emulator. The app data on the phone was allowed to go (each `flutter test` run uninstalls the app).
 
 | # | Requirement | Source | Status |
 |---|---|---|---|
@@ -579,7 +579,7 @@ Your answers: S9-1 … S9-6 and the Q-T4 change (DECISIONS). **Device checks:** 
 
 **Tests (Linux laptop):** analyze 0 issues (`--fatal-infos`); format 0 changed; `flutter test --coverage --concurrency=2`: **939 passed, 4 skipped** (the Cairo tests outside Cairo); `lib/core` 92.9 % (4293/4620), `lib/features/*/domain` 99.7 % (338/339). New: history domain / screen, saved phrases, settings persistence / screen (Settings, About, Privacy, Avatar studio), vibrate + subtitles in Talk, practice-pass vibrate, SOS domain / screens / platform (LocationManager only, no Accuracy offer during SOS, default SMS app / dialer), conversation ids (Clear, midnight, 9:59 vs 10:01, background, legacy, delete newest), Talk closing mid-sign, architecture (no sample history). The step 9 goldens pass locally against images rendered on this laptop (not committed).
 
-**Integration (Galaxy A52, RZ8R317P1EW, one file at a time, final code):** onboarding_test ✓ 2/2 (the auth fields now wait for the page: slower transition on a phone); talk_test ✓ 1/1 (DeveloperMode on for the Mock panel); learn_test ✓ 3/3; avatar_test ✓ 1/1 (ready 3.96 s, 25 signs, 23.7–38.7 fps); history_test ✓ 1/1 (mock glove signs hello → History "Today" → star → Starred speaks it); settings_test ✓ 1/1 (vibrate, subtitles, dark and 0.5x survive a restart; Talk plays hello at 0.5x); flow_test ✓ 1/1 (new, the recording's flow); sos_test ✓ 1/1 (with `tools/sos_watch.sh`: fresh fix ±15 m, Google Messages with both recipients and the link, Samsung dialer with 123, nothing sent). Earlier the same day on the emulator (software GPU): all 6 files then present ✓, and sos_test ✓ (fresh fix from `adb emu geo fix`, no dialog).
+**Integration (the user's Galaxy A52, one file at a time, final code):** onboarding_test ✓ 2/2 (the auth fields now wait for the page: slower transition on a phone); talk_test ✓ 1/1 (DeveloperMode on for the Mock panel); learn_test ✓ 3/3; avatar_test ✓ 1/1 (ready 3.96 s, 25 signs, 23.7–38.7 fps); history_test ✓ 1/1 (mock glove signs hello → History "Today" → star → Starred speaks it); settings_test ✓ 1/1 (vibrate, subtitles, dark and 0.5x survive a restart; Talk plays hello at 0.5x); flow_test ✓ 1/1 (new, the recording's flow); sos_test ✓ 1/1 (with `tools/sos_watch.sh`: fresh fix ±15 m, Google Messages with both recipients and the link, Samsung dialer with 123, nothing sent). Earlier the same day on the emulator (software GPU): all 6 files then present ✓, and sos_test ✓ (fresh fix from `adb emu geo fix`, no dialog).
 
 **SOS device checks (S9-6):** emulator: no dialog, fresh fix, SMS app + dialer. Galaxy A52: Location Accuracy on → fresh ±19 m; off → fresh ±6 m (GPS), no system dialog in either (screenshots at 1.5 s: D23 spoken, "Getting your location…", call buttons ready); location off → "Couldn't get your location", SMS "I need help. I couldn't get my location."; before the fix a plain sms: link opened the "Open with" chooser (fixed). Screenshots were in `tools/out/step9/sos/`; deleted after your review (they showed your real location and contacts).
 
@@ -615,7 +615,7 @@ New drafts (7): `tools/out/step9/drafts.html`, top section.
 
 **Checks (Linux laptop):** analyze 0 issues, format 0 changed; `flutter test --concurrency=2`: 945 passed, 4 skipped; `lib/core` 92.9 %, domain 99.7 % (345/346). The integration tests were not rerun on the phone for this round (the changes are texts and the SOS sheet, covered by widget tests).
 
-## Step 10a: the local database (2026-10-17, Linux laptop; device: the user's Galaxy A52 RZ8R317P1EW)
+## Step 10a: the local database (2026-10-17, Linux laptop; device: the user's Galaxy A52)
 
 Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/drafts.html`); `app/ishara_app/run.txt`, `runB.log` and the root `stt.txt` deleted (old logs, referenced nowhere but a step 6 note here).
 
@@ -666,7 +666,7 @@ Before step 10: O17–O23 marked approved (ARB descriptions, `tools/out/step9/dr
 
 **Checks:** analyze 0 issues, format clean; `flutter test --concurrency=2`: **979 passed, 4 skipped**. CI on `53fbcee` (10a): run 39036934472 green (Flutter app, AI, Firmware, Android build).
 
-## Talk voice: speech → sign words, hold to talk (2026-10-26, branch `talk-voice`, worktree `~/Ishara-talk`; device: the user's Galaxy A52 RZ8R317P1EW, Android 14)
+## Talk voice: speech → sign words, hold to talk (2026-10-26, branch `talk-voice`, worktree `~/Ishara-talk`; device: the user's Galaxy A52, Android 14)
 
 **Checklist (source → status)**
 
@@ -831,3 +831,34 @@ User decision TV-24: EgypTalk-ASR-v2 (sherpa-onnx CTC int8) is Arabic's recogniz
 - why 5 Arabic listens gave no sign: a debug build with the speech trace on shows the text (not "ميه"/"مية": ة → ه is already normalized, `word_normalizer.dart`).
 
 **Not run yet:** integration tests; APK with the `word_to_stop_ms` fix.
+
+## Step 10b: Firebase accounts, sync, rules, account deletion (2026-11-27, branch `feature/backend-10b` from `feature/stt-egyptalk` f3e5ad6, Linux laptop; phone: the user's Galaxy A56)
+
+The 10b work from 2026-10-17 (local WIP on `step10`) applied as one 3-way patch, then brought up to date. The real Firebase project (Spark, Email/Password, Firestore in production mode); its config never enters git.
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| 1 | WIP applied, conflicts resolved, nothing of talk voice lost | user | ✓ conflicts: `extract_strings.py` (both lists kept), `settings_screen_test.dart` (talk voice's scroll + 10b's check), ARBs merged from data (no key changed on both sides) |
+| 2 | String generator reproduces the ARBs | user | ✓ the 4 talk-voice privacy texts copied in; HEAD's generator + this fix gives HEAD's ARBs byte for byte; the merged ARBs are the generator's output |
+| 3 | Firebase packages: newest 4.x / 6.x patches, licences, no analytics | user A | ✓ firebase_core 4.15.2, firebase_auth 6.7.1, cloud_firestore 6.10.2 (security patches only; Android BoM 34.19.0) |
+| 4 | Config out of git; fake backend by default; `BACKEND=firebase` without the values fails the build | user C | ✓ root `.gitignore`, guard test, `firebase_defines.py`, Gradle check (both failure messages checked on a real build), Dart check |
+| 5 | `micTap` stays on the phone | user B, S10-9 | ✓ test |
+| 6 | Rules tests in the emulator, mutation check | brief | ✓ 28/28; rules opened to everyone: 19/28 fail; global CLI locally (D), CI installs firebase-tools 15.33.0 |
+| 7 | `ACCESS_NETWORK_STATE` for exactly the four Firebase libraries | user, TV-21a | ✓ guard allows Moonshine + those four, fails for any other |
+| 8 | Licences from the real dependency list | user A | ✓ 39 artifacts only through the Firebase plugins: 29 open source with full texts (Apache-2.0, gRPC and PerfMark NOTICEs, MIT checker-qual and animal-sniffer, Go licence re2j), 10 under Google terms by name, version and link; test |
+| 9 | Release build with `BACKEND=firebase` | user | ✓ 522.0 MB (models); licence assets inside |
+| 10 | Old phone serial out of the records; `storage_probe.py --serial` required | user | ✓ no serial in any tracked file |
+
+**Checks (laptop, 2026-11-27):** analyze `--fatal-infos` 0 issues, format clean; full suite 1234 passed, 4 skipped; CI goldens 76 passed; coverage gate `lib/core` 91.0 %, domain 99.7 % (Firebase-only files low: `firebase_auth_repository.dart` 17 %, `remote_store.dart` 60 %, `backend.dart` 40 %: the emulator test on the phone covers them).
+**Goldens:** re-rendered (Linux and CI, locally): `step9_privacy`, `step9_settings_signed_in`, `step10_delete_confirm`, `step10_delete_password`, `step10_sign_out_unsynced`, `step10_storage_notice` (dialogs unchanged; the Settings row behind them moved with the mic-tap row). The CI images must come from the runner (`goldens.yml`) before merge.
+**Review:** sync logs no longer carry the account id (`users/{uid}/…`). `/code-review` found 9 + 1 nit; fixed with tests (each test fails with its fix undone): sign-out clear serialized and listener jobs checked against the account (1); separate pull-retry timer (2); sync resumes after a deletion run (3); suspend waits for a write under way (4); push errors other than the server's answer back off (8); create account succeeds when only the name update fails (9); fake account ids never reused (nit). Open for the user: password dialog cancelled mid-deletion (5), runtime fallback to the fakes (6), phrases over 500 characters (7).
+**In the release APK (R8):** of the 10 Google-terms artifacts, classes kept: firebase-auth 653/1410, firebase-auth-interop 5/7, play-services-auth 49/179, play-services-auth-base 0/309, play-services-auth-api-phone 6/38, play-services-fido 61/309, googleid 0/10, recaptcha 562/562, core-common 1/4, integrity 123/133. New in the merged manifest: `READ_GSERVICES` (reCAPTCHA); exported `GenericIdpActivity`, `RecaptchaActivity` (Firebase Auth), `RevocationBoundService` (Google Sign-In).
+
+**Your answers (2026-11-27), done with tests (each fails with its change undone):** deletion asks the password first, every time (S10-11); Firebase failing at run time turns accounts off, never the fakes (S10-12, new text N29); phrases over 500 UTF-16 units stay on the phone, no sign-out warning (S10-13; the emulator showed the rules count UTF-16 units: 500 Arabic letters, 250 emoji; a new rules test pins it); `READ_GSERVICES` kept (S10-10a).
+**Checks after them:** analyze `--fatal-infos` 0 issues, format clean; full suite 1242 passed, 4 skipped; CI goldens 76 passed (none changed); coverage `lib/core` 91.0 %, domain 99.7 %; rules 29/29 (`firestore.rules` unchanged); release APK with `BACKEND=firebase` 522.0 MB.
+
+**Texts (2026-11-28):** N2–N29 approved as written (S10-14): ARB descriptions marked approved, `app_ar.arb` byte-identical to before (Arabic exactly as on the drafts page), English texts unchanged; drafts page regenerated.
+
+**Project id out of git (2026-11-28):** the real project's id is no longer in any tracked file (docs say "the real Firebase project"); `firebase_defines.py` checks exactly one project and the app id, `--expect-project <id>` optional, and never prints the id; the guard test reads the id from the local `google-services.json` and fails if a tracked file holds it (mutation-checked; skipped where the file is absent, i.e. CI).
+
+**Open (deferred by the user, 2026-11-28):** integration tests on the phone (`tools/run_integration_phone.sh`); the real-account checklist; CI goldens from the runner (after the push).

@@ -60,7 +60,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     AuthProblem.emailInUse => l.authErrEmailInUse,
     AuthProblem.network => l.authErrNetwork,
     AuthProblem.tooManyRequests => l.authErrTooMany,
-    AuthProblem.unknown => l.authErrUnknown,
+    AuthProblem.unavailable => l.authErrUnavailable,
+    // shown on their fields instead (see _submit)
+    AuthProblem.weakPassword => l.errPw,
+    AuthProblem.invalidEmail => l.errEmailFormat,
+    AuthProblem.requiresRecentLogin || AuthProblem.unknown => l.authErrUnknown,
   };
 
   /// Prototype submit handler (email only): name (create), email present and
@@ -69,7 +73,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final l = AppLocalizations.of(context);
     final errors = <_Field, String>{
       if (_signUp && AuthValidation.nameMissing(_name.text))
-        _Field.name: l.errName,
+        _Field.name: l.errName
+      else if (_signUp && AuthValidation.nameTooLong(_name.text))
+        _Field.name: l.errNameTooLong,
       if (AuthValidation.emailMissing(_email.text))
         _Field.email: l.errEmail
       else if (AuthValidation.emailMalformed(_email.text))
@@ -101,10 +107,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } on AuthFailure catch (f) {
       if (mounted) {
+        // the server's field problems go on their fields, like the form's
+        final field = switch (f.problem) {
+          AuthProblem.weakPassword => _Field.password,
+          AuthProblem.invalidEmail => _Field.email,
+          _ => null,
+        };
         setState(() {
           _busy = false;
-          _formError = _problemText(l, f.problem);
+          if (field == null) {
+            _formError = _problemText(l, f.problem);
+          } else {
+            _errors[field] = _problemText(l, f.problem);
+          }
         });
+        if (field != null) _focus[field]!.requestFocus();
       }
       return;
     }

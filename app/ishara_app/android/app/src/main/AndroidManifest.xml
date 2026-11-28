@@ -31,13 +31,14 @@
     <!-- Moonshine (TV-21) needs API 26; below it the app never touches its
          classes and English uses the phone's recognizer. -->
     <uses-sdk tools:overrideLibrary="ai.moonshine.voice" />
-    <!-- Moonshine's downloader (left out of the build) needs it; nothing
-         else does. Removed without tools:selector (a selector keeps this
-         entry as a declaration). The build fails if another library ever
-         declares it (the ACCESS_NETWORK_STATE check in app/build.gradle.kts). -->
-    <uses-permission
-        android:name="android.permission.ACCESS_NETWORK_STATE"
-        tools:node="remove" />
+    <!-- Accounts and sync (step 10b, TV-21 amendment 2026-11-27): Firebase
+         Auth, Firestore, gRPC and reCAPTCHA (inside Firebase Auth) read
+         whether a network exists, so the sync notices when the connection
+         comes back. A normal permission: no prompt, no data. Moonshine also
+         declares it (its downloader is left out of the build). The build
+         fails if any other library declares it (the ACCESS_NETWORK_STATE
+         check in app/build.gradle.kts). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Optional: without BLE the app still offers speech -> avatar and Learn. -->
     <uses-feature
         android:name="android.hardware.bluetooth_le"

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ishara_app/core/auth/auth_providers.dart';
+import 'package:ishara_app/core/auth/auth_repository.dart';
 import 'package:ishara_app/core/avatar/avatar_providers.dart';
 import 'package:ishara_app/core/avatar/sign_speed.dart';
 import 'package:ishara_app/core/glove/dev_glove_switch.dart';
@@ -14,12 +15,15 @@ import 'package:ishara_app/core/profile/profile_providers.dart';
 import 'package:ishara_app/core/router/app_routes.dart';
 import 'package:ishara_app/core/settings/app_settings.dart';
 import 'package:ishara_app/core/settings/developer_mode.dart';
+import 'package:ishara_app/core/sync/sync_engine.dart';
+import 'package:ishara_app/core/sync/sync_providers.dart';
 import 'package:ishara_app/core/theme/ishara_theme.dart';
 import 'package:ishara_app/core/ui/list_ui.dart';
 import 'package:ishara_app/core/ui/onboarding_ui.dart';
 import 'package:ishara_app/core/ui/sign_language_picker.dart';
 import 'package:ishara_app/core/ui/toast.dart';
 import 'package:ishara_app/features/learn/application/learn_providers.dart';
+import 'package:ishara_app/features/settings/presentation/account_flows.dart';
 import 'package:ishara_app/features/sos/application/sos_controller.dart';
 import 'package:ishara_app/l10n/gen/app_localizations.dart';
 
@@ -44,6 +48,7 @@ class SettingsScreen extends ConsumerWidget {
     final speed = ref.watch(signSpeedProvider);
     final contacts = ref.watch(emergencyContactsProvider).value ?? const [];
     final dev = ref.watch(developerModeProvider) && DevGloveSwitch.available;
+    final signedIn = !ref.watch(learnGuestProvider);
     return Scaffold(
       key: const ValueKey('screen-settings'),
       backgroundColor: c.bg,
@@ -191,13 +196,19 @@ class SettingsScreen extends ConsumerWidget {
                     tone: RowTone.amber,
                     title: l.sLogout,
                     subtitle: l.sLogoutS,
-                    onTap: () async {
-                      await ref.read(authRepositoryProvider).signOut();
-                      if (!context.mounted) return;
-                      showToast(context, l.toastLogout);
-                      context.go(AppRoutes.welcome);
-                    },
+                    onTap: () => unawaited(signOutFlow(context, ref)),
                   ),
+                  if (signedIn) ...[
+                    const SizedBox(height: 8),
+                    ActionRow(
+                      key: const ValueKey('settings-delete-account'),
+                      icon: 'trash',
+                      tone: RowTone.amber,
+                      title: l.deleteAccount,
+                      subtitle: l.deleteAccountS,
+                      onTap: () => unawaited(deleteAccountFlow(context, ref)),
+                    ),
+                  ],
                   if (dev) const _Developer(),
                 ],
               ),
@@ -220,8 +231,9 @@ class _Profile extends ConsumerWidget {
     final c = context.colors;
     final t = context.text;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    ref.watch(learnGuestProvider);
-    final user = ref.watch(authRepositoryProvider).currentUser;
+    final user =
+        ref.watch(authUserProvider).value ??
+        ref.watch(authRepositoryProvider).currentUser;
     final name = user?.name ?? l.guestName;
     final initial = user == null
         ? '?'
@@ -290,6 +302,8 @@ class _Profile extends ConsumerWidget {
                     color: c.muted,
                   ),
                 ),
+                if (user != null && !user.emailVerified) const _Verify(),
+                if (user != null && user.emailVerified) const _SyncLine(),
               ],
             ),
           ),
@@ -311,6 +325,169 @@ class _Profile extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Q-B3: the account's email isn't verified yet: what that means, Resend
+/// (60 s apart) and "I've verified" (asks the server again).
+class _Verify extends ConsumerStatefulWidget {
+  const new();
+
+  static const cooldown = Duration(seconds: 60);
+
+  @override
+  ConsumerState<_Verify> createState() => _VerifyState();
+}
+
+class _VerifyState extends ConsumerState<_Verify> {
+  Timer? _tick;
+  int _left = 0;
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  void _startCooldown() {
+    _tick?.cancel();
+    setState(() => _left = _Verify.cooldown.inSeconds);
+    _tick = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return t.cancel();
+      setState(() => _left--);
+      if (_left <= 0) t.cancel();
+    });
+  }
+
+  String _problem(AppLocalizations l, AuthFailure f) => switch (f.problem) {
+    AuthProblem.network => l.authErrNetwork,
+    AuthProblem.tooManyRequests => l.authErrTooMany,
+    _ => l.authErrUnknown,
+  };
+
+  Future<void> _resend() async {
+    final l = AppLocalizations.of(context);
+    try {
+      await ref.read(authRepositoryProvider).sendEmailVerification();
+    } on AuthFailure catch (f) {
+      if (mounted) showToast(context, _problem(l, f));
+      return;
+    }
+    if (!mounted) return;
+    _startCooldown();
+    showToast(context, l.toastVerifySent);
+  }
+
+  Future<void> _check() async {
+    final l = AppLocalizations.of(context);
+    setState(() => _busy = true);
+    AuthUser? u;
+    try {
+      u = await ref.read(authRepositoryProvider).refreshUser();
+    } on AuthFailure catch (f) {
+      if (mounted) {
+        setState(() => _busy = false);
+        showToast(context, _problem(l, f));
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _busy = false);
+    showToast(
+      context,
+      u?.emailVerified ?? false ? l.toastVerified : l.toastNotVerified,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final c = context.colors;
+    final t = context.text;
+    return Padding(
+      key: const ValueKey('settings-verify'),
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.verifyNote,
+            style: t.rowSubtitle.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: c.amber,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              IntrinsicWidth(
+                child: IsharaButton(
+                  key: const ValueKey('verify-resend'),
+                  label: _left > 0 ? l.verifyResendIn(_left) : l.verifyResend,
+                  kind: IsharaButtonKind.ghost,
+                  small: true,
+                  onPressed: _left > 0 ? null : () => unawaited(_resend()),
+                ),
+              ),
+              IntrinsicWidth(
+                child: IsharaButton(
+                  key: const ValueKey('verify-check'),
+                  label: l.verifyCheck,
+                  small: true,
+                  busy: _busy,
+                  onPressed: _busy ? null : () => unawaited(_check()),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// S10-8: signed in and verified, whether everything is up.
+class _SyncLine extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final c = context.colors;
+    final t = context.text;
+    return ValueListenableBuilder(
+      valueListenable: ref.watch(syncStateProvider),
+      builder: (context, state, _) => switch (state) {
+        SyncState.off => const SizedBox.shrink(),
+        SyncState.synced || SyncState.pending || SyncState.parked => Padding(
+          key: const ValueKey('settings-sync'),
+          padding: const EdgeInsets.only(top: 6),
+          child: Semantics(
+            liveRegion: true,
+            child: Text(
+              switch (state) {
+                SyncState.synced => l.syncDone,
+                SyncState.parked => l.syncParked,
+                _ => l.syncPending,
+              },
+              style: t.rowSubtitle.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: switch (state) {
+                  SyncState.synced => c.ok,
+                  SyncState.parked => c.danger,
+                  _ => c.amber,
+                },
+              ),
+            ),
+          ),
+        ),
+      },
     );
   }
 }
